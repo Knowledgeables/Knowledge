@@ -23,14 +23,14 @@ feat/user-registration
 
 We follow Conventional Commits:
 
-<type>(<scope>): <short summary>
+<type>(<scope>): <present verb + short summary>
 
-- feat(scope): new feature
-- fix(scope): bug fix
-- chore(scope): maintenance
-- docs: documentation
-- refactor(scope): code refactor
-- test(scope): tests
+- feat(scope): added new feature
+- fix(scope): made bug fix
+- chore(scope): added maintenance
+- docs: added documentation
+- refactor(scope): started code refactor
+- test(scope): implemented tests
 
 Example:
 feat(user): implement registration
