@@ -1,0 +1,23 @@
+# IDE
+.idea/
+**/.idea/
+*.iml
+.vscode/
+
+# Go
+/bin/
+/dist/
+*.test
+*.out
+coverage.out
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
