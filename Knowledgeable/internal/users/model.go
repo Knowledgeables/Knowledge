@@ -1,5 +1,4 @@
 package users
-import "time"
 
 
 type User struct {
@@ -7,5 +6,4 @@ type User struct {
 	Username     string
 	Email        string
 	PasswordHash string
-	CreatedAt    time.Time
 }

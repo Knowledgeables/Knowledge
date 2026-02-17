@@ -34,12 +34,12 @@ func (r *Repository) Create(user *User) error {
 
 func (r *Repository) FindByUsername(username string) (*User, error) {
 	row := r.db.QueryRow(
-		"SELECT id, username, email, password_hash, created_at FROM users WHERE username = ?",
+		"SELECT id, username, email, password_hash FROM users WHERE username = ?",
 		username,
 	)
 
 	var user User
-	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.CreatedAt)
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -54,12 +54,12 @@ func (r *Repository) FindByUsername(username string) (*User, error) {
 
 func (r *Repository) FindById(id int64) (*User, error) {
 	row := r.db.QueryRow(
-		"SELECT id, username, email, password_hash, created_at FROM users WHERE id = ?",
+		"SELECT id, username, email, password_hash FROM users WHERE id = ?",
 		id,
 	)
 
 	var user User
-	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.CreatedAt)
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -71,3 +71,37 @@ func (r *Repository) FindById(id int64) (*User, error) {
 
 	return &user, nil
 }
+
+func (r *Repository) FindAll() ([]User, error) {
+	rows, err := r.db.Query(
+		"SELECT id, username, email FROM users",
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []User
+
+	for rows.Next() {
+		var user User
+
+		err := rows.Scan(
+			&user.ID,
+			&user.Username,
+			&user.Email,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
