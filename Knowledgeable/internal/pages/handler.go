@@ -52,3 +52,16 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 
 	tmpl.Execute(w, data)
 }
+func (h *Handler) ViewPage(w http.ResponseWriter, r *http.Request) {
+
+	url := r.URL.Query().Get("url")
+
+	page, err := h.service.FindByURL(url)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	tmpl := template.Must(template.ParseFiles("templates/page.html"))
+	tmpl.Execute(w, page)
+}

@@ -46,10 +46,10 @@ func (r *Repository) GetAll() ([]Page, error) {
 func (r *Repository) Search(query string, lang Language) ([]Page, error) {
 
 	rows, err := r.db.Query(`
-		SELECT title, url, language, last_updated, content
+		SELECT title, url, language
 		FROM pages
 		WHERE language = ?
-		AND content LIKE ?
+		AND LOWER(title) LIKE LOWER(?)
 	`,
 		lang,
 		"%"+query+"%",
@@ -68,8 +68,6 @@ func (r *Repository) Search(query string, lang Language) ([]Page, error) {
 			&p.Title,
 			&p.URL,
 			&p.Language,
-			&p.LastUpdated,
-			&p.Content,
 		)
 		if err != nil {
 			return nil, err
@@ -80,4 +78,29 @@ func (r *Repository) Search(query string, lang Language) ([]Page, error) {
 
 	return pages, nil
 }
+func (r *Repository) FindByURL(url string) (*Page, error) {
+
+	row := r.db.QueryRow(`
+		SELECT title, url, language, content
+		FROM pages
+		WHERE url = ?
+	`, url)
+
+	var p Page
+
+	err := row.Scan(
+		&p.Title,
+		&p.URL,
+		&p.Language,
+		&p.Content,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &p, nil
+}
+
+
 

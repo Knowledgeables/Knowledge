@@ -13,11 +13,15 @@
 <div id="results">
   {{range .Results}}
   <div>
-      <h2><a href="{{.URL}}">{{.Title}}</a></h2>
-      <p>{{.Content}}</p>
+      <h2>
+        <a href="/page?url={{.URL}}">
+          {{.Title}}
+        </a>
+      </h2>
   </div>
   {{end}}
 </div>
+
 
 <script>
   let searchInput;

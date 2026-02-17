@@ -19,3 +19,6 @@ func (s *Service) Search(q string, lang Language) ([]Page, error) {
 
 	return s.repo.Search(q, lang)
 }
+func (s *Service) FindByURL(url string) (*Page, error) {
+	return s.repo.FindByURL(url)
+}

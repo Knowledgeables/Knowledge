@@ -51,14 +51,11 @@ func main() {
 
 
 	http.HandleFunc("/", pageHandler.Search)
-
+	http.HandleFunc("/page", pageHandler.ViewPage)
 	
 	// user handler below that takes userservice as an argument.
 	http.HandleFunc("/users", userHandler.GetAll)
 	
-	// page handler below that takes pageservice as an argument.
-	http.HandleFunc("/pages", pageHandler.GetAll)
-
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
