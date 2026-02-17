@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>All Pages</title>
+</head>
+<body>
+
+<h1>All Indexed Pages</h1>
+
+{{range .}}
+    <div>
+        <h2>{{.Title}}</h2>
+        <p><strong>URL:</strong> {{.URL}}</p>
+        <p><strong>Language:</strong> {{.Language}}</p>
+        <p>{{.Content}}</p>
+        <hr>
+    </div>
+{{end}}
+
+</body>
+</html>

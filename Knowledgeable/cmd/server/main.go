@@ -1,8 +1,8 @@
 package main
 
 import (
+	"knowledgeable/internal/pages"
 	"database/sql"
-	"html/template"
 	"knowledgeable/internal/users"
 	"log"
 	"net/http"
@@ -40,20 +40,25 @@ func main() {
 
 	userHandler := users.NewHandler(userService)
 
+	pageRepo := pages.NewRepository(db)
+	pageService := pages.NewService(pageRepo)
+	pageHandler := pages.NewHandler(pageService)
+
+
 	// user handler below that takes userservice as an argument.
 
 	log.Println("Dependencies wired successfully")
 
-	tmpl := template.Must(template.ParseFiles("templates/index.html"))
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tmpl.Execute(w, map[string]string{
-			"Title": "Knowledgeable",
-		})
-	})
+	http.HandleFunc("/", pageHandler.Search)
 
+	
+	// user handler below that takes userservice as an argument.
 	http.HandleFunc("/users", userHandler.GetAll)
+	
+	// page handler below that takes pageservice as an argument.
+	http.HandleFunc("/pages", pageHandler.GetAll)
+
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
-
 }
