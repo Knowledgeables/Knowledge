@@ -79,3 +79,17 @@ func (s *Service) Login(username, password string) (*User, error) {
 
 	return user, nil
 }
+
+func (s *Service) GetAll() ([]User, error) {
+	users, err := s.repo.FindAll()
+	if err != nil {
+		return nil, err
+	}
+
+	// Ekstra sikkerhed: nulstil hash hvis structen stadig har feltet
+	for i := range users {
+		users[i].PasswordHash = ""
+	}
+
+	return users, nil
+}

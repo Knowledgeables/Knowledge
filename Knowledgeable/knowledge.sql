@@ -1,10 +1,6 @@
 PRAGMA foreign_keys = ON;
 
-
--- USERS TABLE
-DROP TABLE IF EXISTS users;
-
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     email TEXT NOT NULL UNIQUE,
@@ -12,10 +8,7 @@ CREATE TABLE users (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- PAGES TABLE
-DROP TABLE IF EXISTS pages;
-
-CREATE TABLE pages (
+CREATE TABLE IF NOT EXISTS pages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     url TEXT NOT NULL UNIQUE,
@@ -24,6 +17,5 @@ CREATE TABLE pages (
     last_updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Index for faster search
-CREATE INDEX idx_pages_language ON pages(language);
-CREATE INDEX idx_pages_title ON pages(title);
+CREATE INDEX IF NOT EXISTS idx_pages_language ON pages(language);
+CREATE INDEX IF NOT EXISTS idx_pages_title ON pages(title);

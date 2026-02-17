@@ -3,17 +3,18 @@ package main
 import (
 	"database/sql"
 	"html/template"
+	"knowledgeable/internal/users"
 	"log"
 	"net/http"
-	_ "github.com/mattn/go-sqlite3"
-	"knowledgeable/internal/users"
+	"os"
+	_ "modernc.org/sqlite"
+
 )
 
-
 func main() {
-	
-	
-db, err := sql.Open("sqlite3", "knowledge.db")
+
+	// db setup
+	db, err := sql.Open("sqlite", "whoknows.db")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,16 +24,25 @@ db, err := sql.Open("sqlite3", "knowledge.db")
 		log.Fatal(err)
 	}
 
+	schema, err := os.ReadFile("knowledge.sql")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if _, err := db.Exec(string(schema)); err != nil {
+		log.Fatal(err)
+	}
+
+	// dependency injection
 	userRepo := users.NewRepository(db)
 
-	_ = users.NewService(userRepo)
+	userService := users.NewService(userRepo)
+
+	userHandler := users.NewHandler(userService)
 
 	// user handler below that takes userservice as an argument.
 
 	log.Println("Dependencies wired successfully")
-
-
-
 
 	tmpl := template.Must(template.ParseFiles("templates/index.html"))
 
@@ -42,5 +52,8 @@ db, err := sql.Open("sqlite3", "knowledge.db")
 		})
 	})
 
-	http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/users", userHandler.GetAll)
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
+
 }
