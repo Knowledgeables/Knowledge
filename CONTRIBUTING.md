@@ -2,13 +2,13 @@
 
 ## Branch Naming
 
-<type>(<scope>)-<keywords>
+type/scope-keywords
 
-- feat/<scope>-short-description
-- fix/<scope>-short-description
-- chore/<scope>-short-description
-- docs/<scope>-short-description
-- refactor/<scope>-short-description
+- feat/scope-short-keywords
+- fix/scope-short-keywords
+- chore/scope-short-keywords
+- docs/scope-short-keywords
+- refactor/scope-short-keywords
 
 * lowercase only
 * use - not _
@@ -23,7 +23,7 @@ feat/user-registration
 
 We follow Conventional Commits:
 
-<type>(<scope>): <present verb + short summary>
+type(scope): present verb + short summary
 
 - feat(scope): added new feature
 - fix(scope): made bug fix
