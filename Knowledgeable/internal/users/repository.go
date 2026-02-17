@@ -28,18 +28,18 @@ func (r *Repository) Create(user *User) error {
 		return err
 	}
 
-	user.ID = int64(id)
+	user.ID = id
 	return nil
 }
 
 func (r *Repository) FindByUsername(username string) (*User, error) {
 	row := r.db.QueryRow(
-		"SELECT id, username, email, password_hash FROM users WHERE username = ?",
+		"SELECT id, username, email, password_hash, created_at FROM users WHERE username = ?",
 		username,
 	)
 
 	var user User
-	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash)
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.CreatedAt)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -54,12 +54,12 @@ func (r *Repository) FindByUsername(username string) (*User, error) {
 
 func (r *Repository) FindById(id int64) (*User, error) {
 	row := r.db.QueryRow(
-		"SELECT id, username, email, password_hash FROM users WHERE id = ?",
+		"SELECT id, username, email, password_hash, created_at FROM users WHERE id = ?",
 		id,
 	)
 
 	var user User
-	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash)
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.CreatedAt)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
