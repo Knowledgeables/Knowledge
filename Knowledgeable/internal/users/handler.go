@@ -2,6 +2,8 @@ package users
 
 import (
 	"encoding/json"
+	"html/template"
+	"log"
 	"net/http"
 )
 
@@ -30,24 +32,28 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
-	// Sørg for det kun er POST
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if r.Method == http.MethodGet {
+		tmpl := template.Must(template.ParseFiles("templates/register.html"))
+		tmpl.Execute(w, nil)
 		return
 	}
 
-	username := r.FormValue("username")
-	email := r.FormValue("email")
-	password := r.FormValue("password")
+	if r.Method == http.MethodPost {
+		username := r.FormValue("username")
+		email := r.FormValue("email")
+		password := r.FormValue("password")
 
-	user, err := h.service.Register(username, email, password)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		user, err := h.service.Register(username, email, password)
+
+		if err != nil {
+			log.Println("Register error:", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		log.Println("User created: ", user.Username)
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 		return
 	}
 
-	// Hvis succes → redirect
-	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
-
-	_ = user // (kan bruges senere hvis du vil)
+	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }

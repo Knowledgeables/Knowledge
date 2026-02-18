@@ -1,14 +1,15 @@
 package main
 
 import (
-	"knowledgeable/internal/pages"
 	"database/sql"
 	"knowledgeable/internal/auth"
+	"knowledgeable/internal/pages"
 	"knowledgeable/internal/users"
 	"log"
-	_ "modernc.org/sqlite"
 	"net/http"
 	"os"
+
+	_ "modernc.org/sqlite"
 )
 
 func main() {
@@ -53,12 +54,9 @@ func main() {
 
 	log.Println("Dependencies wired successfully")
 
-
 	// http.HandleFunc("/", pageHandler.Search)
 	http.HandleFunc("/page", pageHandler.ViewPage)
-	
-	
-	
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
@@ -83,6 +81,8 @@ func main() {
 	http.Handle("/users",
 		auth.Middleware(http.HandlerFunc(userHandler.GetAll)),
 	)
+
+	http.HandleFunc("/register", userHandler.Register)
 
 	http.HandleFunc("/logout", authHandler.Logout)
 	http.HandleFunc("/login", authHandler.Login)
