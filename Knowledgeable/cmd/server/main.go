@@ -2,13 +2,12 @@ package main
 
 import (
 	"database/sql"
-	"html/template"
+	"knowledgeable/internal/auth"
 	"knowledgeable/internal/users"
 	"log"
+	_ "modernc.org/sqlite"
 	"net/http"
 	"os"
-	_ "modernc.org/sqlite"
-
 )
 
 func main() {
@@ -34,25 +33,54 @@ func main() {
 	}
 
 	// dependency injection
+
+	// user
 	userRepo := users.NewRepository(db)
 
 	userService := users.NewService(userRepo)
 
 	userHandler := users.NewHandler(userService)
 
+	// auth
+	authHandler := auth.NewHandler(userService)
+
 	// user handler below that takes userservice as an argument.
 
 	log.Println("Dependencies wired successfully")
 
-	tmpl := template.Must(template.ParseFiles("templates/index.html"))
-
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tmpl.Execute(w, map[string]string{
-			"Title": "Knowledgeable",
-		})
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+
+		cookie, err := r.Cookie("session_id")
+		if err != nil {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		_, ok := auth.Get(cookie.Value)
+		if !ok {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	})
 
-	http.HandleFunc("/users", userHandler.GetAll)
+	http.Handle("/users",
+		auth.Middleware(http.HandlerFunc(userHandler.GetAll)),
+	)
+
+	http.HandleFunc("/logout", authHandler.Logout)
+	http.HandleFunc("/login", authHandler.Login)
+
+	http.Handle("/dashboard",
+		auth.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("Protected dashboard"))
+		})),
+	)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 
