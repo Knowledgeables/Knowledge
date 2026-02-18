@@ -1,15 +1,17 @@
 package main
 
 import (
-	"knowledgeable/internal/pages"
 	"database/sql"
 	"knowledgeable/internal/auth"
+	"knowledgeable/internal/pages"
 	"knowledgeable/internal/users"
 	"log"
 	"html/template"
 	_ "modernc.org/sqlite"
 	"net/http"
 	"os"
+
+	_ "modernc.org/sqlite"
 )
 
 func main() {
@@ -87,6 +89,8 @@ func main() {
 	http.Handle("/users",
 		auth.Middleware(http.HandlerFunc(userHandler.GetAll)),
 	)
+
+	http.HandleFunc("/register", userHandler.Register)
 
 	http.HandleFunc("/logout", authHandler.Logout)
 	http.HandleFunc("/login", authHandler.Login)

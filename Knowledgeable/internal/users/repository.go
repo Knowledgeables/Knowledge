@@ -2,6 +2,7 @@ package users
 
 import (
 	"database/sql"
+	"log"
 )
 
 type Repository struct {
@@ -19,6 +20,8 @@ func (r *Repository) Register(user *User) error {
 		user.Email,
 		user.PasswordHash,
 	)
+	log.Println("User added: ", user.Username)
+
 	if err != nil {
 		return err
 	}
