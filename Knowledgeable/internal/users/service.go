@@ -31,7 +31,7 @@ func (s *Service) Register(username, email, rawPassword string) (*User, error) {
 		PasswordHash: string(hashed),
 	}
 
-	if err := s.repo.Create(user); err != nil {
+	if err := s.repo.Register(user); err != nil {
 		return nil, err
 	}
 

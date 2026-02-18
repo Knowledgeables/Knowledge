@@ -12,7 +12,7 @@ func NewRepository(db *sql.DB) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) Create(user *User) error {
+func (r *Repository) Register(user *User) error {
 	result, err := r.db.Exec(
 		"INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
 		user.Username,
@@ -44,7 +44,7 @@ func (r *Repository) FindByUsername(username string) (*User, error) {
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (r *Repository) FindById(id int64) (*User, error) {
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -104,4 +104,3 @@ func (r *Repository) FindAll() ([]User, error) {
 
 	return users, nil
 }
-
