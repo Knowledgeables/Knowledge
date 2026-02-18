@@ -6,6 +6,7 @@ import (
 	"knowledgeable/internal/auth"
 	"knowledgeable/internal/users"
 	"log"
+	"html/template"
 	_ "modernc.org/sqlite"
 	"net/http"
 	"os"
@@ -54,10 +55,13 @@ func main() {
 	log.Println("Dependencies wired successfully")
 
 
-	// http.HandleFunc("/", pageHandler.Search)
-	http.HandleFunc("/page", pageHandler.ViewPage)
-	
-	
+	http.Handle("/page",
+		auth.Middleware(http.HandlerFunc(pageHandler.ViewPage)),
+	)
+	http.Handle("/search",
+		auth.Middleware(http.HandlerFunc(pageHandler.Search)),
+	)
+
 	
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -77,7 +81,7 @@ func main() {
 			return
 		}
 
-		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		http.Redirect(w, r, "/search-engine", http.StatusSeeOther)
 	})
 
 	http.Handle("/users",
@@ -88,10 +92,11 @@ func main() {
 	http.HandleFunc("/login", authHandler.Login)
 
 	http.Handle("/dashboard",
-		auth.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("Protected dashboard"))
-		})),
-	)
+	auth.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tmpl := template.Must(template.ParseFiles("templates/dashboard.html"))
+		tmpl.Execute(w, nil)
+	})),
+)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
