@@ -1,6 +1,7 @@
 package main
 
 import (
+	"knowledgeable/internal/pages"
 	"database/sql"
 	"knowledgeable/internal/auth"
 	"knowledgeable/internal/users"
@@ -41,6 +42,10 @@ func main() {
 
 	userHandler := users.NewHandler(userService)
 
+	pageRepo := pages.NewRepository(db)
+	pageService := pages.NewService(pageRepo)
+	pageHandler := pages.NewHandler(pageService)
+
 	// auth
 	authHandler := auth.NewHandler(userService)
 
@@ -48,6 +53,13 @@ func main() {
 
 	log.Println("Dependencies wired successfully")
 
+
+	// http.HandleFunc("/", pageHandler.Search)
+	http.HandleFunc("/page", pageHandler.ViewPage)
+	
+	// user handler below that takes userservice as an argument.
+	http.HandleFunc("/users", userHandler.GetAll)
+	
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
@@ -83,5 +95,4 @@ func main() {
 	)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
-
 }

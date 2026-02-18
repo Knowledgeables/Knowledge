@@ -1,9 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{.Title}}</title>
+    <title>Search</title>
 </head>
 <body>
-    <h1>{{.Title}}</h1>
+
+<div>
+  <input id="search-input" placeholder="Search..." value="{{.Query}}"/>
+  <button onclick="makeSearchRequest()">Search</button>
+</div>
+
+<div id="results">
+  {{range .Results}}
+  <div>
+      <h2>
+        <a href="/page?url={{.URL}}">
+          {{.Title}}
+        </a>
+      </h2>
+  </div>
+  {{end}}
+</div>
+
+
+<script>
+  let searchInput;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    searchInput = document.getElementById("search-input");
+
+    searchInput.focus();
+
+    searchInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+          makeSearchRequest();
+        }
+    });
+  });
+
+  function makeSearchRequest() {
+    const query = searchInput.value;
+    const url = new URL(window.location.href);
+    url.searchParams.set('q', query);
+    window.location.href = url.toString();
+  }
+</script>
+
 </body>
 </html>
