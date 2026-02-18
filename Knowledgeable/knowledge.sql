@@ -20,13 +20,7 @@ CREATE TABLE IF NOT EXISTS pages (
 CREATE INDEX IF NOT EXISTS idx_pages_language ON pages(language);
 CREATE INDEX IF NOT EXISTS idx_pages_title ON pages(title);
 
-ALTER TABLE users RENAME COLUMN password TO password_hash;
-
-INSERT INTO users (username, email, password_hash)
-VALUES (
-    'test',
-    'test@gmail.com',
-    '$2a$12$.xdbDulNs8oIA/36pacumemsdtn8b9Ad3lOIkKUjJ.V7cusgfVIGq'
-);
 
 
+
+ 
