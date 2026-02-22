@@ -61,7 +61,9 @@ func main() {
 	http.Handle("/search",
 		auth.Middleware(http.HandlerFunc(pageHandler.Search)),
 	)
-
+	http.Handle("/api/search",
+		auth.Middleware(http.HandlerFunc(pageHandler.SearchAPI)),
+	)
 	
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
