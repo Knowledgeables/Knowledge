@@ -6,11 +6,18 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Service struct {
-	repo *Repository
+type UserRepository interface {
+	Register(*User) error
+	FindByUsername(string) (*User, error)
+	FindById(int64) (*User, error)
+	FindAll() ([]User, error)
 }
 
-func NewService(repo *Repository) *Service {
+type Service struct {
+	repo UserRepository
+}
+
+func NewService(repo UserRepository) *Service {
 	return &Service{repo: repo}
 }
 
