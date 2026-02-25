@@ -81,6 +81,9 @@ func main() {
 	http.Handle("/search",
 		auth.Middleware(http.HandlerFunc(pageHandler.Search)),
 	)
+	http.Handle("/api/search",
+	auth.Middleware(http.HandlerFunc(pageHandler.SearchAPI)),
+	)
 
 	http.Handle("/users",
 		auth.Middleware(http.HandlerFunc(userHandler.GetAll)),
