@@ -12,7 +12,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./knowledge/Knowledgeable
+        working-directory: knowledgeable
 
     steps:
       - uses: actions/checkout@v4
@@ -29,10 +29,7 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
-          working-directory: knowledge/Knowledgeable
-
-      - name: Vet
-        run: go vet ./...
+          working-directory: knowledgeable
 
       - name: Build
         run: go build ./...
