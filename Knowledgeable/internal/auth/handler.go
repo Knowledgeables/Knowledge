@@ -66,10 +66,10 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionID, err := Create(user.ID)
-if err != nil {
-	http.Error(w, "internal error", http.StatusInternalServerError)
-	return
-}
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",
