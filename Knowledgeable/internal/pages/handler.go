@@ -3,6 +3,7 @@ package pages
 import (
 	"html/template"
 	"net/http"
+	"encoding/json"
 )
 
 type Handler struct {
@@ -64,4 +65,27 @@ func (h *Handler) ViewPage(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.ParseFiles("templates/page.html"))
 	tmpl.Execute(w, page)
+}
+func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
+
+	query := r.URL.Query().Get("q")
+	lang := r.URL.Query().Get("language")
+
+	if lang == "" {
+		lang = "en"
+	}
+
+	results, err := h.service.Search(query, Language(lang))
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(results)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 }
