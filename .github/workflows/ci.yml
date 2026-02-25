@@ -12,7 +12,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./knowledge
+        working-directory: ./knowledgeable
 
     steps:
       - uses: actions/checkout@v4
