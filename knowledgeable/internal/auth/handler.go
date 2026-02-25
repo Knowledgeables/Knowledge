@@ -1,10 +1,10 @@
 package auth
 
 import (
+	"encoding/json"
 	"html/template"
 	"knowledgeable/internal/users"
 	"net/http"
-	"encoding/json"
 )
 
 type UserService interface {
@@ -136,7 +136,11 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionID := Create(user.ID)
+	sessionID, err := Create(user.ID)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",
@@ -148,8 +152,11 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	json.NewEncoder(w).Encode(map[string]string{
+	if err := json.NewEncoder(w).Encode(map[string]string{
 		"status":  "ok",
 		"message": "login successful",
-	})
+	}); err != nil {
+		http.Error(w, "encoding error", http.StatusInternalServerError)
+		return
+	}
 }
