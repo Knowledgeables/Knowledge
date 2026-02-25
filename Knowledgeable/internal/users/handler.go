@@ -76,3 +76,44 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
+func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	type registerRequest struct {
+		Username string `json:"username"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	var req registerRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
+	}
+
+	if req.Username == "" || req.Email == "" || req.Password == "" {
+		http.Error(w, "missing fields", http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.service.Register(req.Username, req.Email, req.Password)
+	if err != nil {
+		log.Println("RegisterAPI error:", err)
+		http.Error(w, "registration failed", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":   "ok",
+		"message":  "user registered",
+		"username": user.Username,
+	})
+}

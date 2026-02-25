@@ -92,6 +92,7 @@ func main() {
 	http.Handle("/register",
 		auth.Middleware(http.HandlerFunc(userHandler.Register)),
 	)
+	http.HandleFunc("/api/register", userHandler.RegisterAPI)
 
 	http.HandleFunc("/logout", authHandler.Logout)
 
