@@ -94,7 +94,10 @@ func main() {
 	)
 
 	http.HandleFunc("/logout", authHandler.Logout)
+
 	http.HandleFunc("/login", authHandler.Login)
+	
+	http.HandleFunc("/api/login", authHandler.LoginAPI)
 
 	http.Handle("/dashboard",
 		auth.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
