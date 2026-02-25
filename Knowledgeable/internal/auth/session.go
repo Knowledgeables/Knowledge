@@ -11,16 +11,20 @@ var (
 	mu       sync.Mutex
 )
 
-func Create(userID int64) string {
+func Create(userID int64) (string, error) {
 	b := make([]byte, 32)
-	rand.Read(b)
+		
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	
 	sessionID := hex.EncodeToString(b)
 
 	mu.Lock()
 	sessions[sessionID] = userID
 	mu.Unlock()
 
-	return sessionID
+	return sessionID, nil
 }
 
 func Get(sessionID string) (int64, bool) {

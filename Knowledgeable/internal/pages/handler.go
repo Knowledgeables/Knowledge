@@ -1,9 +1,9 @@
 package pages
 
 import (
+	"encoding/json"
 	"html/template"
 	"net/http"
-	"encoding/json"
 )
 
 type Handler struct {
@@ -23,8 +23,11 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl := template.Must(template.ParseFiles("templates/pages.html"))
+	if err := tmpl.Execute(w, allPages); err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
+		return
+	}
 
-	tmpl.Execute(w, allPages)
 }
 func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 
@@ -41,8 +44,6 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl := template.Must(template.ParseFiles("templates/search.html"))
-
 	data := struct {
 		Query   string
 		Results []Page
@@ -51,8 +52,13 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 		Results: results,
 	}
 
-	tmpl.Execute(w, data)
+	tmpl := template.Must(template.ParseFiles("templates/search.html"))
+	if err := tmpl.Execute(w, data); err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
+		return
+	}
 }
+
 func (h *Handler) ViewPage(w http.ResponseWriter, r *http.Request) {
 
 	url := r.URL.Query().Get("url")
@@ -64,8 +70,14 @@ func (h *Handler) ViewPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl := template.Must(template.ParseFiles("templates/page.html"))
-	tmpl.Execute(w, page)
+
+	if err := tmpl.Execute(w, page); err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
+		return
+	}
+
 }
+
 func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 
 	query := r.URL.Query().Get("q")
