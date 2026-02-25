@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"knowledgeable/internal/users"
 	"net/http"
+	"encoding/json"
 )
 
 type UserService interface {
@@ -103,4 +104,52 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	})
 
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}
+func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	type loginRequest struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+
+	var req loginRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
+	}
+
+	if req.Username == "" || req.Password == "" {
+		http.Error(w, "missing credentials", http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.userService.Login(req.Username, req.Password)
+	if err != nil {
+		http.Error(w, "invalid credentials", http.StatusUnauthorized)
+		return
+	}
+
+	sessionID := Create(user.ID)
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    sessionID,
+		SameSite: http.SameSiteLaxMode,
+		HttpOnly: true,
+		Path:     "/",
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "ok",
+		"message": "login successful",
+	})
 }
