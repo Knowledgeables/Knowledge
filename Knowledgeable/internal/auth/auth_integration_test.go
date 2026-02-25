@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"strings"
 	"testing"
-	"errors"
 )
 
 type successUserService struct{}
@@ -79,10 +78,3 @@ func TestLogin_SetsSessionCookie(t *testing.T) {
 	}
 }
 
-
-// ERROR PATH
-type errorUserService struct{}
-
-func (e *errorUserService) Login(username, password string) (*users.User, error) {
-	return nil, errors.New("invalid credentials")
-}
