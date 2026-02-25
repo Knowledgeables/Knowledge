@@ -6,16 +6,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserRepository interface {
-	Register(*User) error
-	FindByUsername(string) (*User, error)
-	FindById(int64) (*User, error)
-	FindAll() ([]User, error)
-}
+	type UserRepository interface {
+		Register(*User) error
+		FindByUsername(string) (*User, error)
+		FindById(int64) (*User, error)
+		FindAll() ([]User, error)
+	}
 
-type Service struct {
-	repo UserRepository
-}
+	type Service struct {
+		repo UserRepository
+	}
 
 func NewService(repo UserRepository) *Service {
 	return &Service{repo: repo}
@@ -69,18 +69,17 @@ func (s *Service) Login(username, password string) (*User, error) {
 
 	user, err := s.repo.FindByUsername(username)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("invalid credentials")
 	}
 
 	if user == nil {
 		return nil, errors.New("invalid credentials")
 	}
 
-	err = bcrypt.CompareHashAndPassword(
+	if err := bcrypt.CompareHashAndPassword(
 		[]byte(user.PasswordHash),
 		[]byte(password),
-	)
-	if err != nil {
+	); err != nil {
 		return nil, errors.New("invalid credentials")
 	}
 

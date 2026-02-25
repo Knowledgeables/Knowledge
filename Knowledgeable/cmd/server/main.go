@@ -2,16 +2,14 @@ package main
 
 import (
 	"database/sql"
+	"html/template"
 	"knowledgeable/internal/auth"
 	"knowledgeable/internal/pages"
 	"knowledgeable/internal/users"
 	"log"
-	"html/template"
 	_ "modernc.org/sqlite"
 	"net/http"
 	"os"
-
-	_ "modernc.org/sqlite"
 )
 
 func main() {
@@ -38,34 +36,26 @@ func main() {
 
 	// dependency injection
 
+	// templates
+	tmpl := template.Must(template.ParseGlob("templates/*.html"))
+
 	// user
 	userRepo := users.NewRepository(db)
-
 	userService := users.NewService(userRepo)
+	userHandler := users.NewHandler(userService, tmpl)
 
-	userHandler := users.NewHandler(userService)
-
+	// pages
 	pageRepo := pages.NewRepository(db)
 	pageService := pages.NewService(pageRepo)
 	pageHandler := pages.NewHandler(pageService)
 
 	// auth
-	authHandler := auth.NewHandler(userService)
-
-	// user handler below that takes userservice as an argument.
+	authHandler := auth.NewHandler(userService, tmpl)
 
 	log.Println("Dependencies wired successfully")
 
-
-	http.Handle("/page",
-		auth.Middleware(http.HandlerFunc(pageHandler.ViewPage)),
-	)
-	http.Handle("/search",
-		auth.Middleware(http.HandlerFunc(pageHandler.Search)),
-	)
-
-	
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
 			return
@@ -77,32 +67,39 @@ func main() {
 			return
 		}
 
-		_, ok := auth.Get(cookie.Value)
-		if !ok {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
+		if _, ok := auth.Get(cookie.Value); ok {
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 
-		http.Redirect(w, r, "/search-engine", http.StatusSeeOther)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	})
+
+	http.Handle("/page",
+		auth.Middleware(http.HandlerFunc(pageHandler.ViewPage)),
+	)
+	http.Handle("/search",
+		auth.Middleware(http.HandlerFunc(pageHandler.Search)),
+	)
 
 	http.Handle("/users",
 		auth.Middleware(http.HandlerFunc(userHandler.GetAll)),
 	)
 
-	http.Handle("/register", 
-	auth.Middleware(http.HandlerFunc(userHandler.Register)),
+	http.Handle("/register",
+		auth.Middleware(http.HandlerFunc(userHandler.Register)),
 	)
 
 	http.HandleFunc("/logout", authHandler.Logout)
 	http.HandleFunc("/login", authHandler.Login)
 
 	http.Handle("/dashboard",
-	auth.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tmpl := template.Must(template.ParseFiles("templates/dashboard.html"))
-		tmpl.Execute(w, nil)
-	})),
-)
+		auth.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if err := tmpl.ExecuteTemplate(w, "dashboard.html", nil); err != nil {
+				http.Error(w, "template error", http.StatusInternalServerError)
+			}
+		})),
+	)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
