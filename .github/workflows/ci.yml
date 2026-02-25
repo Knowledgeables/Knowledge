@@ -10,22 +10,25 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    defaults:
+      run:
+        working-directory: ./knowledge
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
         with:
-          go-version: '1.26.0'
+          go-version: '1.22'
+
+      - name: Download dependencies
+        run: go mod download
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-         version: latest
-
-      - name: Download dependencies
-        run: go mod download
+          version: latest
+          working-directory: knowledge
 
       - name: Vet
         run: go vet ./...
