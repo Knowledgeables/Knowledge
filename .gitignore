@@ -11,6 +11,12 @@
 *.out
 coverage.out
 
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+data/*.db
+
 # Logs
 *.log
 
