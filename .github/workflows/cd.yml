@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: Knowledgeables/Knowledge
+  IMAGE_NAME: knowledgeables/knowledge
 
 jobs:
   deploy:
