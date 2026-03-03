@@ -1,5 +1,21 @@
 # Contributing
 
+## Before You Start
+
+Before making your first commit, install the Git hooks by running this from the repo root:
+
+```sh
+sh setup-hooks.sh
+```
+
+This sets up a pre-commit hook that runs `golangci-lint` on the `knowledgeable` project automatically. Your commit will be blocked if there are any lint errors — fix them before committing.
+
+> **Requires `golangci-lint` to be installed.**
+> Install it from: https://golangci-lint.run/usage/install/
+> Windows: `choco install golangci-lint`
+> Mac: `brew install golangci-lint`
+---
+
 ## Branch Naming
 
 type/scope-keywords
