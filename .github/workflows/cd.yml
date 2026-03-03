@@ -30,7 +30,7 @@ jobs:
         run: go test ./...
 
       - name: Build binary
-        run: CGO_ENABLED=0 go build -o app
+        run: CGO_ENABLED=0 go build -o app ./cmd/server
 
       - name: Login to GHCR
         run: |
