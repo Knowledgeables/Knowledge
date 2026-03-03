@@ -2,27 +2,27 @@ name: CD - Production
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   deploy:
-    name: Build & Deploy
     runs-on: ubuntu-latest
 
     environment:
       name: production
+
+    defaults:
+      run:
+        working-directory: knowledgeable
 
     permissions:
       contents: read
       packages: write
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/setup-go@v5
         with:
           go-version: '1.22'
 
@@ -30,22 +30,18 @@ jobs:
         run: go test ./...
 
       - name: Build binary
-        run: |
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-          go build -o app
+        run: CGO_ENABLED=0 go build -o app
 
-      - name: Log in to GHCR
+      - name: Login to GHCR
         run: |
-          echo "${{ secrets.GHCR_TOKEN }}" | \
+          echo "${{ secrets.GITHUB_TOKEN }}" | \
           docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Build Docker image
         run: |
           docker build \
-            -t ghcr.io/${{ github.repository }}:latest \
-            -t ghcr.io/${{ github.repository }}:${{ github.sha }} .
+            -t ghcr.io/${{ github.repository }}/knowledgeable:latest \
+            .
 
       - name: Push Docker image
-        run: |
-          docker push ghcr.io/${{ github.repository }}:latest
-          docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
+        run: docker push ghcr.io/${{ github.repository }}/knowledgeable:latest
