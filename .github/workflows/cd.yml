@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: mrmorsing14/knowledgeable
+  IMAGE_NAME: Knowledgeables/Knowledge
 
 jobs:
   deploy:
