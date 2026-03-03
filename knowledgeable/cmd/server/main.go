@@ -7,9 +7,11 @@ import (
 	"knowledgeable/internal/pages"
 	"knowledgeable/internal/users"
 	"log"
-	_ "modernc.org/sqlite"
 	"net/http"
 	"os"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	_ "modernc.org/sqlite"
 )
 
 func main() {
@@ -82,7 +84,7 @@ func main() {
 		auth.Middleware(http.HandlerFunc(pageHandler.Search)),
 	)
 	http.Handle("/api/search",
-	auth.Middleware(http.HandlerFunc(pageHandler.SearchAPI)),
+		auth.Middleware(http.HandlerFunc(pageHandler.SearchAPI)),
 	)
 
 	http.Handle("/users",
@@ -97,7 +99,7 @@ func main() {
 	http.HandleFunc("/logout", authHandler.Logout)
 
 	http.HandleFunc("/login", authHandler.Login)
-	
+
 	http.HandleFunc("/api/login", authHandler.LoginAPI)
 
 	http.Handle("/dashboard",
@@ -108,5 +110,10 @@ func main() {
 		})),
 	)
 
+	// Metrics endpoint used by Prometheus and visualized in Grafana
+	http.Handle("/metrics", promhttp.Handler())
+	http.ListenAndServe(":8080", nil)
+
+	// Start HTTP server
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
