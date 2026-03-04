@@ -1,0 +1,13 @@
+services:
+  app:
+    build: 
+     context: .
+     dockerfile: Dockerfile.dev
+    container_name: knowledgeable
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/workspace
+      - ./data:/app/data
+    environment:
+      DB_PATH: /app/data/dev.db

@@ -27,3 +27,10 @@ data/*.db
 # OS
 .DS_Store
 Thumbs.db
+
+
+*.db
+*.sqlite
+*.sqlite3
+
+data/
