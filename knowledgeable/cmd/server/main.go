@@ -114,8 +114,7 @@ func main() {
 	)
 
 	// Metrics endpoint used by Prometheus and visualized in Grafana
-	http.Handle("/metrics", promhttp.Handler())
-	http.ListenAndServe(":8080", nil)
+	http.Handle("/metrics", promhttp.Handler())	
 
 	// Start HTTP server
 	log.Fatal(http.ListenAndServe(":8080", nil))
