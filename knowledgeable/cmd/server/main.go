@@ -17,7 +17,10 @@ import (
 func main() {
 
 	// db setup
-	db, err := sql.Open("sqlite", "whoknows.db")
+
+	dbPath := os.Getenv("DB_PATH")
+
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		log.Fatal(err)
 	}
