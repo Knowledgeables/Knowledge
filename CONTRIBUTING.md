@@ -1,6 +1,19 @@
 # Contributing
 
-## Before You Start
+
+## Set up local work environment with Docker compose
+
+When cloning the project, in the knowledge directory, you will see two docker files and two docker compose in the main directory. These are used to seperate **development** and **production** environments.
+
+To start the development environment (requires docker desktop), run:
+
+'''bash
+docker compose -f docker-compose-dev.yml up -d
+'''
+
+Now you have access to the development environment used by all the developers on the team.
+
+## Before You Start Comitting
 
 Before making your first commit, install the Git hooks by running this from the repo root:
 
