@@ -1,3 +1,4 @@
 # Force shell scripts to always use LF line endings
 *.sh text eol=lf
 pre-commit text eol=lf
+commit-msg text eol=lf

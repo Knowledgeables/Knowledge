@@ -1,6 +1,10 @@
 package pages
 
-import "database/sql"
+import (
+	"database/sql"
+	"log"
+	
+)
 
 type Repository struct {
 	db *sql.DB
@@ -19,7 +23,11 @@ func (r *Repository) GetAll() ([]Page, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+    if err := r.db.Close(); err != nil {
+        log.Printf("failed to close db: %v", err)
+    }
+	}()
 
 	var pages []Page
 
@@ -57,7 +65,11 @@ func (r *Repository) Search(query string, lang Language) ([]Page, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+    if err := r.db.Close(); err != nil {
+        log.Printf("failed to close db: %v", err)
+    }
+	}()	
 
 	var pages []Page
 
