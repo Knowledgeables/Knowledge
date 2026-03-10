@@ -7,6 +7,16 @@ import (
 	"net/http"
 )
 
+type LoginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type LoginResponse struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+}
+
 type UserService interface {
 	Login(string, string) (*users.User, error)
 }
@@ -105,6 +115,19 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
+
+// LoginAPI godoc
+// @Summary Login user
+// @Description Authenticate user and create session
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param credentials body LoginRequest true "Login credentials"
+// @Success 200 {object} LoginResponse
+// @Failure 400 {string} string "invalid json or missing credentials"
+// @Failure 401 {string} string "invalid credentials"
+// @Failure 500 {string} string "internal error"
+// @Router /api/login [post]
 func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
@@ -112,12 +135,7 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type loginRequest struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
-
-	var req loginRequest
+	var req LoginRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -152,11 +170,11 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	if err := json.NewEncoder(w).Encode(map[string]string{
-		"status":  "ok",
-		"message": "login successful",
+	if err := json.NewEncoder(w).Encode(LoginResponse{
+		Status:  "ok",
+		Message: "login successful",
 	}); err != nil {
 		http.Error(w, "encoding error", http.StatusInternalServerError)
 		return
-	}
+	 }
 }

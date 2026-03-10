@@ -52,7 +52,7 @@ func main() {
 	}
 
 	// Swagger UI
-    http.Handle("/swagger/", httpSwagger.WrapHandler)
+    http.Handle("/swagger/", httpSwagger.Handler())
 
 	// dependency injection
 
