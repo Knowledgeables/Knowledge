@@ -1,15 +1,30 @@
 # Contributing
 
-
 ## Set up local work environment with Docker compose
 
-When cloning the project, in the knowledge directory, you will see two docker files and two docker compose in the main directory. These are used to seperate **development** and **production** environments.
+After cloning the repository, navigate to the project root.
 
-To start the development environment (requires docker desktop), run:
+To start the development environment, run:
 
-'''bash
-docker compose -f docker-compose-dev.yml up -d
-'''
+```
+ make dev-up
+```
+This command starts the development environment using Docker Compose.
+
+To stop the environment again:
+
+```
+ make dev-down
+```
+
+The Makefile wraps the Docker Compose commands used by the project, so developers do not need to remember the full Docker commands.
+
+Requirements:
+
+- Docker Desktop installed
+- make installed
+- Go version 1.24 installed
+- Make commands must run in a bash-compatible terminal
 
 Now you have access to the development environment used by all the developers on the team.
 
@@ -17,8 +32,8 @@ Now you have access to the development environment used by all the developers on
 
 Before making your first commit, install the Git hooks by running this from the repo root:
 
-```sh
-sh setup-hooks.sh
+```
+make setup-hooks
 ```
 
 This sets up a pre-commit hook that runs `golangci-lint` on the `knowledgeable` project automatically. Your commit will be blocked if there are any lint errors — fix them before committing.
@@ -52,7 +67,7 @@ feat/user-registration
 
 We follow Conventional Commits:
 
-type(scope): present verb + short summary
+type(scope): past tense verb + short summary
 
 - feat(scope): added new feature
 - fix(scope): made bug fix
