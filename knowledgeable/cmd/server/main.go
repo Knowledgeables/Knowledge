@@ -39,6 +39,19 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// seed
+	if os.Getenv("APP_ENV") == "dev" {
+
+		seed, err := os.ReadFile("seed-dev.sql")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if _, err := db.Exec(string(seed)); err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	// dependency injection
 
 	// templates
@@ -114,7 +127,7 @@ func main() {
 	)
 
 	// Metrics endpoint used by Prometheus and visualized in Grafana
-	http.Handle("/metrics", promhttp.Handler())	
+	http.Handle("/metrics", promhttp.Handler())
 
 	// Start HTTP server
 	log.Fatal(http.ListenAndServe(":8080", nil))
