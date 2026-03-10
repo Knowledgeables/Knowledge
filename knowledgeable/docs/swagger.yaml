@@ -14,6 +14,15 @@ definitions:
       status:
         type: string
     type: object
+  users.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -53,6 +62,32 @@ paths:
           schema:
             type: string
       summary: Login user
+      tags:
+      - auth
+  /api/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user
+      parameters:
+      - description: Register user
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/users.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: invalid request
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: Register user
       tags:
       - auth
   /api/search:
