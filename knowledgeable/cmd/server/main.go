@@ -1,3 +1,8 @@
+// @title Knowledge API
+// @version 1.0
+// @description API for Knowledge service
+// @host localhost:8080
+// @BasePath /
 package main
 
 import (
@@ -12,6 +17,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	_ "modernc.org/sqlite"
+		httpSwagger "github.com/swaggo/http-swagger"
+	_ "knowledgeable/docs"
 )
 
 func main() {
@@ -43,6 +50,9 @@ func main() {
 	if _, err := db.Exec(string(schema)); err != nil {
 		log.Fatal(err)
 	}
+
+	// Swagger UI
+    http.Handle("/swagger/", httpSwagger.WrapHandler)
 
 	// dependency injection
 
