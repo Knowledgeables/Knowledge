@@ -28,7 +28,7 @@ Requirements:
 
 Now you have access to the development environment used by all the developers on the team.
 
-## Before You Start Comitting
+## Before You Start Committing
 
 Before making your first commit, install the framework prek, to run automated checks before commits
 
@@ -44,6 +44,11 @@ This downloads the prek framework and allows you to run the following command
 ```
 make setup-hooks
 ```
+
+This commands installs the 3 hooks for you inside /.git/hooks and then checks 3 things. 
+- Checks if the commit is over 400 lines of code and warns you if it is
+- Runs golang-lint before committing, to make sure the code you provided is bulletproof
+- Checks the commit message, to make sure you are following the provided conventions
 
 
 ## Branch Naming
@@ -79,7 +84,7 @@ type(scope): past tense verb + short summary
 - test(scope): implemented tests
 
 Example:
-feat(user): implement registration
+feat(user): implemented registration
 
 ---
 
