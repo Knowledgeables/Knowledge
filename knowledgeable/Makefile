@@ -30,3 +30,7 @@ dev-logs:
 
 setup-hooks:
 	setup-hooks.sh
+
+swagger:
+	rm -rf docs
+	swag init -g cmd/server/main.go -o docs
