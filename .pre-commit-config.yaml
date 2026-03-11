@@ -19,3 +19,11 @@ repos:
         entry: scripts/commit_msg_check.sh
         language: system
         stages: [commit-msg]
+        
+      - id: go-tests
+        name: Run Go tests
+        entry: scripts/run_go_tests.sh
+        language: system
+        stages: [pre-commit]
+        files: \.go$
+        pass_filenames: false 

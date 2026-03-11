@@ -59,6 +59,12 @@ func main() {
 	// templates
 	tmpl := template.Must(template.ParseGlob("templates/*.html"))
 
+	defer func() {
+	if err := tmpl.ExecuteTemplate(os.Stdout, "dashboard.html", nil); err != nil {
+		log.Printf("failed to execute template: %v", err)
+	}
+	}()
+
 	// user
 	userRepo := users.NewRepository(db)
 	userService := users.NewService(userRepo)
