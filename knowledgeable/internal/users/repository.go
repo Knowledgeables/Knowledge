@@ -82,11 +82,7 @@ func (r *Repository) FindAll() ([]User, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-    if err := r.db.Close(); err != nil {
-        log.Printf("failed to close db: %v", err)
-    	}
-	}()
+	
 
 	var users []User
 

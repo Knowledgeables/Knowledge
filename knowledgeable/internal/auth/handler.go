@@ -1,10 +1,10 @@
 package auth
 
 import (
-	"encoding/json"
 	"html/template"
 	"knowledgeable/internal/users"
 	"net/http"
+	"strings"
 )
 
 type LoginRequest struct {
@@ -33,6 +33,14 @@ func NewHandler(us UserService, tmpl *template.Template) *Handler {
 	}
 }
 
+// RootRedirect godoc
+// @Summary Root redirect
+// @Description Redirects the user depending on authentication state
+// @Tags pages
+// @Produce html
+// @Success 303 {string} string "Redirect to login or dashboard"
+// @Header 303 {string} Location "Redirect destination"
+// @Router / [get]
 func (h *Handler) Root(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
@@ -53,63 +61,27 @@ func (h *Handler) Root(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
+// LoginPage godoc
+// @Summary Login page
+// @Description Render login page
+// @Tags auth
+// @Produce html
+// @Success 200 {string} string "Login page"
+// @Success 303 {string} string "Redirect to dashboard"
+// @Router /login [get]
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method == http.MethodGet {
-
-		cookie, err := r.Cookie("session_id")
-		if err == nil {
-			if _, ok := Get(cookie.Value); ok {
-				http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
-				return
-			}
+	cookie, err := r.Cookie("session_id")
+	if err == nil {
+		if _, ok := Get(cookie.Value); ok {
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
 		}
-
-		if err := h.loginTmpl.ExecuteTemplate(w, "login.html", nil); err != nil {
-			http.Error(w, "template error", http.StatusInternalServerError)
-		}
-		return
 	}
 
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
+	if err := h.loginTmpl.ExecuteTemplate(w, "login.html", nil); err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
 	}
-
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
-	}
-
-	username := r.FormValue("username")
-	password := r.FormValue("password")
-
-	if username == "" || password == "" {
-		http.Error(w, "missing credentials", http.StatusBadRequest)
-		return
-	}
-
-	user, err := h.userService.Login(username, password)
-	if err != nil {
-		http.Error(w, "invalid credentials", http.StatusUnauthorized)
-		return
-	}
-
-	sessionID, err := Create(user.ID)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_id",
-		Value:    sessionID,
-		SameSite: http.SameSiteLaxMode,
-		HttpOnly: true,
-		Path:     "/",
-	})
-
-	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
@@ -140,11 +112,12 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 // @Summary Login user
 // @Description Authenticate user and create session
 // @Tags auth
-// @Accept json
+// @Accept application/x-www-form-urlencoded
 // @Produce json
-// @Param credentials body LoginRequest true "Login credentials"
+// @Param username formData string true "Username"
+// @Param password formData string true "Password"
 // @Success 200 {object} LoginResponse
-// @Failure 400 {string} string "invalid json or missing credentials"
+// @Failure 400 {string} string "missing credentials or bad form data"
 // @Failure 401 {string} string "invalid credentials"
 // @Failure 500 {string} string "internal error"
 // @Router /api/login [post]
@@ -155,13 +128,18 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req LoginRequest
-
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		http.Error(w, "invalid json", http.StatusBadRequest)
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
+
+	req := LoginRequest{
+		Username: strings.TrimSpace(r.FormValue("username")),
+		Password: strings.TrimSpace(r.FormValue("password")),
+	}
+
+
+
 
 	if req.Username == "" || req.Password == "" {
 		http.Error(w, "missing credentials", http.StatusBadRequest)
@@ -188,13 +166,5 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 	})
 
-	w.Header().Set("Content-Type", "application/json")
-
-	if err := json.NewEncoder(w).Encode(LoginResponse{
-		Status:  "ok",
-		Message: "login successful",
-	}); err != nil {
-		http.Error(w, "encoding error", http.StatusInternalServerError)
-		return
-	}
+	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }

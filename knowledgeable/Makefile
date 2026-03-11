@@ -9,9 +9,10 @@ help:
 	@echo   make dev-build
 	@echo   make dev-logs
 	@echo   make setup-hooks
+	@echo   make swagger
 
 test:
-	go test ./...
+	go test ./... -count=1 -v
 
 lint:
 	golangci-lint run
