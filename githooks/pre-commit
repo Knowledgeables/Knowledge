@@ -5,6 +5,38 @@
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 PROJECT_DIR="$REPO_ROOT/knowledgeable"
 
+MAX_LINES=400
+
+echo "Checking commit size..."
+
+LINES_CHANGED=$(git diff --cached --numstat | awk '{added+=$1; removed+=$2} END {print added+removed}')
+
+WARN=false
+
+if [ "$LINES_CHANGED" -gt "$MAX_LINES" ]; then
+  echo ""
+  echo "⚠️  Large commit detected."
+  echo "You are about to commit $LINES_CHANGED lines of code."
+  echo "Recommended maximum is $MAX_LINES lines."
+  WARN=true
+fi
+
+if [ "$WARN" = true ]; then
+  echo ""
+  printf "Do you still want to continue with this commit? (y/N): "
+  read confirm
+
+  case "$confirm" in
+    y|Y) echo "Continuing commit..." ;;
+    *)
+      echo "❌ Commit aborted. Consider splitting it into smaller commits."
+      exit 1
+      ;;
+  esac
+fi
+
+
+echo ""
 echo "Running golangci-lint in $PROJECT_DIR ..."
 
 if ! command -v golangci-lint > /dev/null 2>&1; then
