@@ -2,7 +2,7 @@
 
 ## Set up local work environment with Docker compose
 
-After cloning the repository, navigate to the project root.
+After cloning the repository, navigate to the project root "knowledgeable".
 
 To start the development environment, run:
 
