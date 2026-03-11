@@ -34,7 +34,7 @@ func NewHandler(us UserService, tmpl *template.Template) *Handler {
 }
 
 // RootRedirect godoc
-// @Summary Root redirect
+// @Summary Serve Root Page
 // @Description Redirects the user depending on authentication state
 // @Tags pages
 // @Produce html
@@ -62,9 +62,9 @@ func (h *Handler) Root(w http.ResponseWriter, r *http.Request) {
 }
 
 // LoginPage godoc
-// @Summary Login page
+// @Summary Serve Login page
 // @Description Render login page
-// @Tags auth
+// @Tags pages
 // @Produce html
 // @Success 200 {string} string "Login page"
 // @Success 303 {string} string "Redirect to dashboard"
@@ -84,6 +84,15 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Logout godoc
+// @Summary Logout user
+// @Description Deletes the current session and redirects to login page
+// @Tags auth
+// @Produce html
+// @Success 303 {string} string "Redirect to login page"
+// @Header 303 {string} Location "/login"
+// @Failure 405 {string} string "method not allowed"
+// @Router /logout [post]
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
@@ -109,7 +118,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 // LoginAPI godoc
-// @Summary Login user
+// @Summary Login 
 // @Description Authenticate user and create session
 // @Tags auth
 // @Accept application/x-www-form-urlencoded

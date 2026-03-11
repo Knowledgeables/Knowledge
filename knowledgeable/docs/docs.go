@@ -24,7 +24,7 @@ const docTemplate = `{
                 "tags": [
                     "pages"
                 ],
-                "summary": "Root redirect",
+                "summary": "Serve Root Page",
                 "responses": {
                     "303": {
                         "description": "Redirect to login or dashboard",
@@ -45,7 +45,7 @@ const docTemplate = `{
             "post": {
                 "description": "Authenticate user and create session",
                 "consumes": [
-                    "application/json"
+                    "application/x-www-form-urlencoded"
                 ],
                 "produces": [
                     "application/json"
@@ -53,16 +53,21 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Login user",
+                "summary": "Login",
                 "parameters": [
                     {
-                        "description": "Login credentials",
-                        "name": "credentials",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/auth.LoginRequest"
-                        }
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -73,7 +78,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "invalid json or missing credentials",
+                        "description": "missing credentials or bad form data",
                         "schema": {
                             "type": "string"
                         }
@@ -142,7 +147,7 @@ const docTemplate = `{
                 "tags": [
                     "pages"
                 ],
-                "summary": "Search pages",
+                "summary": "Search",
                 "parameters": [
                     {
                         "type": "string",
@@ -179,31 +184,14 @@ const docTemplate = `{
         },
         "/login": {
             "get": {
-                "description": "Render login page or authenticate user",
-                "consumes": [
-                    "application/x-www-form-urlencoded"
-                ],
+                "description": "Render login page",
                 "produces": [
                     "text/html"
                 ],
                 "tags": [
-                    "auth"
+                    "pages"
                 ],
-                "summary": "Login page",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Username",
-                        "name": "username",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Password",
-                        "name": "password",
-                        "in": "formData"
-                    }
-                ],
+                "summary": "Serve Login page",
                 "responses": {
                     "200": {
                         "description": "Login page",
@@ -218,42 +206,53 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/logout": {
             "post": {
-                "description": "Render login page or authenticate user",
-                "consumes": [
-                    "application/x-www-form-urlencoded"
-                ],
+                "description": "Deletes the current session and redirects to login page",
                 "produces": [
                     "text/html"
                 ],
                 "tags": [
                     "auth"
                 ],
-                "summary": "Login page",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Username",
-                        "name": "username",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Password",
-                        "name": "password",
-                        "in": "formData"
-                    }
-                ],
+                "summary": "Logout user",
                 "responses": {
-                    "200": {
-                        "description": "Login page",
+                    "303": {
+                        "description": "Redirect to login page",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "headers": {
+                            "Location": {
+                                "type": "string",
+                                "description": "/login"
+                            }
+                        }
+                    },
+                    "405": {
+                        "description": "method not allowed",
                         "schema": {
                             "type": "string"
                         }
-                    },
-                    "303": {
-                        "description": "Redirect to dashboard",
+                    }
+                }
+            }
+        },
+        "/register": {
+            "get": {
+                "description": "Shows the register form",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "pages"
+                ],
+                "summary": "Server Register page",
+                "responses": {
+                    "200": {
+                        "description": "Register page",
                         "schema": {
                             "type": "string"
                         }
@@ -263,17 +262,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "auth.LoginRequest": {
-            "type": "object",
-            "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
         "auth.LoginResponse": {
             "type": "object",
             "properties": {
