@@ -15,6 +15,32 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/": {
+            "get": {
+                "description": "Redirects the user depending on authentication state",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "pages"
+                ],
+                "summary": "Root redirect",
+                "responses": {
+                    "303": {
+                        "description": "Redirect to login or dashboard",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "headers": {
+                            "Location": {
+                                "type": "string",
+                                "description": "Redirect destination"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/login": {
             "post": {
                 "description": "Authenticate user and create session",
@@ -144,6 +170,90 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/login": {
+            "get": {
+                "description": "Render login page or authenticate user",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login page",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "303": {
+                        "description": "Redirect to dashboard",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Render login page or authenticate user",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login page",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "303": {
+                        "description": "Redirect to dashboard",
                         "schema": {
                             "type": "string"
                         }

@@ -30,6 +30,23 @@ info:
   title: Knowledge API
   version: "1.0"
 paths:
+  /:
+    get:
+      description: Redirects the user depending on authentication state
+      produces:
+      - text/html
+      responses:
+        "303":
+          description: Redirect to login or dashboard
+          headers:
+            Location:
+              description: Redirect destination
+              type: string
+          schema:
+            type: string
+      summary: Root redirect
+      tags:
+      - pages
   /api/login:
     post:
       consumes:
@@ -119,4 +136,59 @@ paths:
       summary: Search pages
       tags:
       - pages
+  /login:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Render login page or authenticate user
+      parameters:
+      - description: Username
+        in: formData
+        name: username
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        type: string
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: Login page
+          schema:
+            type: string
+        "303":
+          description: Redirect to dashboard
+          schema:
+            type: string
+      summary: Login page
+      tags:
+      - auth
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Render login page or authenticate user
+      parameters:
+      - description: Username
+        in: formData
+        name: username
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        type: string
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: Login page
+          schema:
+            type: string
+        "303":
+          description: Redirect to dashboard
+          schema:
+            type: string
+      summary: Login page
+      tags:
+      - auth
 swagger: "2.0"

@@ -33,6 +33,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	log.Println("Using database:", dbPath)
+	
 	defer func() {
 		if err := db.Close(); err != nil {
 			log.Printf("failed to close db: %v", err)
