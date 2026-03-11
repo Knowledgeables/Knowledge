@@ -39,7 +39,7 @@ pip install prek
 See the direct documentation from the developers in case of confusion
 https://github.com/j178/prek?tab=readme-ov-file#quick-start
 
-This downloads the prek framework and allows you to run 
+This downloads the prek framework and allows you to run the following command
 
 ```
 make setup-hooks

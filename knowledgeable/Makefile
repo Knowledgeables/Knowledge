@@ -28,9 +28,12 @@ dev-build:
 dev-logs:
 	docker compose -f docker-compose-dev.yml logs -f
 
+## This target sets up the pre-commit hooks defined in .pre-commit-config.yaml
+## Prek install by default installs pre-commit hooks, but we also want to install commit-msg hooks for validating commit messages
 setup-hooks:
-	prek install
-	
+	prek install --hook-type pre-commit
+	prek install --hook-type commit-msg
+
 ## This target is for running the pre-commit hooks manually, e.g. in CI pipelines
 hooks-run:
 	prek run
