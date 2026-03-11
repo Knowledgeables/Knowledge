@@ -29,4 +29,8 @@ dev-logs:
 	docker compose -f docker-compose-dev.yml logs -f
 
 setup-hooks:
-	setup-hooks.sh
+	prek install
+	
+## This target is for running the pre-commit hooks manually, e.g. in CI pipelines
+hooks-run:
+	prek run

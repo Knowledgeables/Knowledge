@@ -1,0 +1,21 @@
+repos:
+  - repo: local
+    hooks:
+
+      - id: commit-size-check
+        name: Commit size check
+        entry: scripts/check_commit_size.sh
+        language: system
+        stages: [pre-commit]
+
+      - id: golangci-lint
+        name: Run golangci-lint
+        entry: scripts/run_golang_lint.sh
+        language: system
+        stages: [pre-commit]
+
+      - id: commit-msg-validation
+        name: Commit message validation
+        entry: scripts/commit_msg_check.sh
+        language: system
+        stages: [commit-msg]
