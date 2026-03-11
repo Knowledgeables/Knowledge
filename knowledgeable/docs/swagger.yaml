@@ -1,12 +1,5 @@
 basePath: /
 definitions:
-  auth.LoginRequest:
-    properties:
-      password:
-        type: string
-      username:
-        type: string
-    type: object
   auth.LoginResponse:
     properties:
       message:
@@ -30,18 +23,39 @@ info:
   title: Knowledge API
   version: "1.0"
 paths:
+  /:
+    get:
+      description: Redirects the user depending on authentication state
+      produces:
+      - text/html
+      responses:
+        "303":
+          description: Redirect to login or dashboard
+          headers:
+            Location:
+              description: Redirect destination
+              type: string
+          schema:
+            type: string
+      summary: Serve Root Page
+      tags:
+      - pages
   /api/login:
     post:
       consumes:
-      - application/json
+      - application/x-www-form-urlencoded
       description: Authenticate user and create session
       parameters:
-      - description: Login credentials
-        in: body
-        name: credentials
+      - description: Username
+        in: formData
+        name: username
         required: true
-        schema:
-          $ref: '#/definitions/auth.LoginRequest'
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -50,7 +64,7 @@ paths:
           schema:
             $ref: '#/definitions/auth.LoginResponse'
         "400":
-          description: invalid json or missing credentials
+          description: missing credentials or bad form data
           schema:
             type: string
         "401":
@@ -61,7 +75,7 @@ paths:
           description: internal error
           schema:
             type: string
-      summary: Login user
+      summary: Login
       tags:
       - auth
   /api/register:
@@ -116,7 +130,58 @@ paths:
           description: internal error
           schema:
             type: string
-      summary: Search pages
+      summary: Search
+      tags:
+      - pages
+  /login:
+    get:
+      description: Render login page
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: Login page
+          schema:
+            type: string
+        "303":
+          description: Redirect to dashboard
+          schema:
+            type: string
+      summary: Serve Login page
+      tags:
+      - pages
+  /logout:
+    post:
+      description: Deletes the current session and redirects to login page
+      produces:
+      - text/html
+      responses:
+        "303":
+          description: Redirect to login page
+          headers:
+            Location:
+              description: /login
+              type: string
+          schema:
+            type: string
+        "405":
+          description: method not allowed
+          schema:
+            type: string
+      summary: Logout user
+      tags:
+      - auth
+  /register:
+    get:
+      description: Shows the register form
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: Register page
+          schema:
+            type: string
+      summary: Server Register page
       tags:
       - pages
 swagger: "2.0"

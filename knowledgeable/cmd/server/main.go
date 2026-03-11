@@ -15,10 +15,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	_ "modernc.org/sqlite"
-		httpSwagger "github.com/swaggo/http-swagger"
 	_ "knowledgeable/docs"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	httpSwagger "github.com/swaggo/http-swagger"
+	_ "modernc.org/sqlite"
 )
 
 func main() {
@@ -31,11 +32,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	log.Println("Using database:", dbPath)
 	
 	defer func() {
-    if err := db.Close(); err != nil {
-        log.Printf("failed to close db: %v", err)
-    }
+		if err := db.Close(); err != nil {
+			log.Printf("failed to close db: %v", err)
+		}
 	}()
 
 	if err := db.Ping(); err != nil {
@@ -52,7 +55,7 @@ func main() {
 	}
 
 	// Swagger UI
-    http.Handle("/swagger/", httpSwagger.Handler())
+	http.Handle("/swagger/", httpSwagger.Handler())
 
 	// dependency injection
 
@@ -74,26 +77,7 @@ func main() {
 
 	log.Println("Dependencies wired successfully")
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-
-		cookie, err := r.Cookie("session_id")
-		if err != nil {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
-		}
-
-		if _, ok := auth.Get(cookie.Value); ok {
-			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
-			return
-		}
-
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-	})
+	http.HandleFunc("/", authHandler.Root)
 
 	http.Handle("/page",
 		auth.Middleware(http.HandlerFunc(pageHandler.ViewPage)),
@@ -129,7 +113,7 @@ func main() {
 	)
 
 	// Metrics endpoint used by Prometheus and visualized in Grafana
-	http.Handle("/metrics", promhttp.Handler())	
+	http.Handle("/metrics", promhttp.Handler())
 
 	// Start HTTP server
 	log.Fatal(http.ListenAndServe(":8080", nil))

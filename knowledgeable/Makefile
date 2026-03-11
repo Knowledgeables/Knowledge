@@ -9,9 +9,10 @@ help:
 	@echo   make dev-build
 	@echo   make dev-logs
 	@echo   make setup-hooks
+	@echo   make swagger
 
 test:
-	go test ./...
+	go test ./... -count=1 -v
 
 lint:
 	golangci-lint run
@@ -30,3 +31,7 @@ dev-logs:
 
 setup-hooks:
 	setup-hooks.sh
+
+swagger:
+	rm -rf docs
+	swag init -g cmd/server/main.go -o docs
