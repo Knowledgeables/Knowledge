@@ -7,17 +7,17 @@ import (
 )
 
 var (
-	sessions = map[string]int64{} // sessionID -> userID
-	mu       sync.Mutex
+	sessions = map[string]int64{}
+	mu       sync.RWMutex
 )
 
 func Create(userID int64) (string, error) {
 	b := make([]byte, 32)
-		
+
 	if _, err := rand.Read(b); err != nil {
 		return "", err
 	}
-	
+
 	sessionID := hex.EncodeToString(b)
 
 	mu.Lock()
@@ -39,4 +39,5 @@ func Delete(sessionID string) {
 	mu.Lock()
 	delete(sessions, sessionID)
 	mu.Unlock()
+
 }

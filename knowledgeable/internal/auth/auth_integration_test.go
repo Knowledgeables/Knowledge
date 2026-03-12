@@ -17,13 +17,10 @@ func (s *successUserService) Login(username, password string) (*users.User, erro
 }
 
 // HAPPY PATH
-func TestLogin_SetsSessionCookie(t *testing.T) {
+func TestLoginAPI_SetsSessionCookie(t *testing.T) {
 
 	userService := &successUserService{}
-	handler := NewHandler(
-		userService,
-		template.New("dummy"),
-	)
+	handler := NewHandler(userService, template.New("dummy"))
 
 	sessions = map[string]int64{}
 
@@ -33,19 +30,24 @@ func TestLogin_SetsSessionCookie(t *testing.T) {
 
 	req := httptest.NewRequest(
 		http.MethodPost,
-		"/login",
+		"/api/login",
 		strings.NewReader(form.Encode()),
 	)
+
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	rr := httptest.NewRecorder()
 
-	handler.Login(rr, req)
+	handler.LoginAPI(rr, req)
 
 	res := rr.Result()
 
 	if res.StatusCode != http.StatusSeeOther {
 		t.Fatalf("expected redirect, got %d", res.StatusCode)
+	}
+
+	if res.Header.Get("Location") != "/dashboard" {
+		t.Fatal("expected redirect to /dashboard")
 	}
 
 	cookies := res.Cookies()
@@ -69,12 +71,7 @@ func TestLogin_SetsSessionCookie(t *testing.T) {
 		t.Fatal("wrong user id in session")
 	}
 
-	if res.Header.Get("Location") != "/dashboard" {
-		t.Fatal("expected redirect to /dashboard")
-	}
-
 	if !cookies[0].HttpOnly {
 		t.Fatal("cookie should be HttpOnly")
 	}
 }
-

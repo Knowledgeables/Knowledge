@@ -79,7 +79,7 @@ func (h *Handler) ViewPage(w http.ResponseWriter, r *http.Request) {
 }
 
 // SearchAPI godoc
-// @Summary Search pages
+// @Summary Search 
 // @Description Search pages by query and optional language
 // @Tags pages
 // @Produce json

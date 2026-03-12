@@ -16,7 +16,7 @@ func Middleware(next http.Handler) http.Handler {
 
 		_, ok := Get(cookie.Value)
 		if !ok {
-			http.Redirect(w, r, "/", http.StatusSeeOther)
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
 

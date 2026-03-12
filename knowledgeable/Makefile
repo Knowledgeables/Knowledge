@@ -9,9 +9,10 @@ help:
 	@echo   make dev-build
 	@echo   make dev-logs
 	@echo   make setup-hooks
+	@echo   make swagger
 
 test:
-	go test ./...
+	go test ./... -count=1 -v
 
 lint:
 	golangci-lint run
@@ -37,3 +38,8 @@ setup-hooks:
 ## This target is for running the pre-commit hooks manually, e.g. in CI pipelines
 hooks-run:
 	prek run
+	setup-hooks.sh
+
+swagger:
+	rm -rf docs
+	swag init -g cmd/server/main.go -o docs

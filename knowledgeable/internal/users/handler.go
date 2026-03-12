@@ -55,6 +55,14 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+
+// RegisterPage godoc
+// @Summary Server Register page
+// @Description Shows the register form
+// @Tags pages
+// @Produce html
+// @Success 200 {string} string "Register page"
+// @Router /register [get]
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		if err := h.tmpl.ExecuteTemplate(w, "register.html", nil); err != nil {

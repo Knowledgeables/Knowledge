@@ -15,11 +15,37 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/": {
+            "get": {
+                "description": "Redirects the user depending on authentication state",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "pages"
+                ],
+                "summary": "Serve Root Page",
+                "responses": {
+                    "303": {
+                        "description": "Redirect to login or dashboard",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "headers": {
+                            "Location": {
+                                "type": "string",
+                                "description": "Redirect destination"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/login": {
             "post": {
                 "description": "Authenticate user and create session",
                 "consumes": [
-                    "application/json"
+                    "application/x-www-form-urlencoded"
                 ],
                 "produces": [
                     "application/json"
@@ -27,16 +53,21 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Login user",
+                "summary": "Login",
                 "parameters": [
                     {
-                        "description": "Login credentials",
-                        "name": "credentials",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/auth.LoginRequest"
-                        }
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -47,7 +78,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "invalid json or missing credentials",
+                        "description": "missing credentials or bad form data",
                         "schema": {
                             "type": "string"
                         }
@@ -116,7 +147,7 @@ const docTemplate = `{
                 "tags": [
                     "pages"
                 ],
-                "summary": "Search pages",
+                "summary": "Search",
                 "parameters": [
                     {
                         "type": "string",
@@ -150,20 +181,87 @@ const docTemplate = `{
                     }
                 }
             }
-        }
-    },
-    "definitions": {
-        "auth.LoginRequest": {
-            "type": "object",
-            "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
+        },
+        "/login": {
+            "get": {
+                "description": "Render login page",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "pages"
+                ],
+                "summary": "Serve Login page",
+                "responses": {
+                    "200": {
+                        "description": "Login page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "303": {
+                        "description": "Redirect to dashboard",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
                 }
             }
         },
+        "/logout": {
+            "post": {
+                "description": "Deletes the current session and redirects to login page",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Logout user",
+                "responses": {
+                    "303": {
+                        "description": "Redirect to login page",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "headers": {
+                            "Location": {
+                                "type": "string",
+                                "description": "/login"
+                            }
+                        }
+                    },
+                    "405": {
+                        "description": "method not allowed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/register": {
+            "get": {
+                "description": "Shows the register form",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "pages"
+                ],
+                "summary": "Server Register page",
+                "responses": {
+                    "200": {
+                        "description": "Register page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
         "auth.LoginResponse": {
             "type": "object",
             "properties": {
