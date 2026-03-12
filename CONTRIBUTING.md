@@ -2,7 +2,7 @@
 
 ## Set up local work environment with Docker compose
 
-After cloning the repository, navigate to the project root.
+After cloning the repository, navigate to the project root "knowledgeable".
 
 To start the development environment, run:
 
@@ -28,21 +28,28 @@ Requirements:
 
 Now you have access to the development environment used by all the developers on the team.
 
-## Before You Start Comitting
+## Before You Start Committing
 
-Before making your first commit, install the Git hooks by running this from the repo root:
+Before making your first commit, install the framework prek, to run automated checks before commits
+
+```
+brew install prek
+pip install prek
+```
+See the direct documentation from the developers in case of confusion
+https://github.com/j178/prek?tab=readme-ov-file#quick-start
+
+This downloads the prek framework and allows you to run the following command
 
 ```
 make setup-hooks
 ```
 
-This sets up a pre-commit hook that runs `golangci-lint` on the `knowledgeable` project automatically. Your commit will be blocked if there are any lint errors — fix them before committing.
+This commands installs the 3 hooks for you inside /.git/hooks and then checks 3 things. 
+- Checks if the commit is over 400 lines of code and warns you if it is
+- Runs golang-lint before committing, to make sure the code you provided is bulletproof
+- Checks the commit message, to make sure you are following the provided conventions
 
-> **Requires `golangci-lint` to be installed.**
-> Install it from: https://golangci-lint.run/usage/install/
-> Windows: `choco install golangci-lint`
-> Mac: `brew install golangci-lint`
----
 
 ## Branch Naming
 
@@ -77,7 +84,7 @@ type(scope): past tense verb + short summary
 - test(scope): implemented tests
 
 Example:
-feat(user): implement registration
+feat(user): implemented registration
 
 ---
 
