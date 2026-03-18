@@ -78,6 +78,16 @@ func (h *Handler) ViewPage(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// SearchAPI godoc
+// @Summary Search 
+// @Description Search pages by query and optional language
+// @Tags pages
+// @Produce json
+// @Param q query string true "Search query"
+// @Param language query string false "Language code"
+// @Success 200 {array} object
+// @Failure 500 {string} string "internal error"
+// @Router /api/search [get]
 func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 
 	query := r.URL.Query().Get("q")

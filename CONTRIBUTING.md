@@ -1,33 +1,55 @@
 # Contributing
 
-
 ## Set up local work environment with Docker compose
 
-When cloning the project, in the knowledge directory, you will see two docker files and two docker compose in the main directory. These are used to seperate **development** and **production** environments.
+After cloning the repository, navigate to the project root "knowledgeable".
 
-To start the development environment (requires docker desktop), run:
+To start the development environment, run:
 
-'''bash
-docker compose -f docker-compose-dev.yml up -d
-'''
+```
+ make dev-up
+```
+This command starts the development environment using Docker Compose.
+
+To stop the environment again:
+
+```
+ make dev-down
+```
+
+The Makefile wraps the Docker Compose commands used by the project, so developers do not need to remember the full Docker commands.
+
+Requirements:
+
+- Docker Desktop installed
+- make installed
+- Go version 1.24 installed
+- Make commands must run in a bash-compatible terminal
 
 Now you have access to the development environment used by all the developers on the team.
 
-## Before You Start Comitting
+## Before You Start Committing
 
-Before making your first commit, install the Git hooks by running this from the repo root:
+Before making your first commit, install the framework prek, to run automated checks before commits
 
-```sh
-sh setup-hooks.sh
+```
+brew install prek
+pip install prek
+```
+See the direct documentation from the developers in case of confusion
+https://github.com/j178/prek?tab=readme-ov-file#quick-start
+
+This downloads the prek framework and allows you to run the following command
+
+```
+make setup-hooks
 ```
 
-This sets up a pre-commit hook that runs `golangci-lint` on the `knowledgeable` project automatically. Your commit will be blocked if there are any lint errors — fix them before committing.
+This commands installs the 3 hooks for you inside /.git/hooks and then checks 3 things. 
+- Checks if the commit is over 400 lines of code and warns you if it is
+- Runs golang-lint before committing, to make sure the code you provided is bulletproof
+- Checks the commit message, to make sure you are following the provided conventions
 
-> **Requires `golangci-lint` to be installed.**
-> Install it from: https://golangci-lint.run/usage/install/
-> Windows: `choco install golangci-lint`
-> Mac: `brew install golangci-lint`
----
 
 ## Branch Naming
 
@@ -52,7 +74,7 @@ feat/user-registration
 
 We follow Conventional Commits:
 
-type(scope): present verb + short summary
+type(scope): past tense verb + short summary
 
 - feat(scope): added new feature
 - fix(scope): made bug fix
@@ -62,7 +84,7 @@ type(scope): present verb + short summary
 - test(scope): implemented tests
 
 Example:
-feat(user): implement registration
+feat(user): implemented registration
 
 ---
 

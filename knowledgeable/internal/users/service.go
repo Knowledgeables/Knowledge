@@ -6,16 +6,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-	type UserRepository interface {
-		Register(*User) error
-		FindByUsername(string) (*User, error)
-		FindById(int64) (*User, error)
-		FindAll() ([]User, error)
-	}
+type UserRepository interface {
+	Register(*User) error
+	FindByUsername(string) (*User, error)
+	FindById(int64) (*User, error)
+	FindAll() ([]User, error)
+}
 
-	type Service struct {
-		repo UserRepository
-	}
+type Service struct {
+	repo UserRepository
+}
 
 func NewService(repo UserRepository) *Service {
 	return &Service{repo: repo}
@@ -50,7 +50,9 @@ func (s *Service) GetByUsername(username string) (*User, error) {
 		return nil, errors.New("missing username")
 	}
 
-	return s.repo.FindByUsername(username)
+	user, err := s.repo.FindByUsername(username)
+
+	return user, err
 }
 
 func (s *Service) GetByID(id int64) (*User, error) {

@@ -1,6 +1,9 @@
 package pages
 
-import "database/sql"
+import (
+	"database/sql"
+	"log"
+)
 
 type Repository struct {
 	db *sql.DB
@@ -19,7 +22,11 @@ func (r *Repository) GetAll() ([]Page, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+	if err := rows.Close(); err != nil {
+		log.Printf("rows close error: %v", err)
+	}
+}()
 
 	var pages []Page
 
@@ -40,6 +47,10 @@ func (r *Repository) GetAll() ([]Page, error) {
 		pages = append(pages, p)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return pages, nil
 }
 
@@ -57,7 +68,11 @@ func (r *Repository) Search(query string, lang Language) ([]Page, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("rows close error: %v", err)
+		}
+	}()
 
 	var pages []Page
 
@@ -76,8 +91,13 @@ func (r *Repository) Search(query string, lang Language) ([]Page, error) {
 		pages = append(pages, p)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return pages, nil
 }
+
 func (r *Repository) FindByURL(url string) (*Page, error) {
 
 	row := r.db.QueryRow(`
@@ -101,6 +121,3 @@ func (r *Repository) FindByURL(url string) (*Page, error) {
 
 	return &p, nil
 }
-
-
-

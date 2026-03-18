@@ -12,6 +12,18 @@ type Handler struct {
 	tmpl    *template.Template
 }
 
+type RegisterRequest struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type RegisterResponse struct {
+	Status   string `json:"status"`
+	Message  string `json:"message"`
+	Username string `json:"username"`
+}
+
 type UserService interface {
 	Register(string, string, string) (*User, error)
 	GetAll() ([]User, error)
@@ -43,6 +55,14 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+
+// RegisterPage godoc
+// @Summary Server Register page
+// @Description Shows the register form
+// @Tags pages
+// @Produce html
+// @Success 200 {string} string "Register page"
+// @Router /register [get]
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		if err := h.tmpl.ExecuteTemplate(w, "register.html", nil); err != nil {
@@ -76,6 +96,17 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
+
+// RegisterAPI godoc
+// @Summary Register user
+// @Description Create a new user
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param user body RegisterRequest true "Register user"
+// @Failure 400 {string} string "invalid request"
+// @Failure 500 {string} string "internal error"
+// @Router /api/register [post]
 func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
@@ -83,13 +114,7 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type registerRequest struct {
-		Username string `json:"username"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-
-	var req registerRequest
+	var req RegisterRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -111,12 +136,13 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	if err := json.NewEncoder(w).Encode(map[string]string{
-		"status":   "ok",
-		"message":  "user registered",
-		"username": user.Username,
-	}); err != nil {
+	resp := RegisterResponse{
+		Status:   "ok",
+		Message:  "user registered",
+		Username: user.Username,
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, "encoding error", http.StatusInternalServerError)
-		return
 	}
 }

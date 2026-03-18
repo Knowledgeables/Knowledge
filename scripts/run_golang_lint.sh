@@ -1,6 +1,5 @@
 #!/bin/sh
-# Pre-commit hook: runs golangci-lint inside the knowledgeable Go project.
-# The .git folder lives at the repo root, but the Go project is in ./knowledgeable
+# Runs golangci-lint inside the knowledgeable Go project
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 PROJECT_DIR="$REPO_ROOT/knowledgeable"
@@ -13,9 +12,13 @@ if ! command -v golangci-lint > /dev/null 2>&1; then
   exit 1
 fi
 
-cd "$PROJECT_DIR" || { echo "ERROR: Could not cd into $PROJECT_DIR"; exit 1; }
+cd "$PROJECT_DIR" || {
+  echo "ERROR: Could not cd into $PROJECT_DIR"
+  exit 1
+}
 
 golangci-lint run ./...
+
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then

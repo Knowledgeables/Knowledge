@@ -1,3 +1,8 @@
+// @title Knowledge API
+// @version 1.0
+// @description API for Knowledge service
+// @host localhost:8080
+// @BasePath /
 package main
 
 import (
@@ -10,7 +15,10 @@ import (
 	"net/http"
 	"os"
 
+	_ "knowledgeable/docs"
+
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	httpSwagger "github.com/swaggo/http-swagger"
 	_ "modernc.org/sqlite"
 )
 
@@ -24,7 +32,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+
+	log.Println("Using database:", dbPath)
+	
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Printf("failed to close db: %v", err)
+		}
+	}()
 
 	if err := db.Ping(); err != nil {
 		log.Fatal(err)
@@ -39,6 +54,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+<<<<<<< HEAD
 	// seed
 	if os.Getenv("APP_ENV") == "dev" {
 
@@ -51,11 +67,21 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+=======
+	// Swagger UI
+	http.Handle("/swagger/", httpSwagger.Handler())
+>>>>>>> main
 
 	// dependency injection
 
 	// templates
 	tmpl := template.Must(template.ParseGlob("templates/*.html"))
+
+	defer func() {
+	if err := tmpl.ExecuteTemplate(os.Stdout, "dashboard.html", nil); err != nil {
+		log.Printf("failed to execute template: %v", err)
+	}
+	}()
 
 	// user
 	userRepo := users.NewRepository(db)
@@ -72,26 +98,7 @@ func main() {
 
 	log.Println("Dependencies wired successfully")
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-
-		cookie, err := r.Cookie("session_id")
-		if err != nil {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
-		}
-
-		if _, ok := auth.Get(cookie.Value); ok {
-			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
-			return
-		}
-
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-	})
+	http.HandleFunc("/", authHandler.Root)
 
 	http.Handle("/page",
 		auth.Middleware(http.HandlerFunc(pageHandler.ViewPage)),
@@ -132,3 +139,5 @@ func main() {
 	// Start HTTP server
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
+
+
