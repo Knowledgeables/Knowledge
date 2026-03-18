@@ -7,21 +7,23 @@
 
 <div>
   <input id="search-input" placeholder="Search..." value="{{.Query}}"/>
-  <button onclick="makeSearchRequest()">Search</button>
+  <button id="search-button" onclick="makeSearchRequest()">Search</button>
 </div>
 
 <div id="results">
   {{range .Results}}
   <div>
       <h2>
-        <a href="/page?url={{.URL}}">
+        <a class="search-result-title" href="/page?url={{.URL}}">
           {{.Title}}
         </a>
       </h2>
+      <p class="search-result-description">
+        {{.Description}}
+      </p>
   </div>
   {{end}}
 </div>
-
 
 <script>
   let searchInput;
