@@ -54,7 +54,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-<<<<<<< HEAD
 	// seed
 	if os.Getenv("APP_ENV") == "dev" {
 
@@ -67,10 +66,8 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-=======
 	// Swagger UI
 	http.Handle("/swagger/", httpSwagger.Handler())
->>>>>>> main
 
 	// dependency injection
 
