@@ -54,8 +54,23 @@ func main() {
 		log.Fatal(err)
 	}
 
+<<<<<<< HEAD
+	// seed
+	if os.Getenv("APP_ENV") == "dev" {
+
+		seed, err := os.ReadFile("seed-dev.sql")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if _, err := db.Exec(string(seed)); err != nil {
+			log.Fatal(err)
+		}
+	}
+=======
 	// Swagger UI
 	http.Handle("/swagger/", httpSwagger.Handler())
+>>>>>>> main
 
 	// dependency injection
 
