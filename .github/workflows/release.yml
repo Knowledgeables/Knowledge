@@ -1,0 +1,96 @@
+name: Auto Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version bump
+        id: bump
+        run: |
+          MSG="${{ github.event.head_commit.message }}"
+          echo "Commit: $MSG"
+
+          LATEST=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -n1)
+          LATEST=${LATEST:-v0.0.0}
+          echo "Latest tag: $LATEST"
+
+          VERSION=${LATEST#v}
+          MAJOR=$(echo $VERSION | cut -d. -f1)
+          MINOR=$(echo $VERSION | cut -d. -f2)
+          PATCH=$(echo $VERSION | cut -d. -f3)
+
+          # ── Bump rules ────────────────────────────────────────────────────
+          # minor  → feat(scope):
+          # patch  → fix(scope): | chore(scope): | refactor(scope):
+          # skip   → docs[(...)]?: | test(scope): | anything else
+          # ─────────────────────────────────────────────────────────────────
+
+          if echo "$MSG" | grep -qE '^feat\([a-zA-Z0-9_-]+\): .+'; then
+            MINOR=$((MINOR + 1)); PATCH=0
+            BUMP_TYPE="minor"
+
+          elif echo "$MSG" | grep -qE '^(fix|chore|refactor)\([a-zA-Z0-9_-]+\): .+'; then
+            PATCH=$((PATCH + 1))
+            BUMP_TYPE="patch"
+
+          else
+            echo "No version-bumping commit type — skipping release."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "Bump type : $BUMP_TYPE"
+          echo "New tag   : $NEW_TAG"
+
+          echo "skip=false"           >> $GITHUB_OUTPUT
+          echo "new_tag=$NEW_TAG"     >> $GITHUB_OUTPUT
+          echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+
+      - name: Create tag & GitHub release
+        if: steps.bump.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CR__PAT }}
+        run: |
+          TAG="${{ steps.bump.outputs.new_tag }}"
+          BUMP="${{ steps.bump.outputs.bump_type }}"
+          MSG="${{ github.event.head_commit.message }}"
+
+          TYPE=$(echo "$MSG"  | sed -n 's/^\([a-z]*\)(.*/\1/p')
+          SCOPE=$(echo "$MSG" | sed -n 's/^[a-z]*(\([^)]*\)).*/\1/p')
+          DESC=$(echo "$MSG"  | sed -n 's/^[^:]*: //p')
+
+          # Write notes to a temp file to avoid YAML parsing issues
+          # with special characters like backticks, colons, and bullets
+          cat > /tmp/release-notes.md << EOF
+          ## What changed
+
+          **Type:** $TYPE | **Scope:** $SCOPE | **Bump:** $BUMP
+
+          $DESC
+
+          ---
+          Auto-generated from commit: $MSG
+          EOF
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG" -m "$TAG"
+          git push origin "$TAG"
+
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes-file /tmp/release-notes.md
