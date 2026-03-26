@@ -1,0 +1,24 @@
+services:
+  app:
+    image: ghcr.io/knowledgeables/knowledge:latest
+    container_name: knowledgeable
+    environment:
+      DB_PATH: /app/data/prod.db
+      APP_ENV: production
+    volumes:
+      - ./data:/app/data
+    networks:
+      - knowledgeable_network
+
+  nginx:
+    image: ghcr.io/knowledgeables/knowledge_nginx:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    networks:
+      - knowledgeable_network
+
+networks:
+  knowledgeable_network:
+    driver: bridge
