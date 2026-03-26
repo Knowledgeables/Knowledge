@@ -4,21 +4,13 @@ on:
   push:
     branches: [ main ]
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: knowledgeables/knowledge
-
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
       packages: write
-
-    defaults:
-      run:
-        working-directory: knowledgeable
 
     steps:
       - uses: actions/checkout@v4
@@ -28,22 +20,44 @@ jobs:
           go-version: '1.24'
 
       - name: Run tests
+        working-directory: knowledgeable
         run: go test ./...
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.CR__PAT }}
+      - name: Set up Docker Buildx
+        run: |
+          docker buildx create --use
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: knowledgeable
-          push: true
-          file: knowledgeable/Dockerfile.prod
-          tags: |
-            ghcr.io/${{ env.IMAGE_NAME }}:latest
-            ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          
+      - name: Log in to GHCR
+        run: echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      - name: Build and push all images
+        working-directory: knowledgeable
+        run: docker buildx bake -f docker-compose-build.yml --push
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add SSH key to runner
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
+          chmod 600 ~/.ssh/ssh_key
+
+      - name: Transfer docker-compose-prod.yml to server
+        run: |
+          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            knowledgeable/docker-compose-prod.yml \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/docker-compose.yml
+
+      - name: Deploy on server
+        run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << "EOF"
+            echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+            cd ~/app
+            docker compose pull
+            docker compose up -d
+          EOF

@@ -1,0 +1,12 @@
+services:
+  app:
+    image: ghcr.io/knowledgeables/knowledge:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+
+  nginx:
+    image: ghcr.io/knowledgeables/knowledge_nginx:latest
+    build:
+      context: ./network
+      dockerfile: Dockerfile
