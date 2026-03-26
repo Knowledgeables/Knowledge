@@ -13,5 +13,6 @@ FROM gcr.io/distroless/base-debian12
 WORKDIR /app
 COPY --from=build /app/server /app/server
 COPY --from=build /app/knowledge.sql /app/knowledge.sql
+COPY --from=build /app/templates /app/templates
 
 ENTRYPOINT ["/app/server"]
