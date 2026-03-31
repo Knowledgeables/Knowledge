@@ -34,7 +34,7 @@ func main() {
 	}
 
 	log.Println("Using database:", dbPath)
-	
+
 	defer func() {
 		if err := db.Close(); err != nil {
 			log.Printf("failed to close db: %v", err)
@@ -74,12 +74,6 @@ func main() {
 	// templates
 	tmpl := template.Must(template.ParseGlob("templates/*.html"))
 
-	defer func() {
-	if err := tmpl.ExecuteTemplate(os.Stdout, "dashboard.html", nil); err != nil {
-		log.Printf("failed to execute template: %v", err)
-	}
-	}()
-
 	// user
 	userRepo := users.NewRepository(db)
 	userService := users.NewService(userRepo)
@@ -95,25 +89,13 @@ func main() {
 
 	log.Println("Dependencies wired successfully")
 
-	http.HandleFunc("/", authHandler.Root)
+	http.HandleFunc("/page", pageHandler.ViewPage)
 
-	http.Handle("/page",
-		auth.Middleware(http.HandlerFunc(pageHandler.ViewPage)),
-	)
-	http.Handle("/search",
-		auth.Middleware(http.HandlerFunc(pageHandler.Search)),
-	)
-	http.Handle("/api/search",
-		auth.Middleware(http.HandlerFunc(pageHandler.SearchAPI)),
-	)
+	http.HandleFunc("/search", pageHandler.Search)
 
-	http.Handle("/users",
-		auth.Middleware(http.HandlerFunc(userHandler.GetAll)),
-	)
+	http.HandleFunc("/api/search", pageHandler.SearchAPI)
 
-	http.Handle("/register",
-		auth.Middleware(http.HandlerFunc(userHandler.Register)),
-	)
+	http.HandleFunc("/register", userHandler.Register)
 	http.HandleFunc("/api/register", userHandler.RegisterAPI)
 
 	http.HandleFunc("/logout", authHandler.Logout)
@@ -122,13 +104,16 @@ func main() {
 
 	http.HandleFunc("/api/login", authHandler.LoginAPI)
 
-	http.Handle("/dashboard",
-		auth.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if err := tmpl.ExecuteTemplate(w, "dashboard.html", nil); err != nil {
-				http.Error(w, "template error", http.StatusInternalServerError)
-			}
-		})),
-	)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+
+		if err := tmpl.ExecuteTemplate(w, "dashboard.html", nil); err != nil {
+			http.Error(w, "template error", http.StatusInternalServerError)
+		}
+	})
 
 	// Metrics endpoint used by Prometheus and visualized in Grafana
 	http.Handle("/metrics", promhttp.Handler())
@@ -136,5 +121,3 @@ func main() {
 	// Start HTTP server
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
-
-
