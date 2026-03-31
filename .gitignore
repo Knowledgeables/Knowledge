@@ -34,3 +34,6 @@ Thumbs.db
 *.sqlite3
 
 data/
+
+# Node
+node_modules/
