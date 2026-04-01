@@ -20,7 +20,12 @@ func main() {
 
 	// db setup
 	database := db.Init(os.Getenv("DB_PATH"), "knowledge.sql")
-	defer database.Close()
+
+	defer func() {
+	if err := database.Close(); err != nil {
+		log.Printf("failed to close db: %v", err)
+	}
+}()
 
 	// seed
 	if os.Getenv("APP_ENV") == "dev" {
