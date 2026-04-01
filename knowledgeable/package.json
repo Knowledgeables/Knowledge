@@ -1,0 +1,16 @@
+{
+  "name": "knowledgeable",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev:css": "tailwindcss -i ./input.css -o ./static/output.css --watch",
+    "dev": "npm run dev:css"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}

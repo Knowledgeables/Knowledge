@@ -55,6 +55,9 @@ func main() {
 		}
 	}
 
+	// tailwind
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+
 	// user
 	userRepo := users.NewRepository(database)
 	userService := users.NewService(userRepo)
