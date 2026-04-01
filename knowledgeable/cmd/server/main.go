@@ -113,6 +113,7 @@ func main() {
 		if err := tmpl.ExecuteTemplate(w, "dashboard.html", nil); err != nil {
 			http.Error(w, "template error", http.StatusInternalServerError)
 		}
+	
 	})
 
 	// Metrics endpoint used by Prometheus and visualized in Grafana
