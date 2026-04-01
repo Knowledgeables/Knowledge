@@ -6,9 +6,9 @@
 package main
 
 import (
-	"database/sql"
 	"html/template"
 	"knowledgeable/internal/auth"
+	"knowledgeable/internal/db"
 	"knowledgeable/internal/pages"
 	"knowledgeable/internal/users"
 	"log"
@@ -25,47 +25,23 @@ import (
 func main() {
 
 	// db setup
-
-	dbPath := os.Getenv("DB_PATH")
-
-	db, err := sql.Open("sqlite", dbPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Println("Using database:", dbPath)
-
-	defer func() {
-		if err := db.Close(); err != nil {
-			log.Printf("failed to close db: %v", err)
-		}
-	}()
-
-	if err := db.Ping(); err != nil {
-		log.Fatal(err)
-	}
-
-	schema, err := os.ReadFile("knowledge.sql")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if _, err := db.Exec(string(schema)); err != nil {
-		log.Fatal(err)
-	}
+	database := db.Init(os.Getenv("DB_PATH"), "knowledge.sql")
+	defer database.Close()
 
 	// seed
 	if os.Getenv("APP_ENV") == "dev" {
-
+		log.Println("Seeding database (dev)")
+		
 		seed, err := os.ReadFile("seed-dev.sql")
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		if _, err := db.Exec(string(seed)); err != nil {
+		if _, err := database.Exec(string(seed)); err != nil {
 			log.Fatal(err)
 		}
 	}
+
 	// Swagger UI
 	http.Handle("/swagger/", httpSwagger.Handler())
 
@@ -75,12 +51,12 @@ func main() {
 	tmpl := template.Must(template.ParseGlob("templates/*.html"))
 
 	// user
-	userRepo := users.NewRepository(db)
+	userRepo := users.NewRepository(database)
 	userService := users.NewService(userRepo)
 	userHandler := users.NewHandler(userService, tmpl)
 
 	// pages
-	pageRepo := pages.NewRepository(db)
+	pageRepo := pages.NewRepository(database)
 	pageService := pages.NewService(pageRepo)
 	pageHandler := pages.NewHandler(pageService)
 
