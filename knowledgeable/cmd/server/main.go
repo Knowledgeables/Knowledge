@@ -1,8 +1,3 @@
-// @title Knowledge API
-// @version 1.0
-// @description API for Knowledge service
-// @host localhost:8080
-// @BasePath /
 package main
 
 import (
@@ -11,14 +6,13 @@ import (
 	"knowledgeable/internal/db"
 	"knowledgeable/internal/pages"
 	"knowledgeable/internal/users"
+	"knowledgeable/internal/web"
 	"log"
 	"net/http"
 	"os"
 
 	_ "knowledgeable/docs"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	httpSwagger "github.com/swaggo/http-swagger"
 	_ "modernc.org/sqlite"
 )
 
@@ -31,7 +25,7 @@ func main() {
 	// seed
 	if os.Getenv("APP_ENV") == "dev" {
 		log.Println("Seeding database (dev)")
-		
+
 		seed, err := os.ReadFile("seed-dev.sql")
 		if err != nil {
 			log.Fatal(err)
@@ -41,11 +35,6 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-
-	// Swagger UI
-	http.Handle("/swagger/", httpSwagger.Handler())
-
-	// dependency injection
 
 	// templates
 	tmpl := template.Must(template.ParseGlob("templates/*.html"))
@@ -63,37 +52,24 @@ func main() {
 	// auth
 	authHandler := auth.NewHandler(userService, tmpl)
 
-	log.Println("Dependencies wired successfully")
+	// routes
+	web.SetupRoutes(
+		userHandler,
+		pageHandler,
+		authHandler,
+		func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != "/" {
+				http.NotFound(w, r)
+				return
+			}
 
-	http.HandleFunc("/page", pageHandler.ViewPage)
+			if err := tmpl.ExecuteTemplate(w, "dashboard.html", nil); err != nil {
+				http.Error(w, "template error", http.StatusInternalServerError)
+			}
+		},
+	)
 
-	http.HandleFunc("/search", pageHandler.Search)
+	log.Println("Server running on :8080")
 
-	http.HandleFunc("/api/search", pageHandler.SearchAPI)
-
-	http.HandleFunc("/register", userHandler.Register)
-	http.HandleFunc("/api/register", userHandler.RegisterAPI)
-
-	http.HandleFunc("/logout", authHandler.Logout)
-
-	http.HandleFunc("/login", authHandler.Login)
-
-	http.HandleFunc("/api/login", authHandler.LoginAPI)
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-
-		if err := tmpl.ExecuteTemplate(w, "dashboard.html", nil); err != nil {
-			http.Error(w, "template error", http.StatusInternalServerError)
-		}
-	})
-
-	// Metrics endpoint used by Prometheus and visualized in Grafana
-	http.Handle("/metrics", promhttp.Handler())
-
-	// Start HTTP server
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
