@@ -3,11 +3,11 @@ package pages
 import (
 	"database/sql"
 	"encoding/json"
+	"html/template"
+	_ "modernc.org/sqlite"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	_ "modernc.org/sqlite"
 )
 
 func newTestDB(t *testing.T) *sql.DB {
@@ -32,7 +32,11 @@ func newTestDB(t *testing.T) *sql.DB {
 		t.Fatalf("create table: %v", err)
 	}
 
-	t.Cleanup(func() { db.Close() })
+	t.Cleanup(func() {
+		if err := db.Close(); err != nil {
+			t.Logf("failed to close db: %v", err)
+		}
+	})
 
 	return db
 }
@@ -48,7 +52,10 @@ func TestSearchAPI_ReturnsStubPage(t *testing.T) {
 		t.Fatalf("insert stub page: %v", err)
 	}
 
-	handler := NewHandler(NewService(NewRepository(db)))
+	handler := NewHandler(
+		NewService(NewRepository(db)),
+		func() *template.Template { return nil },
+	)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/search?q=Go+Integration+Testing&language=en", nil)
 	rr := httptest.NewRecorder()

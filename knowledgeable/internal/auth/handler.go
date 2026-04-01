@@ -23,17 +23,15 @@ type UserService interface {
 
 type Handler struct {
 	userService UserService
-	loginTmpl   *template.Template
+	loadTmpl    func() *template.Template
 }
 
-func NewHandler(us UserService, tmpl *template.Template) *Handler {
+func NewHandler(us UserService, load func() *template.Template) *Handler {
 	return &Handler{
 		userService: us,
-		loginTmpl:   tmpl,
+		loadTmpl:    load,
 	}
 }
-
-
 
 // LoginPage godoc
 // @Summary Serve Login page
@@ -53,7 +51,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := h.loginTmpl.ExecuteTemplate(w, "login.html", nil); err != nil {
+	tmpl := h.loadTmpl()
+
+	if err := tmpl.ExecuteTemplate(w, "login.html", nil); err != nil {
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
@@ -92,7 +92,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 // LoginAPI godoc
-// @Summary Login 
+// @Summary Login
 // @Description Authenticate user and create session
 // @Tags auth
 // @Accept application/x-www-form-urlencoded
@@ -120,9 +120,6 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 		Username: strings.TrimSpace(r.FormValue("username")),
 		Password: strings.TrimSpace(r.FormValue("password")),
 	}
-
-
-
 
 	if req.Username == "" || req.Password == "" {
 		http.Error(w, "missing credentials", http.StatusBadRequest)

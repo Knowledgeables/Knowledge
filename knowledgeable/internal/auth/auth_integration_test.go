@@ -20,7 +20,9 @@ func (s *successUserService) Login(username, password string) (*users.User, erro
 func TestLoginAPI_SetsSessionCookie(t *testing.T) {
 
 	userService := &successUserService{}
-	handler := NewHandler(userService, template.New("dummy"))
+	handler := NewHandler(userService, func() *template.Template {
+		return template.New("dummy")
+	})
 
 	sessions = map[string]int64{}
 
