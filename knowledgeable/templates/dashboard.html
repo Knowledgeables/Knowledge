@@ -1,28 +1,54 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Dashboard</title>
     <link href="/static/output.css" rel="stylesheet">
 </head>
+
 <body>
 
-<h1>Welcome</h1>
+    <div
+        class="w-screen h-screen bg-[#141413] flex items-center justify-center flex-col text-white font-sans font-semibold tracking-tight">
 
-<a class="text-green-500" href="/search">
-    <button>Go to Search Engine</button>
-</a>
+        <div
+            class="w-fit h-fit border-[1px] border-[#242422] flex flex-col justify-center items-center gap-3 rounded-lg p-5">
 
-<a href="/login">
-    <button type="button">Login</button>
-</a>
+            <div class="m-5 flex items-center justify center flex-col gap-2">
+                <h1 class="text-3xl">Knowledgeable</h1>
+                <p class="text-sm text-gray-400">
+                    Search. Unlock knowledge.
+                </p>
+            </div>
 
-<a href="/register">
-    <button type="button">Register new user</button>
-</a>
+            <div
+                class="bg-[#224daa] rounded-lg w-80 h-10 flex flex-row items-center justify-center pb-1">
+                <a href="/search"
+                    class="w-80 h-10 flex items-center justify-center bg-[#224daa] hover:bg-[#2b66e6] rounded-lg transition">
+                    Go to Search Engine
+                </a>
+            </div>
 
-<form action="/logout" method="post">
-    <button type="submit">Logout</button>
-</form>
+            <div class="w-80 flex justify-between gap-3">
+
+                <a href="/login"
+                    class="w-full h-10 flex items-center justify-center border border-[#242422] rounded-lg hover:bg-[#1a1a19]">
+                    Login
+                </a>
+
+                <a href="/register"
+                    class="w-full h-10 flex items-center justify-center border border-[#242422] rounded-lg hover:bg-[#1a1a19]">
+                    Sign up
+                </a>
+
+            </div>
+        </div>
+
+
+    </div>
+
+    </div>
 
 </body>
+
 </html>

@@ -12,3 +12,12 @@ services:
     environment:
       DB_PATH: /app/data/dev.db
       APP_ENV: dev
+
+  frontend:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: sh -c "npx tailwindcss@latest -i ./input.css -o ./output.css --watch"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
