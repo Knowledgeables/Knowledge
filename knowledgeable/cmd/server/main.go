@@ -22,10 +22,10 @@ func main() {
 	database := db.Init(os.Getenv("DB_PATH"), "knowledge.sql")
 
 	defer func() {
-	if err := database.Close(); err != nil {
-		log.Printf("failed to close db: %v", err)
-	}
-}()
+		if err := database.Close(); err != nil {
+			log.Printf("failed to close db: %v", err)
+		}
+	}()
 
 	// seed
 	if os.Getenv("APP_ENV") == "dev" {
@@ -42,20 +42,31 @@ func main() {
 	}
 
 	// templates
-	tmpl := template.Must(template.ParseGlob("templates/*.html"))
+	var tmplLoader func() *template.Template
+
+	if os.Getenv("APP_ENV") == "dev" {
+		tmplLoader = func() *template.Template {
+			return template.Must(template.ParseGlob("templates/*.html"))
+		}
+	} else {
+		tmpl := template.Must(template.ParseGlob("templates/*.html"))
+		tmplLoader = func() *template.Template {
+			return tmpl
+		}
+	}
 
 	// user
 	userRepo := users.NewRepository(database)
 	userService := users.NewService(userRepo)
-	userHandler := users.NewHandler(userService, tmpl)
+	userHandler := users.NewHandler(userService, tmplLoader)
 
 	// pages
 	pageRepo := pages.NewRepository(database)
 	pageService := pages.NewService(pageRepo)
-	pageHandler := pages.NewHandler(pageService)
+	pageHandler := pages.NewHandler(pageService, tmplLoader)
 
 	// auth
-	authHandler := auth.NewHandler(userService, tmpl)
+	authHandler := auth.NewHandler(userService, tmplLoader)
 
 	// routes
 	web.SetupRoutes(
@@ -67,6 +78,8 @@ func main() {
 				http.NotFound(w, r)
 				return
 			}
+
+			tmpl := tmplLoader()
 
 			if err := tmpl.ExecuteTemplate(w, "dashboard.html", nil); err != nil {
 				http.Error(w, "template error", http.StatusInternalServerError)
