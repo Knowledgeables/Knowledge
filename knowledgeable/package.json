@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "directories": {
-    "doc": "knowledgeable/docs"
+    "doc": "docs"
   },
   "scripts": {},
   "keywords": [],
