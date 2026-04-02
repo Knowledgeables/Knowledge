@@ -50,6 +50,78 @@ This commands installs the 3 hooks for you inside /.git/hooks and then checks 3 
 - Runs golang-lint before committing, to make sure the code you provided is bulletproof
 - Checks the commit message, to make sure you are following the provided conventions
 
+## Dev Flow
+
+Start the development environment from the `knowledgeable/` directory:
+
+    make dev-up
+
+This builds from `Dockerfile.dev`, mounts the entire source tree into the
+container, and starts the app on http://localhost:8080.
+
+The database is created automatically at `./data/dev.db` on first run.
+With `APP_ENV=dev`, the seed data from `seed-dev.sql` is also applied.
+
+To stop:
+
+    make dev-down
+
+
+
+## Prod Flow
+
+Production runs from pre-built images published to the GitHub Container Registry.
+No build step happens on the server.
+
+On the server, from the `knowledgeable/` directory:
+
+    docker compose -f docker-compose-prod.yml pull
+    docker compose -f docker-compose-prod.yml up -d
+
+This starts two containers:
+- **app** — the Go server on internal port 8080
+- **nginx** — reverse proxy, exposed on port 80
+
+The database file lives at `./data/prod.db` on the host, mounted into
+the container. It persists across deploys and restarts.
+
+To deploy a new version, run the same two commands again. The old container
+is replaced; the data volume is untouched.
+
+
+## Docker Files
+
+| File                      | Purpose                                      |
+|---------------------------|----------------------------------------------|
+| `Dockerfile.dev`          | Dev image — mounts source, supports live reload |
+| `Dockerfile.prod`         | Multi-stage prod build — outputs minimal image  |
+| `docker-compose-dev.yml`  | Local development                            |
+| `docker-compose-prod.yml` | Production — uses published images           |
+| `docker-compose-build.yml`| Builds and tags images for GHCR              |
+
+To build and push new images (CI does this automatically on merge to main):
+
+    docker compose -f docker-compose-build.yml build
+    docker compose -f docker-compose-build.yml push
+
+
+## Database Migrations
+
+Schema initialization runs automatically on startup in **both dev and prod**.
+
+When the server starts, it runs `knowledge.sql` against the database,
+creating all tables if they do not exist. No manual step is required —
+a fresh database is fully initialized on first boot.
+
+In dev (`APP_ENV=dev`), `seed-dev.sql` is also run on startup to populate
+test data. This does not run in production.
+
+If you change the schema:
+1. Update `knowledge.sql` with the new table/column definitions
+2. For existing databases, write a manual `ALTER TABLE` or coordinate
+   a data migration with the team (a migration library is tracked in #81)
+
+
 
 ## Branch Naming
 

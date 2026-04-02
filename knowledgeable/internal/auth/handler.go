@@ -23,42 +23,14 @@ type UserService interface {
 
 type Handler struct {
 	userService UserService
-	loginTmpl   *template.Template
+	loadTmpl    func() *template.Template
 }
 
-func NewHandler(us UserService, tmpl *template.Template) *Handler {
+func NewHandler(us UserService, load func() *template.Template) *Handler {
 	return &Handler{
 		userService: us,
-		loginTmpl:   tmpl,
+		loadTmpl:    load,
 	}
-}
-
-// RootRedirect godoc
-// @Summary Serve Root Page
-// @Description Redirects the user depending on authentication state
-// @Tags pages
-// @Produce html
-// @Success 303 {string} string "Redirect to login or dashboard"
-// @Header 303 {string} Location "Redirect destination"
-// @Router / [get]
-func (h *Handler) Root(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-
-	cookie, err := r.Cookie("session_id")
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
-	if _, ok := Get(cookie.Value); ok {
-		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
-		return
-	}
-
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
 // LoginPage godoc
@@ -79,7 +51,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := h.loginTmpl.ExecuteTemplate(w, "login.html", nil); err != nil {
+	tmpl := h.loadTmpl()
+
+	if err := tmpl.ExecuteTemplate(w, "login.html", nil); err != nil {
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
@@ -118,7 +92,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 // LoginAPI godoc
-// @Summary Login 
+// @Summary Login
 // @Description Authenticate user and create session
 // @Tags auth
 // @Accept application/x-www-form-urlencoded
@@ -146,9 +120,6 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 		Username: strings.TrimSpace(r.FormValue("username")),
 		Password: strings.TrimSpace(r.FormValue("password")),
 	}
-
-
-
 
 	if req.Username == "" || req.Password == "" {
 		http.Error(w, "missing credentials", http.StatusBadRequest)
