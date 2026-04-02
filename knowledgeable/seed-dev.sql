@@ -7,4 +7,4 @@ INSERT OR IGNORE INTO pages (title, url, language, content)
 VALUES
 ('Docker Intro', '/docker', 'en', 'Introduction to Docker'),
 ('Go Basics', '/go', 'en', 'Intro to Go'),
-('Docker Intro DK', '/docker-da', 'da', 'Introduktion til Docker');
+('Docker Intro DK', '/docker-da', 'make dev-upda', 'Introduktion til Docker');

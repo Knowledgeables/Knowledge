@@ -33,8 +33,6 @@ func NewHandler(us UserService, tmpl *template.Template) *Handler {
 	}
 }
 
-
-
 // LoginPage godoc
 // @Summary Serve Login page
 // @Description Render login page
@@ -48,7 +46,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err == nil {
 		if _, ok := Get(cookie.Value); ok {
-			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 	}
@@ -92,7 +90,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 // LoginAPI godoc
-// @Summary Login 
+// @Summary Login
 // @Description Authenticate user and create session
 // @Tags auth
 // @Accept application/x-www-form-urlencoded
@@ -121,9 +119,6 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 		Password: strings.TrimSpace(r.FormValue("password")),
 	}
 
-
-
-
 	if req.Username == "" || req.Password == "" {
 		http.Error(w, "missing credentials", http.StatusBadRequest)
 		return
@@ -149,5 +144,5 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 	})
 
-	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
