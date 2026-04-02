@@ -23,13 +23,13 @@ type UserService interface {
 
 type Handler struct {
 	userService UserService
-	loginTmpl   *template.Template
+	loadTmpl    func() *template.Template
 }
 
-func NewHandler(us UserService, tmpl *template.Template) *Handler {
+func NewHandler(us UserService, load func() *template.Template) *Handler {
 	return &Handler{
 		userService: us,
-		loginTmpl:   tmpl,
+		loadTmpl:    load,
 	}
 }
 
@@ -51,7 +51,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := h.loginTmpl.ExecuteTemplate(w, "login.html", nil); err != nil {
+	tmpl := h.loadTmpl()
+
+	if err := tmpl.ExecuteTemplate(w, "login.html", nil); err != nil {
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }

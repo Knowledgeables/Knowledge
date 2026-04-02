@@ -8,8 +8,8 @@ import (
 )
 
 type Handler struct {
-	service UserService
-	tmpl    *template.Template
+	service  UserService
+	loadTmpl func() *template.Template
 }
 
 type RegisterRequest struct {
@@ -29,10 +29,10 @@ type UserService interface {
 	GetAll() ([]User, error)
 }
 
-func NewHandler(s UserService, tmpl *template.Template) *Handler {
+func NewHandler(s UserService, load func() *template.Template) *Handler {
 	return &Handler{
-		service: s,
-		tmpl:    tmpl,
+		service:  s,
+		loadTmpl: load,
 	}
 }
 
@@ -55,7 +55,6 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 // RegisterPage godoc
 // @Summary Server Register page
 // @Description Shows the register form
@@ -65,7 +64,9 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 // @Router /register [get]
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		if err := h.tmpl.ExecuteTemplate(w, "register.html", nil); err != nil {
+		tmpl := h.loadTmpl()
+
+		if err := tmpl.ExecuteTemplate(w, "register.html", nil); err != nil {
 			http.Error(w, "template error", http.StatusInternalServerError)
 		}
 		return

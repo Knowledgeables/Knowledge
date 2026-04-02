@@ -7,11 +7,15 @@ import (
 )
 
 type Handler struct {
-	service *Service
+	service  *Service
+	loadTmpl func() *template.Template
 }
 
-func NewHandler(service *Service) *Handler {
-	return &Handler{service: service}
+func NewHandler(service *Service, load func() *template.Template) *Handler {
+	return &Handler{
+		service:  service,
+		loadTmpl: load,
+	}
 }
 
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
@@ -22,8 +26,9 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl := template.Must(template.ParseFiles("templates/pages.html"))
-	if err := tmpl.Execute(w, allPages); err != nil {
+	tmpl := h.loadTmpl()
+
+	if err := tmpl.ExecuteTemplate(w, "pages.html", allPages); err != nil {
 		http.Error(w, "template error", http.StatusInternalServerError)
 		return
 	}
@@ -52,8 +57,9 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 		Results: results,
 	}
 
-	tmpl := template.Must(template.ParseFiles("templates/search.html"))
-	if err := tmpl.Execute(w, data); err != nil {
+	tmpl := h.loadTmpl()
+
+	if err := tmpl.ExecuteTemplate(w, "search.html", data); err != nil {
 		http.Error(w, "template error", http.StatusInternalServerError)
 		return
 	}
@@ -69,9 +75,9 @@ func (h *Handler) ViewPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl := template.Must(template.ParseFiles("templates/page.html"))
+	tmpl := h.loadTmpl()
 
-	if err := tmpl.Execute(w, page); err != nil {
+	if err := tmpl.ExecuteTemplate(w, "page.html", page); err != nil {
 		http.Error(w, "template error", http.StatusInternalServerError)
 		return
 	}
@@ -79,7 +85,7 @@ func (h *Handler) ViewPage(w http.ResponseWriter, r *http.Request) {
 }
 
 // SearchAPI godoc
-// @Summary Search 
+// @Summary Search
 // @Description Search pages by query and optional language
 // @Tags pages
 // @Produce json
