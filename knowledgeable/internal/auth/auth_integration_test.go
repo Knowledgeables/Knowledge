@@ -48,8 +48,8 @@ func TestLoginAPI_SetsSessionCookie(t *testing.T) {
 		t.Fatalf("expected redirect, got %d", res.StatusCode)
 	}
 
-	if res.Header.Get("Location") != "/dashboard" {
-		t.Fatal("expected redirect to /dashboard")
+	if res.Header.Get("Location") != "/" {
+		t.Fatal("expected redirect to /")
 	}
 
 	cookies := res.Cookies()

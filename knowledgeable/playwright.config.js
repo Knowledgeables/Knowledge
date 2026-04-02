@@ -72,11 +72,11 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-  command: 'make dev-up',
+webServer: {
+  command: 'docker compose -f docker-compose-dev.yml up -d',
   url: 'http://localhost:8080',
   reuseExistingServer: !process.env.CI,
-  timeout: 120000, // 2 min, da Docker kan være langsom at starte
+  timeout: 120000,
 },
 });
 
