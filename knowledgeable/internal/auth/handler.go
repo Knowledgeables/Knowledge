@@ -46,7 +46,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err == nil {
 		if _, ok := Get(cookie.Value); ok {
-			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 	}
@@ -146,5 +146,5 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 	})
 
-	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
