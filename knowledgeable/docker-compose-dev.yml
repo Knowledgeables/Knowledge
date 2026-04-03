@@ -15,9 +15,10 @@ services:
 
   frontend:
     image: node:20
-    working_dir: /app
+    working_dir: /workspace
     volumes:
-      - ./frontend:/app
-    command: sh -c "npx tailwindcss@latest -i ./input.css -o ./output.css --watch"
+      - .:/workspace 
+    command: sh -c "npm install --prefix frontend && npm run dev --prefix frontend"
     environment:
       - CHOKIDAR_USEPOLLING=true
+    tty: true
