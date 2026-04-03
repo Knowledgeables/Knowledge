@@ -11,16 +11,16 @@
 *.out
 coverage.out
 
-# Database files
+# Database
 *.db
 *.sqlite
 *.sqlite3
-data/*.db
+data/
 
 # Logs
 *.log
 
-# Environment
+# Env
 .env
 .env.*
 
@@ -28,14 +28,16 @@ data/*.db
 .DS_Store
 Thumbs.db
 
-
-*.db
-*.sqlite
-*.sqlite3
-
-data/
-
 # Node
 node_modules/
+frontend/node_modules/
+
+# Build artifacts
 dist/
 build/
+
+# Air / dev
+tmp/
+
+# Tailwind output
+static/output.css
