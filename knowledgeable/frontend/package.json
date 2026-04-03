@@ -1,0 +1,11 @@
+{
+  "name": "knowledgeable-frontend",
+  "scripts": {
+    "dev:css": "npx tailwindcss -i ./input.css -o ../static/output.css --watch",
+    "dev": "npm run dev:css",
+    "build:css": "npx tailwindcss -i ./input.css -o ../static/output.css"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}

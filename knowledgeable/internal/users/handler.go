@@ -109,7 +109,6 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} string "internal error"
 // @Router /api/register [post]
 func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
-
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -117,10 +116,22 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 
 	var req RegisterRequest
 
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		http.Error(w, "invalid json", http.StatusBadRequest)
-		return
+	ct := r.Header.Get("Content-Type")
+
+	if ct == "application/json" {
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "invalid json", http.StatusBadRequest)
+			return
+		}
+	} else {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "invalid form", http.StatusBadRequest)
+			return
+		}
+
+		req.Username = r.FormValue("username")
+		req.Email = r.FormValue("email")
+		req.Password = r.FormValue("password")
 	}
 
 	if req.Username == "" || req.Email == "" || req.Password == "" {
@@ -130,20 +141,11 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.service.Register(req.Username, req.Email, req.Password)
 	if err != nil {
-		log.Println("RegisterAPI error:", err)
 		http.Error(w, "registration failed", http.StatusBadRequest)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-
-	resp := RegisterResponse{
-		Status:   "ok",
-		Message:  "user registered",
-		Username: user.Username,
-	}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, "encoding error", http.StatusInternalServerError)
-	}
+	log.Println("User registered:", user.Username)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

@@ -12,3 +12,13 @@ services:
     environment:
       DB_PATH: /app/data/dev.db
       APP_ENV: dev
+
+  frontend:
+    image: node:20
+    working_dir: /workspace
+    volumes:
+      - .:/workspace 
+    command: sh -c "npm install --prefix frontend && npm run dev --prefix frontend"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    tty: true

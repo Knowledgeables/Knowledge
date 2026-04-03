@@ -1,16 +1,23 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Login</title>
 </head>
+
 <body>
 
-<h1>Login</h1>
+    <h1>Login</h1>
 
-<form method="POST" action="/api/login">
-    <input name="username" placeholder="username" required>
-    <input name="password" type="password" placeholder="password" required>
-    <button type="submit" id="login-button" value="Log In">Login</button>
-</form>
+    <form method="POST" action="/api/login">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" required>
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required>
+
+        <button type="submit">Login</button>
+    </form>
 </body>
+
 </html>

@@ -39,7 +39,7 @@ func NewHandler(us UserService, load func() *template.Template) *Handler {
 // @Tags pages
 // @Produce html
 // @Success 200 {string} string "Login page"
-// @Success 303 {string} string "Redirect to dashboard"
+// @Success 303 {string} string "Redirect to home"
 // @Router /login [get]
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 

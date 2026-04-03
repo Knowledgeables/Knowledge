@@ -19,11 +19,10 @@ lint:
 
 dev-up:
 	docker compose -f docker-compose-dev.yml up -d
-	start cmd /k "npm run dev
+	
 
 dev-down:
 	docker compose -f docker-compose-dev.yml down
-	npm run dev
 
 dev-build:
 	docker compose -f docker-compose-dev.yml build

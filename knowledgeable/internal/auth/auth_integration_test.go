@@ -49,8 +49,8 @@ func TestLoginAPI_SetsSessionCookie(t *testing.T) {
 	}
 
 	if res.Header.Get("Location") != "/" {
-    	t.Fatal("expected redirect to /")
-  }
+		t.Fatal("expected redirect to /")
+	}
 
 	cookies := res.Cookies()
 
