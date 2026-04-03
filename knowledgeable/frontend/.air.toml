@@ -1,0 +1,19 @@
+root = "."
+
+
+[build]
+cmd = "go build -o /tmp/main ./cmd/server"
+bin = "/tmp/main"
+
+include_dir = [
+  "cmd",
+  "internal",
+  "templates",
+]
+
+exclude_regex = [
+  "frontend",
+  "node_modules",
+  "\\.git",
+  "tmp",
+]
