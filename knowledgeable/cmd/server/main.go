@@ -55,8 +55,12 @@ func main() {
 		}
 	}
 
-	// tailwind
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	// serves static files such as css, js and images.
+	http.Handle("/static/",
+		http.StripPrefix("/static/",
+			http.FileServer(http.Dir("static")),
+		),
+	)
 
 	// user
 	userRepo := users.NewRepository(database)
@@ -84,7 +88,7 @@ func main() {
 
 			tmpl := tmplLoader()
 
-			if err := tmpl.ExecuteTemplate(w, "dashboard.html", nil); err != nil {
+			if err := tmpl.ExecuteTemplate(w, "home.html", nil); err != nil {
 				http.Error(w, "template error", http.StatusInternalServerError)
 			}
 		},
