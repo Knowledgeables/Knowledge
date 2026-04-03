@@ -4,67 +4,68 @@
 <head>
     <title>Dashboard</title>
     <link href="/static/output.css" rel="stylesheet">
-    <script>
-        lucide.createIcons();
-    </script>
+    <link rel="icon" href="/static/favicon.png" />
 </head>
 
 <body>
-    <nav class="flex flex-row items-center absolute top-0 left-0 w-full justify-between bg-green-400">
-        <div class="logo">
-            <h1 class="text-3xl font-semibold tracking-tight">
+    <nav class="flex flex-row items-center absolute top-0 left-0 w-full justify-between py-2 px-5 bg-[#141313] ">
+        <div class="flex flex-row gap-14 justify-center items-center">
+            <h1 class="text-[1.5rem] font-semibold tracking-tight">
                 Knowledgeable
             </h1>
-        </div>
-        <ul class="flex flex-row">
-            <li><a href="#">Hom</a></li>
-            <li><a href="#">Search</a></li>
-            <li><a href="#">About</a></li>
 
-        </ul>
+            <ul class="flex flex-row gap-4">
+                <li><a class="text-gray-400" href="#">Home</a></li>
+                <li><a class="text-gray-400" href="#">Search</a></li>
+                <li><a class="text-gray-400" href="#">About</a></li>
+
+            </ul>
+        </div>
+
+        <div class="w-64 flex gap-3">
+
+            <a href="/login"
+                class="group w-full h-10 flex items-center justify-center gap-2 border border-[#242422] rounded-lg hover:bg-[#1a1a19] transition">
+
+                <i data-lucide="log-in" class="w-4 h-4 text-gray-400 group-hover:text-white transition"></i>
+                Login
+            </a>
+
+            <a href="/register"
+                class="group w-full h-10 flex items-center justify-center gap-2 border border-[#242422] rounded-lg hover:bg-[#1a1a19] transition">
+
+                <i data-lucide="user-plus" class="w-4 h-4 text-gray-400 group-hover:text-white transition"></i>
+                Sign up
+            </a>
+
+        </div>
     </nav>
 
-    <div
-        class="w-screen h-screen bg-[#141413] flex items-center justify-center flex-col text-white font-sans tracking-tight">
+    <div class="w-screen h-screen bg-[#0f0f0e] flex items-center justify-center flex-col font-sans tracking-tight">
 
 
 
 
         <div
-            class="w-fit h-fit border-[1px] border-[#242422] flex flex-col justify-center items-center gap-3 rounded-lg p-5">
+            class="w-fit h-fit border-[1px] border-[#242422] flex flex-col justify-center items-center gap-8 rounded-lg p-5">
 
             <div class="m-5 flex items-center justify-center flex-col gap-2">
 
 
-                <p class="text-sm text-gray-400 tracking-wide leading-relaxed">
+                <h1 class="text-5xl">
                     Search. Unlock knowledge.
-                </p>
+                </h1>
             </div>
 
-            <div class="bg-[#224daa] rounded-lg w-80 h-10 flex flex-row items-center justify-center pb-1">
+            <div class="border-[#242422] border-[1px] rounded-lg w-80 h-10 flex flex-row items-center justify-center pb-1">
                 <a href="/search"
-                    class="w-80 h-10 flex items-center justify-center bg-[#224daa] hover:bg-[#2b66e6] rounded-lg transition font-semibold">
+                    class="w-80 h-10 flex gap-2 items-center justify-center bg-[#362a96] hover:bg-[#4636c1] rounded-lg transition font-semibold">
+                    <i data-lucide="search"></i>
                     Go to Search Engine
                 </a>
             </div>
 
-            <div class="w-80 flex gap-3">
-
-                <a href="/login"
-                    class="group w-full h-10 flex items-center justify-center gap-2 border border-[#242422] rounded-lg hover:bg-[#1a1a19] transition">
-
-                    <i data-lucide="log-in" class="w-4 h-4 text-gray-400 group-hover:text-white transition"></i>
-                    Login
-                </a>
-
-                <a href="/register"
-                    class="group w-full h-10 flex items-center justify-center gap-2 border border-[#242422] rounded-lg hover:bg-[#1a1a19] transition">
-
-                    <i data-lucide="user-plus" class="w-4 h-4 text-gray-400 group-hover:text-white transition"></i>
-                    Sign up
-                </a>
-
-            </div>
+      
         </div>
 
 

@@ -39,14 +39,14 @@ func NewHandler(us UserService, load func() *template.Template) *Handler {
 // @Tags pages
 // @Produce html
 // @Success 200 {string} string "Login page"
-// @Success 303 {string} string "Redirect to dashboard"
+// @Success 303 {string} string "Redirect to home"
 // @Router /login [get]
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	cookie, err := r.Cookie("session_id")
 	if err == nil {
 		if _, ok := Get(cookie.Value); ok {
-			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 	}
@@ -146,5 +146,5 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 	})
 
-	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

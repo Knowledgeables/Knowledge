@@ -1,3 +1,38 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+
+    /* default text */
+    html {
+        @apply text-[#f0ede8] font-sans tracking-tight;
+    }
+
+    /* headings */
+    h1,
+    h2,
+    h3,
+    h4 {
+        @apply text-[#f0ede8] font-semibold;
+    }
+
+    /* paragraph */
+    p {
+        @apply text-[#cfcac3] leading-relaxed;
+    }
+
+    /* links */
+    a {
+        @apply text-[#f0ede8] no-underline transition;
+    }
+
+    a:hover {
+        @apply text-white;
+    }
+
+    /* subtle text */
+    small {
+        @apply text-gray-400;
+    }
+}
