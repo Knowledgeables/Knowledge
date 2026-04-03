@@ -73,10 +73,10 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-  command: 'make dev-up',
-  url: 'http://localhost:8080',
-  reuseExistingServer: !process.env.CI,
-  timeout: 120000, // 2 min, da Docker kan være langsom at starte
-},
+    command: 'APP_ENV=dev DB_PATH=./test.db go run ./cmd/server',
+    url: 'http://localhost:8080',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120000,
+  },
 });
 
