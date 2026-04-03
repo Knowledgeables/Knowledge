@@ -554,6 +554,15 @@ video {
   display: none;
 }
 
+::-webkit-scrollbar {
+  display: none;
+}
+
+html {
+  scrollbar-width: none;
+  /* Firefox */
+}
+
 /* default text */
 
 html {
@@ -607,8 +616,8 @@ small {
   color: rgb(156 163 175 / var(--tw-text-opacity, 1));
 }
 
-.absolute {
-  position: absolute;
+.fixed {
+  position: fixed;
 }
 
 .left-0 {
@@ -644,6 +653,10 @@ small {
   height: 100vh;
 }
 
+.min-h-screen {
+  min-height: 100vh;
+}
+
 .w-4 {
   width: 1rem;
 }
@@ -667,6 +680,10 @@ small {
 
 .w-screen {
   width: 100vw;
+}
+
+.flex-1 {
+  flex: 1 1 0%;
 }
 
 .flex-row {
@@ -705,8 +722,8 @@ small {
   gap: 1rem;
 }
 
-.gap-8 {
-  gap: 2rem;
+.gap-6 {
+  gap: 1.5rem;
 }
 
 .rounded-lg {
@@ -719,6 +736,10 @@ small {
 
 .border-\[1px\] {
   border-width: 1px;
+}
+
+.border-t {
+  border-top-width: 1px;
 }
 
 .border-\[\#242422\] {
@@ -741,8 +762,8 @@ small {
   background-color: rgb(54 42 150 / var(--tw-bg-opacity, 1));
 }
 
-.p-5 {
-  padding: 1.25rem;
+.p-8 {
+  padding: 2rem;
 }
 
 .px-5 {
@@ -753,6 +774,11 @@ small {
 .py-2 {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 
 .pb-1 {
@@ -770,6 +796,11 @@ small {
 
 .text-\[1\.5rem\] {
   font-size: 1.5rem;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
 
 .font-semibold {

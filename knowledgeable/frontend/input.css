@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+    ::-webkit-scrollbar {
+        display: none;
+    }
+
+    html {
+        scrollbar-width: none;
+        /* Firefox */
+    }
 
     /* default text */
     html {
