@@ -35,10 +35,6 @@
         @apply text-[#f0ede8] no-underline transition;
     }
 
-    a:hover {
-        @apply text-white;
-    }
-
     /* subtle text */
     small {
         @apply text-gray-400;
