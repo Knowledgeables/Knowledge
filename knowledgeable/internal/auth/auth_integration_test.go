@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"html/template"
 	"knowledgeable/internal/users"
 	"net/http"
@@ -75,5 +76,56 @@ func TestLoginAPI_SetsSessionCookie(t *testing.T) {
 
 	if !cookies[0].HttpOnly {
 		t.Fatal("cookie should be HttpOnly")
+	}
+
+}
+
+//Login failure
+
+type failUserService struct{}
+
+func (s *failUserService) Login(username, password string) (*users.User, error) {
+	return nil, errors.New("invalid credentials")
+}
+
+func TestLoginAPI_InvalidCredentials(t *testing.T) {
+
+	userService := &failUserService{}
+	handler := NewHandler(userService, func() *template.Template {
+		return template.New("dummy")
+	})
+
+	sessions = map[string]int64{}
+
+	form := url.Values{}
+	form.Add("username", "rasmus")
+	form.Add("password", "wrong")
+
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/login",
+		strings.NewReader(form.Encode()),
+	)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	rr := httptest.NewRecorder()
+
+	handler.LoginAPI(rr, req)
+
+	res := rr.Result()
+
+	// korrekt status
+	if res.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", res.StatusCode)
+	}
+
+	// ingen cookie
+	if len(res.Cookies()) != 0 {
+		t.Fatal("expected no cookies on failed login")
+	}
+
+	// ingen session
+	if len(sessions) != 0 {
+		t.Fatal("expected no session to be created")
 	}
 }
