@@ -6,7 +6,7 @@ test('user can login successfully', async ({ page }) => {
     await page.getByLabel('Username').fill('admin');
     await page.getByLabel('Password').fill('secret');
 
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Log in' }).click();
 
     await expect(page).toHaveURL(/\/$/);
 
