@@ -17,40 +17,49 @@
 
 
         <div
-            class="w-fit h-fit border-[1px] border-[#242422]  bg-[#090d16] flex flex-col justify-center items-center rounded-lg z-10">
+            class="w-fit h-fit border border-[#242422] bg-[#090d16] flex flex-col justify-center items-center rounded-lg z-10 p-6 gap-4">
 
-            <form method="POST" action="/api/login" class="flex flex-col rounded-lg w-full h-full gap-5 p-6">
+            <form method="POST" action="/api/login" class="flex flex-col gap-5 items-center">
 
-                <div class="flex flex-col">
+                <div class="flex flex-col w-72">
                     <h1 class="text-xl font-semibold text-white">Welcome back</h1>
                     <span class="text-gray-400 text-sm">Log in to your account</span>
                 </div>
 
-                <div class="flex flex-col w-full">
+                <div class="flex flex-col w-72">
                     <label for="username" class="text-sm text-gray-400 mb-1">USERNAME</label>
                     <input
                         class="w-72 bg-[#0f172a] border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                         id="username" name="username" type="text" required>
                 </div>
 
-                <div class="flex flex-col w-full">
+                <div class="flex flex-col w-72">
                     <label for="password" class="text-sm text-gray-400 mb-1">PASSWORD</label>
                     <input
                         class="w-72 bg-[#0f172a] border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                         id="password" name="password" type="password" required>
                 </div>
 
-                <div class="flex flex-col mt-2">
-                    <button class="bg-[#1eff8c] hover:bg-[#38be7d] text-black font-bold py-2 rounded transition">
-                        Log in
-                    </button>
-                </div>
-
-                <div class="flex flex-row justify-center items-center gap-1">
-                    <a class="text-gray-500 text-sm">Don't have an account?</a><a href="/register" class="text-[#1eff8c] text-sm hover:text-[#38be7d]">Sign up</a>
-                </div>
+                <button class="w-72 bg-[#1eff8c] hover:bg-[#38be7d] text-black font-bold py-2 rounded transition mt-2">
+                    Log in
+                </button>
             </form>
 
+            <div class="flex items-center gap-3 w-72">
+                <div class="flex-1 h-px bg-[#1e2533]"></div>
+                <span class="text-xs text-gray-600">or</span>
+                <div class="flex-1 h-px bg-[#1e2533]"></div>
+            </div>
+
+            <button
+                class="w-72 hover:bg-[#121a2d] text-gray-400 font-medium py-2 transition border border-gray-800 rounded">
+                Continue without logging in
+            </button>
+
+            <div class="flex flex-row justify-center items-center gap-1 w-72">
+                <span class="text-gray-500 text-sm">Don't have an account?</span>
+                <a href="/register" class="text-[#1eff8c] text-sm hover:text-[#38be7d]">Sign up</a>
+            </div>
 
         </div>
 
