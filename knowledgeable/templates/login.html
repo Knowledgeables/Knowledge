@@ -3,21 +3,63 @@
 
 <head>
     <title>Login</title>
+    <link href="/static/output.css" rel="stylesheet">
+    <link rel="icon" href="/static/favicon.png" />
 </head>
 
-<body>
+<body class="min-h-screen flex flex-col">
 
-    <h1>Login</h1>
+    <div
+        class="relative w-screen h-screen bg-[url('/static/grid-green.svg')] bg-repeat flex items-center justify-center flex-col font-sans tracking-tight">
+        <div
+            class="absolute inset-x-0 bottom-0 top-16 pointer-events-none bg-[radial-gradient(ellipse_80%_80%_at_50%_50%,transparent_30%,#0a0e17_100%)]">
+        </div>
 
-    <form method="POST" action="/api/login">
-        <label for="username">Username</label>
-        <input id="username" name="username" type="text" required>
 
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" required>
+        <div
+            class="w-fit h-fit border-[1px] border-[#242422]  bg-[#090d16] flex flex-col justify-center items-center rounded-lg z-10">
 
-        <button type="submit">Login</button>
-    </form>
+            <form method="POST" action="/api/login" class="flex flex-col rounded-lg w-full h-full gap-5 p-6">
+
+                <div class="flex flex-col">
+                    <h1 class="text-xl font-semibold text-white">Welcome back</h1>
+                    <span class="text-gray-400 text-sm">Log in to your account</span>
+                </div>
+
+                <div class="flex flex-col w-full">
+                    <label for="username" class="text-sm text-gray-400 mb-1">USERNAME</label>
+                    <input
+                        class="w-72 bg-[#0f172a] border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                        id="username" name="username" type="text" required>
+                </div>
+
+                <div class="flex flex-col w-full">
+                    <label for="password" class="text-sm text-gray-400 mb-1">PASSWORD</label>
+                    <input
+                        class="w-72 bg-[#0f172a] border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                        id="password" name="password" type="password" required>
+                </div>
+
+                <div class="flex flex-col mt-2">
+                    <button class="bg-[#1eff8c] hover:bg-[#38be7d] text-black font-bold py-2 rounded transition">
+                        Log in
+                    </button>
+                </div>
+
+                <div class="flex flex-row justify-center items-center gap-1">
+                    <a class="text-gray-500 text-sm">Don't have an account?</a><a href="/register" class="text-[#1eff8c] text-sm hover:text-[#38be7d]">Sign up</a>
+                </div>
+            </form>
+
+
+        </div>
+
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
 
 </html>
