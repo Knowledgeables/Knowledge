@@ -668,6 +668,10 @@ small {
   margin-top: 0.5rem;
 }
 
+.block {
+  display: block;
+}
+
 .flex {
   display: flex;
 }
@@ -945,6 +949,10 @@ small {
 
 .pb-1 {
   padding-bottom: 0.25rem;
+}
+
+.text-center {
+  text-align: center;
 }
 
 .font-sans {
