@@ -24,4 +24,11 @@ VALUES
 ('OAuth2 Explained', '/oauth2', 'en', 'Secure authorization flows'),
 ('JWT Authentication', '/jwt', 'en', 'Stateless authentication with tokens'),
 ('Clean Code Principles', '/clean-code', 'en', 'Write maintainable software'),
-('System Design Basics', '/system-design', 'en', 'Scalability, load balancing, caching');
+('System Design Basics', '/system-design', 'en', 'Scalability, load balancing, caching'),
+('Distributed Systems Deep Dive', '/distributed-systems', 'en', 
+'Distributed systems are complex by nature. They require careful handling of consistency, 
+availability, and partition tolerance (CAP theorem). In real-world systems, engineers 
+must deal with issues like network latency, partial failures, retries, idempotency, and 
+eventual consistency. Techniques such as replication, sharding, leader election, and 
+consensus algorithms (like Raft or Paxos) are essential. Observability, monitoring, 
+and tracing also play a crucial role in debugging distributed environments.');
