@@ -3,31 +3,92 @@
 
 <head>
   <title>Search</title>
+  <link href="/static/output.css" rel="stylesheet">
+  <link rel="icon" href="/static/favicon.png" />
 </head>
 
-<body>
+<body class="min-h-screen flex flex-col">
 
-  <div>
-    <input id="search-input" placeholder="Search..." value="{{.Query}}" />
-    <button id="search-button" onclick="makeSearchRequest()">Search</button>
-  </div>
+  <nav class="flex flex-row items-center fixed top-0 left-0 w-full justify-between py-3 px-5 bg-[#090d16] z-[999]">
+    <div class="flex flex-row gap-14 justify-center items-center">
+      <h1 class="text-[1.5rem] font-semibold tracking-tight">
+        Knowledgeable
+      </h1>
 
-  <div id="results">
-    {{range .Results}}
-    <div>
-      <h2>
-        <a class="search-result-title" href="/page?url={{.URL}}">
-          {{.Title}}
-        </a>
-      </h2>
-      <p class="search-result-description">
-        {{.Content}}
-      </p>
+      <ul class="flex gap-6">
+        <li class="rounded-lg p-2 hover:bg-white/5 transition"><a class="text-gray-400 hover:text-gray-300 transition "
+            href="#" id="nav-home">Home</a></li>
+        <li class="rounded-lg p-2 hover:bg-white/5 transition"><a class="text-gray-400 hover:text-gray-300 transition"
+            href="/search" id="nav-search">Search</a></li>
+        <li class="rounded-lg p-2 hover:bg-white/5 transition"><a class="text-gray-400 hover:text-gray-300 transition"
+            href="#about" id="nav-about">About</a></li>
+      </ul>
     </div>
-    {{end}}
+
+    <div class="w-64 flex gap-3">
+
+      <a href="/login" class="h-9 w-full px-4 flex items-center justify-center gap-2 rounded-lg
+               text-sm text-gray-400 hover:text-white hover:bg-white/5 transition" id="nav-login">
+        <i data-lucide="log-in" class="w-4 h-4"></i>
+        Login
+      </a>
+
+      <a href="/register" class="h-9 w-full px-4 flex items-center justify-center gap-2 rounded-lg
+               text-sm font-semibold bg-[#1eff8c] hover:bg-[#3dffa0] 
+               text-[#0a0e17] transition" id="nav-register">
+        <i data-lucide="user-plus" class="w-4 h-4"></i>
+        Sign up
+      </a>
+
+    </div>
+  </nav>
+
+
+  <div
+    class="relative w-screen h-screen bg-[url('/static/grid-green.svg')] bg-repeat flex items-center justify-center flex-col font-sans tracking-tight">
+    <div
+      class="absolute inset-x-0 bottom-0 top-16 pointer-events-none bg-[radial-gradient(ellipse_80%_80%_at_50%_50%,transparent_30%,#0a0e17_100%)]">
+    </div>
+
+
+    <div class="w-3/4 h-3/4 overflow-y-auto border border-[#242422] flex flex-col items-center p-4  z-10">
+
+
+      <div class="w-full flex flex-row items-center justify-center gap-4">
+        <input
+          class="w-4/5 h-12 bg-[#0f172a] border border-gray-800 rounded px-3  text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+          id="search-input" placeholder="Search..." value="{{.Query}}" />
+        <button class="w-24 h-12 px-3 bg-[#1eff8c] hover:bg-[#3dffa0] text-black font-bold py-2 rounded-lg transition" id="search-button" onclick="makeSearchRequest()">Search</button>
+      </div>
+
+      <div id="results">
+        {{range .Results}}
+        <div>
+          <h2>
+            <a class="search-result-title" href="/page?url={{.URL}}">
+              {{.Title}}
+            </a>
+          </h2>
+          <p class="search-result-description">
+            {{.Content}}
+          </p>
+        </div>
+        {{end}}
+      </div>
+
+
+    </div>
+
+
+
   </div>
+
 
   <script src="/static/js/search.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    lucide.createIcons();
+  </script>
 
 </body>
 
