@@ -16,12 +16,23 @@
       </h1>
 
       <ul class="flex gap-6">
-        <li class="rounded-lg p-2 hover:bg-white/5 transition"><a class="text-gray-400 hover:text-gray-300 transition "
-            href="#" id="nav-home">Home</a></li>
-        <li class="rounded-lg p-2 hover:bg-white/5 transition"><a class="text-gray-400 hover:text-gray-300 transition"
-            href="/search" id="nav-search">Search</a></li>
-        <li class="rounded-lg p-2 hover:bg-white/5 transition"><a class="text-gray-400 hover:text-gray-300 transition"
-            href="#about" id="nav-about">About</a></li>
+        <li class="rounded-lg hover:bg-white/5 transition">
+          <a href="/" id="nav-home" class="block p-2 text-gray-400 hover:text-gray-300 transition">
+            Home
+          </a>
+        </li>
+
+        <li class="rounded-lg hover:bg-white/5 transition">
+          <a href="/search" id="nav-search" class="block p-2 text-gray-400 hover:text-gray-300 transition">
+            Search
+          </a>
+        </li>
+
+        <li class="rounded-lg hover:bg-white/5 transition">
+          <a href="#about" id="nav-about" class="block p-2 text-gray-400 hover:text-gray-300 transition">
+            About
+          </a>
+        </li>
       </ul>
     </div>
 
@@ -51,34 +62,56 @@
     </div>
 
 
-    <div class="w-3/4 h-3/4 overflow-y-auto border border-[#242422] flex flex-col items-center p-4  z-10">
+    <div class="mt-16 w-[80%] h-4/5   flex flex-col items-center p-4 gap-6 z-10">
 
-
-      <div class="w-full flex flex-row items-center justify-center gap-4">
-        <input
-          class="w-4/5 h-12 bg-[#0f172a] border border-gray-800 rounded px-3  text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-          id="search-input" placeholder="Search..." value="{{.Query}}" />
-        <button class="w-24 h-12 px-3 bg-[#1eff8c] hover:bg-[#3dffa0] text-black font-bold py-2 rounded-lg transition" id="search-button" onclick="makeSearchRequest()">Search</button>
-      </div>
-
-      <div id="results">
-        {{range .Results}}
-        <div>
-          <h2>
-            <a class="search-result-title" href="/page?url={{.URL}}">
-              {{.Title}}
-            </a>
-          </h2>
-          <p class="search-result-description">
-            {{.Content}}
-          </p>
+      <div class="flex flex-col justify-center items-center gap-4">
+        <div class="w-fit h-fit rounded-xl p-3 border border-[#1eff8c]/50 bg-[#192543]">
+          <i data-lucide="search" class="text-[#1eff8c]"></i>
         </div>
-        {{end}}
+
+        <div class="flex flex-col justify-center items-center">
+          <h1 class="text-xl">What do you want to know?</h1>
+          <p class="text-sm text-gray-400">Search across the knowledge base</p>
+        </div>
       </div>
 
+      <div class="w-full flex gap-4">
+        <input
+          class="flex-1 h-12 bg-[#0f172a] border border-gray-800 rounded px-3 text-white focus:outline-none focus:ring-2 focus:ring-gray-500"
+          id="search-input" placeholder="Search..." value="{{.Query}}" />
+
+        <button class="h-12 px-4 bg-[#1eff8c] hover:bg-[#3dffa0] text-black font-bold rounded-lg transition"
+          id="search-button" onclick="makeSearchRequest()">
+          Search
+        </button>
+      </div>
+
+      <div class="overflow-y-auto w-full h-full">
+
+        <div id="results" class="flex flex-col w-full divide-y divide-[#1e2533]">
+
+          {{range $i, $r := .Results}}
+
+          <a href="/page?url={{$r.URL}}" class="block px-4 py-4 transition hover:bg-white/5
+            ">
+
+            <h2 class="text-[#1eff8c] font-medium">
+              {{$r.Title}}
+            </h2>
+
+            <p class="text-sm text-gray-400 line-clamp-2">
+              {{$r.Content}}
+            </p>
+
+          </a>
+
+          {{end}}
+
+        </div>
+
+      </div>
 
     </div>
-
 
 
   </div>
