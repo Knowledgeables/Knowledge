@@ -16,26 +16,37 @@
             </h1>
 
             <ul class="flex gap-6">
-                <li class="rounded-lg p-2 hover:bg-white/5 transition"><a
-                        class="text-gray-400 hover:text-gray-300 transition " href="#">Home</a></li>
-                <li class="rounded-lg p-2 hover:bg-white/5 transition"><a
-                        class="text-gray-400 hover:text-gray-300 transition" href="/search">Search</a></li>
-                <li class="rounded-lg p-2 hover:bg-white/5 transition"><a class="text-gray-400 hover:text-gray-300 transition"
-                        href="#about">About</a></li>
+                <li class="rounded-lg hover:bg-white/5 transition">
+                    <a href="/" id="nav-home" class="block p-2 text-gray-400 hover:text-gray-300 transition">
+                        Home
+                    </a>
+                </li>
+
+                <li class="rounded-lg hover:bg-white/5 transition">
+                    <a href="/search" id="nav-search" class="block p-2 text-gray-400 hover:text-gray-300 transition">
+                        Search
+                    </a>
+                </li>
+
+                <li class="rounded-lg hover:bg-white/5 transition">
+                    <a href="#about" id="nav-about" class="block p-2 text-gray-400 hover:text-gray-300 transition">
+                        About
+                    </a>
+                </li>
             </ul>
         </div>
 
         <div class="w-64 flex gap-3">
 
             <a href="/login" class="h-9 w-full px-4 flex items-center justify-center gap-2 rounded-lg
-               text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
+               text-sm text-gray-400 hover:text-white hover:bg-white/5 transition" id="nav-login">
                 <i data-lucide="log-in" class="w-4 h-4"></i>
                 Login
             </a>
 
             <a href="/register" class="h-9 w-full px-4 flex items-center justify-center gap-2 rounded-lg
                text-sm font-semibold bg-[#1eff8c] hover:bg-[#3dffa0] 
-               text-[#0a0e17] transition">
+               text-[#0a0e17] transition" id="nav-register">
                 <i data-lucide="user-plus" class="w-4 h-4"></i>
                 Sign up
             </a>
