@@ -19,22 +19,7 @@ func NewHandler(service *Service, load func() *template.Template) *Handler {
 	}
 }
 
-func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 
-	allPages, err := h.service.GetAllPages()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
-	tmpl := h.loadTmpl()
-
-	if err := tmpl.ExecuteTemplate(w, "pages.html", allPages); err != nil {
-		http.Error(w, "template error", http.StatusInternalServerError)
-		return
-	}
-
-}
 func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 
 	query := strings.TrimSpace(r.URL.Query().Get("q"))
@@ -77,24 +62,7 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) ViewPage(w http.ResponseWriter, r *http.Request) {
 
-	url := r.URL.Query().Get("url")
-
-	page, err := h.service.FindByURL(url)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
-	tmpl := h.loadTmpl()
-
-	if err := tmpl.ExecuteTemplate(w, "page.html", page); err != nil {
-		http.Error(w, "template error", http.StatusInternalServerError)
-		return
-	}
-
-}
 
 // SearchAPI godoc
 // @Summary Search
