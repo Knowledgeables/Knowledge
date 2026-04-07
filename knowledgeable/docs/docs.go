@@ -15,32 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/": {
-            "get": {
-                "description": "Redirects the user depending on authentication state",
-                "produces": [
-                    "text/html"
-                ],
-                "tags": [
-                    "pages"
-                ],
-                "summary": "Serve Root Page",
-                "responses": {
-                    "303": {
-                        "description": "Redirect to login or dashboard",
-                        "schema": {
-                            "type": "string"
-                        },
-                        "headers": {
-                            "Location": {
-                                "type": "string",
-                                "description": "Redirect destination"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/login": {
             "post": {
                 "description": "Authenticate user and create session",
@@ -167,10 +141,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "object"
-                            }
+                            "$ref": "#/definitions/pages.SearchResponse"
                         }
                     },
                     "500": {
@@ -200,7 +171,7 @@ const docTemplate = `{
                         }
                     },
                     "303": {
-                        "description": "Redirect to dashboard",
+                        "description": "Redirect to home",
                         "schema": {
                             "type": "string"
                         }
@@ -273,6 +244,51 @@ const docTemplate = `{
                 }
             }
         },
+        "pages.Language": {
+            "type": "string",
+            "enum": [
+                "en",
+                "da"
+            ],
+            "x-enum-varnames": [
+                "LanguageEN",
+                "LanguageDA"
+            ]
+        },
+        "pages.Page": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "language": {
+                    "$ref": "#/definitions/pages.Language"
+                },
+                "lastUpdated": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "pages.SearchResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/pages.Page"
+                    }
+                }
+            }
+        },
         "users.RegisterRequest": {
             "type": "object",
             "properties": {
@@ -292,12 +308,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/",
+	Version:          "",
+	Host:             "",
+	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "Knowledge API",
-	Description:      "API for Knowledge service",
+	Title:            "",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

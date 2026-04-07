@@ -41,6 +41,7 @@ hooks-run:
 	prek run
 	setup-hooks.sh
 
+
 swagger:
 	rm -rf docs
 	swag init -g cmd/server/main.go -o docs

@@ -15,7 +15,7 @@ type Page struct {
 	Title       string       `db:"title"`
 	URL         string       `db:"url"`
 	Language    Language     `db:"language"`
-	LastUpdated sql.NullTime `db:"last_updated"`
+	LastUpdated sql.NullTime `db:"last_updated" json:"lastUpdated" swaggertype:"string"`
 	Content     string       `db:"content"`
 }
 
