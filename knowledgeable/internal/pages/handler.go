@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+type SearchResponse struct {
+	Results []Page `json:"results"`
+	Count   int    `json:"count"`
+}
+
 type Handler struct {
 	service  *Service
 	loadTmpl func() *template.Template
@@ -19,22 +24,6 @@ func NewHandler(service *Service, load func() *template.Template) *Handler {
 	}
 }
 
-func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
-
-	allPages, err := h.service.GetAllPages()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
-	tmpl := h.loadTmpl()
-
-	if err := tmpl.ExecuteTemplate(w, "pages.html", allPages); err != nil {
-		http.Error(w, "template error", http.StatusInternalServerError)
-		return
-	}
-
-}
 func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 
 	query := strings.TrimSpace(r.URL.Query().Get("q"))
@@ -45,28 +34,28 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var results []Page
+	var count int
 	var err error
 
 	if query == "" {
 		results = []Page{}
+		count = 0
 	} else {
-		results, err = h.service.Search(query, Language(lang))
+		results, count, err = h.service.Search(query, Language(lang))
 		if err != nil {
-			http.Error(w, err.Error(), 500)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-	}
-
-	for i := range results {
-		results[i].Content = truncate(results[i].Content, 120)
 	}
 
 	data := struct {
 		Query   string
 		Results []Page
+		Count   int
 	}{
 		Query:   query,
 		Results: results,
+		Count:   count,
 	}
 
 	tmpl := h.loadTmpl()
@@ -77,25 +66,6 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) ViewPage(w http.ResponseWriter, r *http.Request) {
-
-	url := r.URL.Query().Get("url")
-
-	page, err := h.service.FindByURL(url)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
-	tmpl := h.loadTmpl()
-
-	if err := tmpl.ExecuteTemplate(w, "page.html", page); err != nil {
-		http.Error(w, "template error", http.StatusInternalServerError)
-		return
-	}
-
-}
-
 // SearchAPI godoc
 // @Summary Search
 // @Description Search pages by query and optional language
@@ -103,42 +73,40 @@ func (h *Handler) ViewPage(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param q query string true "Search query"
 // @Param language query string false "Language code"
-// @Success 200 {array} object
+// @Success 200 {object} pages.SearchResponse
 // @Failure 500 {string} string "internal error"
 // @Router /api/search [get]
 func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 
-	query := r.URL.Query().Get("q")
-	query = strings.TrimSpace(query)
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
 	lang := r.URL.Query().Get("language")
 
 	if lang == "" {
 		lang = "en"
 	}
 
-	results, err := h.service.Search(query, Language(lang))
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+	var results []Page
+	var count int
+	var err error
 
-	for i := range results {
-		results[i].Content = truncate(results[i].Content, 120)
+	if query == "" {
+		results = []Page{}
+		count = 0
+	} else {
+		results, count, err = h.service.Search(query, Language(lang))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(results)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
+	if err := json.NewEncoder(w).Encode(SearchResponse{
+		Results: results,
+		Count:   count,
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-func truncate(s string, max int) string {
-	runes := []rune(s)
-	if len(runes) <= max {
-		return s
-	}
-	return string(runes[:max]) + "..."
 }

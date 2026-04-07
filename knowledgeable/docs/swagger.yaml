@@ -1,4 +1,3 @@
-basePath: /
 definitions:
   auth.LoginResponse:
     properties:
@@ -6,6 +5,36 @@ definitions:
         type: string
       status:
         type: string
+    type: object
+  pages.Language:
+    enum:
+    - en
+    - da
+    type: string
+    x-enum-varnames:
+    - LanguageEN
+    - LanguageDA
+  pages.Page:
+    properties:
+      content:
+        type: string
+      language:
+        $ref: '#/definitions/pages.Language'
+      lastUpdated:
+        type: string
+      title:
+        type: string
+      url:
+        type: string
+    type: object
+  pages.SearchResponse:
+    properties:
+      count:
+        type: integer
+      results:
+        items:
+          $ref: '#/definitions/pages.Page'
+        type: array
     type: object
   users.RegisterRequest:
     properties:
@@ -16,30 +45,9 @@ definitions:
       username:
         type: string
     type: object
-host: localhost:8080
 info:
   contact: {}
-  description: API for Knowledge service
-  title: Knowledge API
-  version: "1.0"
 paths:
-  /:
-    get:
-      description: Redirects the user depending on authentication state
-      produces:
-      - text/html
-      responses:
-        "303":
-          description: Redirect to login or dashboard
-          headers:
-            Location:
-              description: Redirect destination
-              type: string
-          schema:
-            type: string
-      summary: Serve Root Page
-      tags:
-      - pages
   /api/login:
     post:
       consumes:
@@ -123,9 +131,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              type: object
-            type: array
+            $ref: '#/definitions/pages.SearchResponse'
         "500":
           description: internal error
           schema:
@@ -144,7 +150,7 @@ paths:
           schema:
             type: string
         "303":
-          description: Redirect to dashboard
+          description: Redirect to home
           schema:
             type: string
       summary: Serve Login page

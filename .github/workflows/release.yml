@@ -11,6 +11,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,11 +22,9 @@ jobs:
         id: bump
         run: |
           MSG="${{ github.event.head_commit.message }}"
-          echo "Commit: $MSG"
 
           LATEST=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -n1)
           LATEST=${LATEST:-v0.0.0}
-          echo "Latest tag: $LATEST"
 
           VERSION=${LATEST#v}
           MAJOR=$(echo $VERSION | cut -d. -f1)
@@ -33,28 +32,33 @@ jobs:
           PATCH=$(echo $VERSION | cut -d. -f3)
 
           # ── Bump rules ────────────────────────────────────────────────────
-          # minor  → feat(scope):
+          # major  → feat!: | fix!: | BREAKING CHANGE:
+          # minor  → feat(scope): | feat:
           # patch  → fix(scope): | chore(scope): | refactor(scope):
-          # skip   → docs[(...)]?: | test(scope): | anything else
+          # skip   → docs: | test: | style: | other
           # ─────────────────────────────────────────────────────────────────
 
-          if echo "$MSG" | grep -qE '^feat\([a-zA-Z0-9_-]+\): .+'; then
+          # BREAKING → MAJOR
+          if echo "$MSG" | grep -qE '^[a-z]+(\([a-zA-Z0-9_-]+\))?!: .+' || \
+             echo "$MSG" | grep -q 'BREAKING CHANGE:'; then
+
+            MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0
+            BUMP_TYPE="major"
+
+          elif echo "$MSG" | grep -qE '^feat(\([a-zA-Z0-9_-]+\))?: .+'; then
             MINOR=$((MINOR + 1)); PATCH=0
             BUMP_TYPE="minor"
 
-          elif echo "$MSG" | grep -qE '^(fix|chore|refactor)\([a-zA-Z0-9_-]+\): .+'; then
+          elif echo "$MSG" | grep -qE '^(fix|chore|refactor)(\([a-zA-Z0-9_-]+\))?: .+'; then
             PATCH=$((PATCH + 1))
             BUMP_TYPE="patch"
 
           else
-            echo "No version-bumping commit type — skipping release."
             echo "skip=true" >> $GITHUB_OUTPUT
             exit 0
           fi
 
           NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
-          echo "Bump type : $BUMP_TYPE"
-          echo "New tag   : $NEW_TAG"
 
           echo "skip=false"           >> $GITHUB_OUTPUT
           echo "new_tag=$NEW_TAG"     >> $GITHUB_OUTPUT
@@ -73,8 +77,6 @@ jobs:
           SCOPE=$(echo "$MSG" | sed -n 's/^[a-z]*(\([^)]*\)).*/\1/p')
           DESC=$(echo "$MSG"  | sed -n 's/^[^:]*: //p')
 
-          # Write notes to a temp file to avoid YAML parsing issues
-          # with special characters like backticks, colons, and bullets
           cat > /tmp/release-notes.md << EOF
           ## What changed
 
@@ -88,6 +90,7 @@ jobs:
 
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
           git tag "$TAG" -m "$TAG"
           git push origin "$TAG"
 

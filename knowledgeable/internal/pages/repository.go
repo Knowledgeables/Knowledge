@@ -3,6 +3,7 @@ package pages
 import (
 	"database/sql"
 	"log"
+	"strings"
 )
 
 type Repository struct {
@@ -54,20 +55,27 @@ func (r *Repository) GetAll() ([]Page, error) {
 	return pages, nil
 }
 
-func (r *Repository) Search(query string, lang Language) ([]Page, error) {
+func (r *Repository) Search(query string, lang Language) ([]Page, int, error) {
+
+	like := "%" + strings.ToLower(query) + "%"
+
+	var count int
+	err := r.db.QueryRow(`
+        SELECT COUNT(*)
+        FROM pages
+        WHERE language = ? AND LOWER(title) LIKE ?
+    `, lang, like).Scan(&count)
+	if err != nil {
+		return nil, 0, err
+	}
 
 	rows, err := r.db.Query(`
-	SELECT title, url, language, content
-	FROM pages
-	WHERE language = ?
-	AND LOWER(title) LIKE LOWER(?)
-`,
-		lang,
-		"%"+query+"%",
-	)
-
+        SELECT title, url
+        FROM pages
+        WHERE language = ? AND LOWER(title) LIKE ?
+    `, lang, like)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer func() {
 		if err := rows.Close(); err != nil {
@@ -79,25 +87,17 @@ func (r *Repository) Search(query string, lang Language) ([]Page, error) {
 
 	for rows.Next() {
 		var p Page
-
-		err := rows.Scan(
-			&p.Title,
-			&p.URL,
-			&p.Language,
-			&p.Content,
-		)
-		if err != nil {
-			return nil, err
+		if err := rows.Scan(&p.Title, &p.URL); err != nil {
+			return nil, 0, err
 		}
-
 		pages = append(pages, p)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return pages, nil
+	return pages, count, nil
 }
 
 func (r *Repository) FindByURL(url string) (*Page, error) {

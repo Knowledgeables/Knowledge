@@ -20,7 +20,6 @@ func SetupRoutes(
 
 	http.Handle("/swagger/", httpSwagger.Handler())
 
-	http.HandleFunc("/page", pageHandler.ViewPage)
 	http.HandleFunc("/search", pageHandler.Search)
 	http.HandleFunc("/api/search", pageHandler.SearchAPI)
 

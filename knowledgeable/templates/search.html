@@ -89,18 +89,29 @@
       <div class="overflow-y-auto w-full h-full">
 
         <div id="results" class="flex flex-col w-full divide-y divide-[#1e2533]">
+          {{if .Query}}
+          {{if gt .Count 0}}
+          <div class="m-2">
+            <p>{{.Count}} results for "{{.Query}}"</p>
+          </div>
+          {{else}}
+          <div class="m-2">
+            <p>No results for "{{.Query}}"</p>
+          </div>
+          {{end}}
+          {{end}}
 
           {{range $i, $r := .Results}}
 
-          <a href="/page?url={{$r.URL}}" class="block px-4 py-4 transition hover:bg-white/5
-            ">
+          <a href="{{$r.URL}}" rel="noopener noreferrer" class="block px-4 py-4 transition hover:bg-white/5
+            " target="_blank">
 
             <h2 class="text-[#1eff8c] font-medium">
               {{$r.Title}}
             </h2>
 
             <p class="text-sm text-gray-400 line-clamp-2">
-              {{$r.Content}}
+              {{$r.URL}}
             </p>
 
           </a>
