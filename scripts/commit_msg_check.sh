@@ -35,7 +35,7 @@ if [ -z "$SUBJECT" ]; then
 fi
 
 # Rule 1: types that require a scope — type(scope): description
-PATTERN_WITH_SCOPE="^($TYPES_WITH_SCOPE)\([a-zA-Z0-9_-]+\): ($PAST_TENSE_VERBS) .+[^\.]$"
+PATTERN_WITH_SCOPE="^($TYPES_WITH_SCOPE)\([a-zA-Z0-9_-]+\)!?: ($PAST_TENSE_VERBS) .+[^\.]$"
 
 # Rule 2: docs — scope is optional
 PATTERN_DOCS="^docs(\([a-zA-Z0-9_-]+\))?: ($PAST_TENSE_VERBS) .+[^\.]$"
