@@ -1,19 +1,37 @@
+# ---------- BUILD STAGE ----------
 FROM golang:1.24-alpine AS build
 WORKDIR /app
+
+RUN apk add --no-cache nodejs npm
 
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
+
+
+WORKDIR /app/frontend
+RUN npm install
+
+
+RUN npx tailwindcss \
+    -i input.css \
+    -o ../static/output.css --minify
+
+WORKDIR /app
+
+# build go
 RUN CGO_ENABLED=0 go build -o server ./cmd/server
 
 
+# ---------- RUNTIME ----------
 FROM gcr.io/distroless/base-debian12
 
 WORKDIR /app
+
 COPY --from=build /app/server /app/server
-COPY --from=build /app/knowledge.sql /app/knowledge.sql
 COPY --from=build /app/templates /app/templates
 COPY --from=build /app/static /app/static
+COPY --from=build /app/knowledge.sql /app/knowledge.sql
 
 ENTRYPOINT ["/app/server"]
