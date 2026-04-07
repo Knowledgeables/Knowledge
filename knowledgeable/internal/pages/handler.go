@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+type SearchResponse struct {
+	Results []Page `json:"results"`
+	Count   int    `json:"count"`
+}
+
 type Handler struct {
 	service  *Service
 	loadTmpl func() *template.Template
@@ -29,12 +34,14 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var results []Page
+	var count int
 	var err error
 
 	if query == "" {
 		results = []Page{}
+		count = 0
 	} else {
-		results, err = h.service.Search(query, Language(lang))
+		results, count, err = h.service.Search(query, Language(lang))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -44,9 +51,11 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Query   string
 		Results []Page
+		Count   int
 	}{
 		Query:   query,
 		Results: results,
+		Count:   count,
 	}
 
 	tmpl := h.loadTmpl()
@@ -64,13 +73,12 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param q query string true "Search query"
 // @Param language query string false "Language code"
-// @Success 200 {array} object
+// @Success 200 {object} pages.SearchResponse
 // @Failure 500 {string} string "internal error"
 // @Router /api/search [get]
 func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 
-	query := r.URL.Query().Get("q")
-	query = strings.TrimSpace(query)
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
 	lang := r.URL.Query().Get("language")
 
 	if lang == "" {
@@ -78,12 +86,14 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var results []Page
+	var count int
 	var err error
 
 	if query == "" {
 		results = []Page{}
+		count = 0
 	} else {
-		results, err = h.service.Search(query, Language(lang))
+		results, count, err = h.service.Search(query, Language(lang))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -92,8 +102,10 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(results)
-	if err != nil {
+	if err := json.NewEncoder(w).Encode(SearchResponse{
+		Results: results,
+		Count:   count,
+	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

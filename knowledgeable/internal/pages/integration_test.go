@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"html/template"
-	_ "modernc.org/sqlite"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	_ "modernc.org/sqlite"
 )
 
 func newTestDB(t *testing.T) *sql.DB {
@@ -68,16 +69,16 @@ func TestSearchAPI_ReturnsStubPage(t *testing.T) {
 		t.Fatalf("expected 200, got %d", res.StatusCode)
 	}
 
-	var results []Page
-	if err := json.NewDecoder(res.Body).Decode(&results); err != nil {
+	var resp SearchResponse
+	if err := json.NewDecoder(res.Body).Decode(&resp); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
 
-	if len(results) != 1 {
-		t.Fatalf("expected 1 result, got %d", len(results))
+	if len(resp.Results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(resp.Results))
 	}
 
-	if results[0].Title != "Go Integration Testing" {
-		t.Errorf("expected title 'Go Integration Testing', got %q", results[0].Title)
+	if resp.Results[0].Title != "Go Integration Testing" {
+		t.Errorf("expected title 'Go Integration Testing', got %q", resp.Results[0].Title)
 	}
 }
