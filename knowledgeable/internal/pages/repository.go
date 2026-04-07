@@ -3,6 +3,7 @@ package pages
 import (
 	"database/sql"
 	"log"
+	"strings"
 )
 
 type Repository struct {
@@ -57,13 +58,12 @@ func (r *Repository) GetAll() ([]Page, error) {
 func (r *Repository) Search(query string, lang Language) ([]Page, error) {
 
 	rows, err := r.db.Query(`
-	SELECT title, url, language, content
-	FROM pages
-	WHERE language = ?
-	AND LOWER(title) LIKE LOWER(?)
+SELECT title, url
+FROM pages
+WHERE language = ? AND LOWER(title) LIKE ?
 `,
 		lang,
-		"%"+query+"%",
+		"%"+strings.ToLower(query)+"%",
 	)
 
 	if err != nil {
@@ -83,8 +83,6 @@ func (r *Repository) Search(query string, lang Language) ([]Page, error) {
 		err := rows.Scan(
 			&p.Title,
 			&p.URL,
-			&p.Language,
-			&p.Content,
 		)
 		if err != nil {
 			return nil, err
