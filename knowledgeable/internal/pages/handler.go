@@ -19,7 +19,6 @@ func NewHandler(service *Service, load func() *template.Template) *Handler {
 	}
 }
 
-
 func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 
 	query := strings.TrimSpace(r.URL.Query().Get("q"))
@@ -37,13 +36,9 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	} else {
 		results, err = h.service.Search(query, Language(lang))
 		if err != nil {
-			http.Error(w, err.Error(), 500)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-	}
-
-	for i := range results {
-		results[i].Content = truncate(results[i].Content, 120)
 	}
 
 	data := struct {
@@ -61,8 +56,6 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-
-
 
 // SearchAPI godoc
 // @Summary Search
@@ -84,29 +77,24 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 		lang = "en"
 	}
 
-	results, err := h.service.Search(query, Language(lang))
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+	var results []Page
+	var err error
 
-	for i := range results {
-		results[i].Content = truncate(results[i].Content, 120)
+	if query == "" {
+		results = []Page{}
+	} else {
+		results, err = h.service.Search(query, Language(lang))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 
 	err = json.NewEncoder(w).Encode(results)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-func truncate(s string, max int) string {
-	runes := []rune(s)
-	if len(runes) <= max {
-		return s
-	}
-	return string(runes[:max]) + "..."
 }
