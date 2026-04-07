@@ -23,10 +23,10 @@ func (r *Repository) GetAll() ([]Page, error) {
 		return nil, err
 	}
 	defer func() {
-	if err := rows.Close(); err != nil {
-		log.Printf("rows close error: %v", err)
-	}
-}()
+		if err := rows.Close(); err != nil {
+			log.Printf("rows close error: %v", err)
+		}
+	}()
 
 	var pages []Page
 
@@ -57,14 +57,15 @@ func (r *Repository) GetAll() ([]Page, error) {
 func (r *Repository) Search(query string, lang Language) ([]Page, error) {
 
 	rows, err := r.db.Query(`
-		SELECT title, url, language
-		FROM pages
-		WHERE language = ?
-		AND LOWER(title) LIKE LOWER(?)
-	`,
+	SELECT title, url, language, content
+	FROM pages
+	WHERE language = ?
+	AND LOWER(title) LIKE LOWER(?)
+`,
 		lang,
 		"%"+query+"%",
 	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -83,6 +84,7 @@ func (r *Repository) Search(query string, lang Language) ([]Page, error) {
 			&p.Title,
 			&p.URL,
 			&p.Language,
+			&p.Content,
 		)
 		if err != nil {
 			return nil, err

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"net/http"
+	"strings"
 )
 
 type Handler struct {
@@ -36,17 +37,28 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 
-	query := r.URL.Query().Get("q")
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
 	lang := r.URL.Query().Get("language")
 
 	if lang == "" {
 		lang = "en"
 	}
 
-	results, err := h.service.Search(query, Language(lang))
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
+	var results []Page
+	var err error
+
+	if query == "" {
+		results = []Page{}
+	} else {
+		results, err = h.service.Search(query, Language(lang))
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+	}
+
+	for i := range results {
+		results[i].Content = truncate(results[i].Content, 120)
 	}
 
 	data := struct {
@@ -97,6 +109,7 @@ func (h *Handler) ViewPage(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 
 	query := r.URL.Query().Get("q")
+	query = strings.TrimSpace(query)
 	lang := r.URL.Query().Get("language")
 
 	if lang == "" {
@@ -109,6 +122,10 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for i := range results {
+		results[i].Content = truncate(results[i].Content, 120)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 
 	err = json.NewEncoder(w).Encode(results)
@@ -116,4 +133,12 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
+}
+
+func truncate(s string, max int) string {
+	runes := []rune(s)
+	if len(runes) <= max {
+		return s
+	}
+	return string(runes[:max]) + "..."
 }

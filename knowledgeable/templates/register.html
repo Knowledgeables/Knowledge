@@ -1,23 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <title>Register new user</title>
+    <title>Sign up</title>
+    <link href="/static/output.css" rel="stylesheet">
+    <link rel="icon" href="/static/favicon.png" />
 </head>
-<body>
-<h2>Sign up</h2>
-<form action="/api/register" method="POST">
 
-    <label for="username">Username:</label><br>
-    <input type="text" id="username" name="username"><br><br>
 
-    <label for="email">Email:</label><br>
-    <input type="email" id="email" name="email"><br><br>
+<body class="min-h-screen flex flex-col">
 
-    <label for="password">Password:</label><br>
-    <input type="password" id="password" name="password"><br><br>
+    <div
+        class="relative w-screen h-screen bg-[url('/static/grid-green.svg')] bg-repeat flex items-center justify-center flex-col font-sans tracking-tight">
+        <div
+            class="absolute inset-x-0 bottom-0 top-16 pointer-events-none bg-[radial-gradient(ellipse_80%_80%_at_50%_50%,transparent_30%,#0a0e17_100%)]">
+        </div>
 
-    <button type="submit" value="Signup">Register</button>
-</form>
+
+        <div
+            class="w-fit h-fit border-[1px] border-[#242422]  bg-[#090d16] flex flex-col justify-center items-center rounded-lg z-10">
+
+            <form action="/api/register" method="POST" class="flex flex-col rounded-lg w-full h-full gap-5 p-6">
+
+                   <div class="flex flex-col w-72">
+                    <h1 class="text-xl font-semibold text-white">Create account</h1>
+                    <span class="text-gray-400 text-sm">Join the knowledgeables</span>
+                </div>
+
+                <div class="flex flex-col w-full">
+                    <label for="username" class="text-sm text-gray-400 mb-1">USERNAME:</label>
+                    <input type="text" id="username" name="username"
+                        class="w-72 bg-[#0f172a] border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <div class="flex flex-col w-full">
+                    <label for="email" class="text-sm text-gray-400 mb-1">EMAIL:</label>
+                    <input type="email" id="email" name="email"
+                        class="w-72 bg-[#0f172a] border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <div class="flex flex-col w-full">
+                    <label for="password" class="text-sm text-gray-400 mb-1">PASSWORD:</label>
+                    <input type="password" id="password" name="password"
+                        class="w-72 bg-[#0f172a] border border-gray-800 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <div class="flex flex-col mt-2">
+                    <button type="submit" value="Signup"
+                        class="bg-[#1eff8c] hover:bg-[#38be7d] text-black font-bold py-2 rounded transition">Sign
+                        up</button>
+                </div>
+
+
+                <div class="flex items-center gap-3">
+                    <div class="flex-1 h-px bg-[#1e2533]"></div>
+                </div>
+
+                <div class="flex flex-row justify-center items-center gap-1">
+                    <a class="text-gray-500 text-sm">Already signed up?</a><a href="/login"
+                        class="text-[#1eff8c] text-sm hover:text-[#38be7d]">Login</a>
+                </div>
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
+
 </html>
