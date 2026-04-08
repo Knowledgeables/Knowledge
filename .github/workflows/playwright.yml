@@ -16,15 +16,27 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
+
+    - name: Start application
+      working-directory: knowledgeable
+      run: docker compose up -d
+
+    - name: Wait for app
+      run:
+        timeout 30 bash -c 'until curl -f http://localhost:8080; do sleep 2; done'
+
     - name: Install dependencies
+      working-directory: knowledgeable
       run: npm ci
-      working-directory: knowledgeable
+
     - name: Install Playwright Browsers
+      working-directory: knowledgeable
       run: npx playwright install --with-deps
-      working-directory: knowledgeable
+      
     - name: Run Playwright tests
-      run: npx playwright test
       working-directory: knowledgeable
+      run: npx playwright test
+      
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
