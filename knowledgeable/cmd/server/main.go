@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	_ "knowledgeable/docs"
 
@@ -96,5 +97,11 @@ func main() {
 
 	log.Println("Server running on :8080")
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	srv := &http.Server{
+		Addr:         ":8080",
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+	log.Fatal(srv.ListenAndServe())
 }

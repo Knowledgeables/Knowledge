@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"knowledgeable/internal/users"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -86,13 +87,14 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		Delete(cookie.Value)
 	}
 
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure is set dynamically based on APP_ENV
 		Name:     "session_id",
 		Value:    "",
 		Path:     "/",
 		MaxAge:   -1, // slet cookie
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
+		Secure:   os.Getenv("APP_ENV") != "dev",
 	})
 
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -145,12 +147,13 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure is set dynamically based on APP_ENV
 		Name:     "session_id",
 		Value:    sessionID,
 		SameSite: http.SameSiteLaxMode,
 		HttpOnly: true,
 		Path:     "/",
+		Secure:   os.Getenv("APP_ENV") != "dev",
 	})
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)

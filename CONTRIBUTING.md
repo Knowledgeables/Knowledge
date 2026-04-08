@@ -30,7 +30,7 @@ Now you have access to the development environment used by all the developers on
 
 ## Before You Start Committing
 
-Before making your first commit, install the framework prek, to run automated checks before commits
+Before making your first commit, install the framework prek, to run automated checks before commits.
 
 ```
 brew install prek
@@ -45,10 +45,12 @@ This downloads the prek framework and allows you to run the following command
 make setup-hooks
 ```
 
-This commands installs the 3 hooks for you inside /.git/hooks and then checks 3 things. 
+This commands installs the 3 hooks for you inside /.git/hooks and then checks 5 things. 
 - Checks if the commit is over 400 lines of code and warns you if it is
 - Runs golang-lint before committing, to make sure the code you provided is bulletproof
 - Checks the commit message, to make sure you are following the provided conventions
+- Runs go test ./.., to ensure the test still work
+- Runs go-sec ./.., to ensure there are no security issues in the new code
 
 ## Dev Flow
 
