@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/json"
 	"html/template"
 	"knowledgeable/internal/users"
 	"net/http"
@@ -17,8 +18,14 @@ type LoginResponse struct {
 	Message string `json:"message"`
 }
 
+type MeResponse struct {
+	ID       int64  `json:"id"`
+	Username string `json:"username"`
+}
+
 type UserService interface {
 	Login(string, string) (*users.User, error)
+	GetByID(id int64) (*users.User, error)
 }
 
 type Handler struct {
@@ -147,4 +154,45 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 	})
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// Me godoc
+// @Summary Get current user
+// @Description Returns authenticated user
+// @Tags auth
+// @Produce json
+// @Success 200 {object} MeResponse
+// @Failure 401 {string} string "unauthorized"
+// @Router /api/me [get]
+func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
+
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	userID, ok := Get(cookie.Value)
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := h.userService.GetByID(userID)
+	if err != nil {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	res := MeResponse{
+		ID:       user.ID,
+		Username: user.Username,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 }
