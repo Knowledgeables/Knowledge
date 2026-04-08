@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('user can login successfully', async ({ page }) => {
+test('login works @smoke', async ({ page }) => {
     await page.goto('/login');
 
     await page.getByLabel('Username').fill('admin');
