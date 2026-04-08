@@ -19,6 +19,7 @@ type LoginResponse struct {
 
 type UserService interface {
 	Login(string, string) (*users.User, error)
+	GetByID(id int64) (*users.User, error)
 }
 
 type Handler struct {
