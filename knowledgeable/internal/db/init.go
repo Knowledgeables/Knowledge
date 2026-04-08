@@ -24,7 +24,7 @@ func Init(dbPath string, schemaPath string) *sql.DB {
 
 		log.Println("Applying schema:", schemaPath)
 
-		schema, err := os.ReadFile(schemaPath)
+		schema, err := os.ReadFile(schemaPath) // #nosec G304 -- path is hardcoded at call site, not user input
 		if err != nil {
 			log.Fatal(err)
 		}
