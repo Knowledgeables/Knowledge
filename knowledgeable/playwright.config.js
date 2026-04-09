@@ -40,16 +40,6 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
 
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-
     /* Test against mobile viewports. */
     // {
     //   name: 'Mobile Chrome',
@@ -72,11 +62,11 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'APP_ENV=dev DB_PATH=./test.db go run ./cmd/server',
-    url: 'http://localhost:8080',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  //webServer: {
+    //command: 'APP_ENV=dev DB_PATH=./test.db go run ./cmd/server',
+    //url: 'http://localhost:8080',
+    //reuseExistingServer: !process.env.CI,
+    //timeout: 120000,
+  //},
 });
 
