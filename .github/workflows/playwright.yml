@@ -25,7 +25,7 @@ jobs:
       run: docker compose -f docker-compose-dev.yml up -d --build
 
     - name: Wait for app
-      working-directory: knowedgeable
+      working-directory: knowledgeable
       run:
         timeout 60 bash -c 'until curl -f http://localhost:8080; do sleep 2; done'
 
