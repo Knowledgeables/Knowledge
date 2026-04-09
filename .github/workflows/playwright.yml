@@ -35,7 +35,7 @@ jobs:
 
     - name: Install Playwright Browsers
       working-directory: knowledgeable
-      run: npx playwright install --with-deps
+      run: npx playwright install chromium --with-deps
 
     - name: Run Playwright smoke tests
       run: npx playwright test --grep @smoke
