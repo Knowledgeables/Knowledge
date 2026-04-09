@@ -1,4 +1,4 @@
-.PHONY: help test lint dev-up dev-down dev-build dev-logs setup-hooks
+.PHONY: help test lint dev-up dev-down dev-build dev-logs setup-hooks install-gosec
 
 help:
 	@echo Available targets:
@@ -9,6 +9,7 @@ help:
 	@echo   make dev-build
 	@echo   make dev-logs
 	@echo   make setup-hooks
+	@echo   make install-gosec
 	@echo   make swagger
 
 test:
@@ -41,6 +42,9 @@ hooks-run:
 	prek run
 	setup-hooks.sh
 
+
+install-gosec:
+	go install github.com/securego/gosec/v2/cmd/gosec@latest
 
 swagger:
 	rm -rf docs

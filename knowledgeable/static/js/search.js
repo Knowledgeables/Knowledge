@@ -18,3 +18,7 @@ function makeSearchRequest() {
   url.searchParams.set('q', query);
   window.location.href = url.toString();
 }
+
+const searchButton = document.getElementById("search-button");
+
+searchButton.addEventListener('click', () => makeSearchRequest())

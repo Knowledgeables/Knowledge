@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('user can use search function', async ({ page }) => {
+test('search function works @smoke', async ({ page }) => {
   await page.goto('/');
 
 

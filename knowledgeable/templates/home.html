@@ -9,49 +9,8 @@
 
 <body class="min-h-screen flex flex-col">
 
-    <nav class="flex flex-row items-center fixed top-0 left-0 w-full justify-between py-3 px-5 bg-[#090d16] z-[999]">
-        <div class="flex flex-row gap-14 justify-center items-center">
-            <h1 class="text-[1.5rem] font-semibold tracking-tight">
-                Knowledgeable
-            </h1>
-
-            <ul class="flex gap-6">
-                <li class="rounded-lg hover:bg-white/5 transition">
-                    <a href="/" id="nav-home" class="block p-2 text-gray-400 hover:text-gray-300 transition">
-                        Home
-                    </a>
-                </li>
-
-                <li class="rounded-lg hover:bg-white/5 transition">
-                    <a href="/search" id="nav-search" class="block p-2 text-gray-400 hover:text-gray-300 transition">
-                        Search
-                    </a>
-                </li>
-
-                <li class="rounded-lg hover:bg-white/5 transition">
-                    <a href="#about" id="nav-about" class="block p-2 text-gray-400 hover:text-gray-300 transition">
-                        About
-                    </a>
-                </li>
-            </ul>
-        </div>
-
-        <div class="w-64 flex gap-3">
-
-            <a href="/login" class="h-9 w-full px-4 flex items-center justify-center gap-2 rounded-lg
-               text-sm text-gray-400 hover:text-white hover:bg-white/5 transition" id="nav-login">
-                <i data-lucide="log-in" class="w-4 h-4"></i>
-                Login
-            </a>
-
-            <a href="/register" class="h-9 w-full px-4 flex items-center justify-center gap-2 rounded-lg
-               text-sm font-semibold bg-[#1eff8c] hover:bg-[#3dffa0] 
-               text-[#0a0e17] transition" id="nav-register">
-                <i data-lucide="user-plus" class="w-4 h-4"></i>
-                Sign up
-            </a>
-
-        </div>
+    <nav id="navbar"
+        class="flex flex-row items-center fixed top-0 left-0 w-full justify-between py-3 px-5 bg-[#090d16] z-[999]">
     </nav>
 
 
@@ -74,14 +33,19 @@
                 </h1>
             </div>
 
-            <div class=" w-80 h-10 flex flex-row items-center justify-center pb-1">
-                <a href="/search" class="w-80 h-10 flex gap-2 items-center justify-center 
-          text-[#1eff8c] 
-          bg-[#1eff8c]/20 
-          hover:bg-[#1eff8c]/50 
+            <div class="w-full flex gap-3">
+                <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Search..."
+                    class="flex-1 h-10 bg-[#0f172a] border border-gray-800 rounded px-3 text-white focus:outline-none focus:ring-2 focus:ring-gray-500" />
+                <a href="/search" id="search-go-button" class="h-10 px-4 flex gap-2 items-center justify-center
+          text-[#1eff8c]
+          bg-[#1eff8c]/20
+          hover:bg-[#1eff8c]/50
           transition font-semibold rounded-lg">
                     <i data-lucide="search"></i>
-                    Go to Search Engine
+                    Search
                 </a>
             </div>
 
@@ -110,6 +74,24 @@
     <script>
         lucide.createIcons();
     </script>
+    <script src="/static/js/navbarAuth.js" type="module"></script>
+    <script>
+        const input = document.getElementById('search-input');
+        const btn = document.getElementById('search-go-button');
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                window.location.href = '/search?q=' + encodeURIComponent(input.value);
+            }
+        });
+        btn.addEventListener('click', function(e) {
+            if (input.value.trim()) {
+                e.preventDefault();
+                window.location.href = '/search?q=' + encodeURIComponent(input.value);
+            }
+        });
+    </script>
+
+
 </body>
 
 </html>

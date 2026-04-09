@@ -60,7 +60,16 @@ func (s *Service) GetByID(id int64) (*User, error) {
 		return nil, errors.New("invalid id")
 	}
 
-	return s.repo.FindById(id)
+	user, err := s.repo.FindById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	return user, nil
 }
 
 func (s *Service) Login(username, password string) (*User, error) {

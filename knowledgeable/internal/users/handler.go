@@ -90,7 +90,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Println("User created: ", user.Username)
+		log.Printf("User created: %q", user.Username) // #nosec G706 -- username is quoted with %q
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -146,6 +146,6 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	log.Println("User registered:", user.Username)
+	log.Printf("User registered: %q", user.Username) // #nosec G706 -- username is quoted with %q
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
