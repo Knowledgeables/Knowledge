@@ -1,8 +1,9 @@
 package users
 
 import (
+	"errors"
 	"testing"
-    "errors"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -11,17 +12,23 @@ type mockRepo struct {
 	err  error
 }
 
-	func (m *mockRepo) Register(u *User) error {
-		m.user = u
-		return m.err
-	}
+func (m *mockRepo) Register(u *User) error {
+	m.user = u
+	return m.err
+}
 
 func (m *mockRepo) FindByUsername(username string) (*User, error) {
 	return m.user, m.err
 }
 
 func (m *mockRepo) FindById(id int64) (*User, error) {
-	return m.user, m.err
+	if m.err != nil {
+		return nil, m.err
+	}
+	if m.user != nil && m.user.ID == id {
+		return m.user, nil
+	}
+	return nil, nil
 }
 
 func (m *mockRepo) FindAll() ([]User, error) {
@@ -30,7 +37,6 @@ func (m *mockRepo) FindAll() ([]User, error) {
 	}
 	return []User{*m.user}, nil
 }
-
 
 // HAPPY PATH
 
@@ -43,7 +49,7 @@ func TestRegister_HashesPassword(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// repo.user 
+	// repo.user
 	if repo.user == nil {
 		t.Fatal("repo not called")
 	}
@@ -81,6 +87,22 @@ func TestLogin_Success(t *testing.T) {
 	}
 }
 
+func TestGetByID_Success(t *testing.T) {
+	repo := &mockRepo{
+		user: &User{ID: 1, Username: "rasmus"},
+	}
+
+	service := NewService(repo)
+
+	user, err := service.GetByID(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if user.ID != 1 {
+		t.Fatal("wrong user returned")
+	}
+}
 
 // ERROR PATH
 func TestRegister_MissingFields(t *testing.T) {
@@ -130,3 +152,12 @@ func TestLogin_UserNotFound(t *testing.T) {
 	}
 }
 
+func TestGetByID_NotFound(t *testing.T) {
+	repo := &mockRepo{user: nil}
+	service := NewService(repo)
+
+	_, err := service.GetByID(1)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}

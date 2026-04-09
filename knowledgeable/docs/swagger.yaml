@@ -6,6 +6,13 @@ definitions:
       status:
         type: string
     type: object
+  auth.MeResponse:
+    properties:
+      id:
+        type: integer
+      username:
+        type: string
+    type: object
   pages.Language:
     enum:
     - en
@@ -84,6 +91,23 @@ paths:
           schema:
             type: string
       summary: Login
+      tags:
+      - auth
+  /api/me:
+    get:
+      description: Returns authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.MeResponse'
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+      summary: Get current user
       tags:
       - auth
   /api/register:

@@ -29,6 +29,7 @@ func SetupRoutes(
 	http.HandleFunc("/logout", authHandler.Logout)
 	http.HandleFunc("/login", authHandler.Login)
 	http.HandleFunc("/api/login", authHandler.LoginAPI)
+    http.HandleFunc("/api/me", authHandler.Me)
 
 	http.Handle("/metrics", promhttp.Handler())
 

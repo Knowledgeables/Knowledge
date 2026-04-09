@@ -17,6 +17,13 @@ func (s *successUserService) Login(username, password string) (*users.User, erro
 	return &users.User{ID: 1, Username: "rasmus"}, nil
 }
 
+func (s *successUserService) GetByID(id int64) (*users.User, error) {
+	return &users.User{
+		ID:       id,
+		Username: "rasmus",
+	}, nil
+}
+
 // HAPPY PATH
 func TestLoginAPI_SetsSessionCookie(t *testing.T) {
 
@@ -86,6 +93,10 @@ type failUserService struct{}
 
 func (s *failUserService) Login(username, password string) (*users.User, error) {
 	return nil, errors.New("invalid credentials")
+}
+
+func (s *failUserService) GetByID(id int64) (*users.User, error) {
+	return nil, errors.New("user not found")
 }
 
 func TestLoginAPI_InvalidCredentials(t *testing.T) {

@@ -1,5 +1,5 @@
 module.exports = {
-  content: ["../templates/**/*.html"],
+  content: ["../templates/**/*.html", "../static/js/**/*.js"],
 
   // tailwind.config.js
 theme: {
