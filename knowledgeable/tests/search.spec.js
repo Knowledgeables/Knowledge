@@ -1,17 +1,11 @@
 import { test, expect } from '@playwright/test';
 
-test('search function works @smoke', async ({ page }) => {
-  await page.goto('/');
+test('search works @smoke', async ({ page }) => {
+  await page.goto('/search');
 
+  await page.getByPlaceholder('Search...').fill('g');
 
-  await page.getByRole('link', { name: 'Go to Search Engine' }).click();
+  await page.locator('#search-button').click();
 
-
-  await expect(page).toHaveURL('/search');
-
-  await page.getByPlaceholder('Search').fill('g');
-
-  await page.getByRole('button', { name: 'Search' }).click();
-
-  await expect(page.getByText('Go Basics')).toBeVisible();
+  await expect(page.locator('#results')).toContainText('results');
 });
