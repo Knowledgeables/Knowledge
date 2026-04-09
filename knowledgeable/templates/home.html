@@ -33,14 +33,19 @@
                 </h1>
             </div>
 
-            <div class=" w-80 h-10 flex flex-row items-center justify-center pb-1">
-                <a href="/search" class="w-80 h-10 flex gap-2 items-center justify-center 
-          text-[#1eff8c] 
-          bg-[#1eff8c]/20 
-          hover:bg-[#1eff8c]/50 
+            <div class="w-full flex gap-3">
+                <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Search..."
+                    class="flex-1 h-10 bg-[#0f172a] border border-gray-800 rounded px-3 text-white focus:outline-none focus:ring-2 focus:ring-gray-500" />
+                <a href="/search" id="search-go-button" class="h-10 px-4 flex gap-2 items-center justify-center
+          text-[#1eff8c]
+          bg-[#1eff8c]/20
+          hover:bg-[#1eff8c]/50
           transition font-semibold rounded-lg">
                     <i data-lucide="search"></i>
-                    Go to Search Engine
+                    Search
                 </a>
             </div>
 
@@ -70,6 +75,21 @@
         lucide.createIcons();
     </script>
     <script src="/static/js/navbarAuth.js" type="module"></script>
+    <script>
+        const input = document.getElementById('search-input');
+        const btn = document.getElementById('search-go-button');
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                window.location.href = '/search?q=' + encodeURIComponent(input.value);
+            }
+        });
+        btn.addEventListener('click', function(e) {
+            if (input.value.trim()) {
+                e.preventDefault();
+                window.location.href = '/search?q=' + encodeURIComponent(input.value);
+            }
+        });
+    </script>
 
 
 </body>
