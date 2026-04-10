@@ -2,6 +2,7 @@ services:
   app:
     image: ghcr.io/knowledgeables/knowledge:latest
     container_name: knowledgeable
+    restart: unless-stopped
     environment:
       DB_PATH: /app/data/prod.db
       APP_ENV: production
