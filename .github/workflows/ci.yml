@@ -10,6 +10,10 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+      GOPRIVATE: github.com/knowledgeables/*
+      GITHUB_AUTHENTICATION_TOKEN: ${{ secrets.CR__PAT }}
 
     defaults:
       run:
