@@ -11,17 +11,30 @@ services:
       - knowledgeable_network
 
   nginx:
-    image: ghcr.io/knowledgeables/knowledge_nginx:latest
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - app
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      - ./certbot/www:/var/www/certbot
+    container_name: nginx
+    image: nginx:latest
+    restart: unless-stopped
+    env_file: .env
     networks:
-      - knowledgeable_network
+      - knowledgeable_network 
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - knowledgeable 
+    volumes:
+      - ./nginx/secure/:/etc/nginx/templates/
+      - /etc/localtime:/etc/localtime:ro
+      - ./nginx/certbot/conf:/etc/letsencrypt
+      - ./nginx/certbot/www:/var/www/certbot
+      - ./nginx/99-autoreload.sh:/docker-entrypoint.d/99-autoreload.sh  # Script to autoreload Nginx when certs are renewed
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./nginx/certbot/conf:/etc/letsencrypt
+      - ./nginx/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"  # Renew certificates every 12 hours
 
 networks:
   knowledgeable_network:
