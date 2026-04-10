@@ -7,11 +7,6 @@ A knowledge management web application — rewritten from a legacy Flash/Python 
 [![E2E Tests](https://github.com/Knowledgeables/Knowledge/actions/workflows/playwright.yml/badge.svg)](https://github.com/Knowledgeables/Knowledge/actions/workflows/playwright.yml)
 [![Latest Release](https://img.shields.io/github/v/release/Knowledgeables/Knowledge)](https://github.com/Knowledgeables/Knowledge/releases/latest)
 [![Go Version](https://img.shields.io/badge/go-1.25-00ADD8?logo=go)](https://go.dev/)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Knowledgeables/Knowledge)](https://goreportcard.com/report/github.com/Knowledgeables/Knowledge)
-
----
-
-<img width="1458" height="795" alt="image" src="https://github.com/user-attachments/assets/8f87a6e4-258a-45c0-8663-3245b5cc634d" />
 
 ---
 
@@ -23,7 +18,6 @@ Knowledgeable is a searchable knowledge-base platform supporting multiple langua
 
 - User registration and authentication with `bcrypt` password hashing
 - Full-text page search with multi-language support (EN / DA)
-- Prometheus metrics endpoint (`/metrics`)
 - Swagger/OpenAPI documentation (`/swagger/`)
 - Docker-first development and production environments
 - Automated semantic versioning driven by Conventional Commits
@@ -39,7 +33,6 @@ Knowledgeable is a searchable knowledge-base platform supporting multiple langua
 | Containerisation | Docker + Docker Compose |
 | CI/CD | GitHub Actions |
 | Security scanning | Gosec + GitHub SARIF |
-| Metrics | Prometheus |
 | API docs | Swagger |
 
 ## CI/CD Pipeline
