@@ -31,7 +31,7 @@ jobs:
     
     - name: Run migrations + seeds
       working-directory: knowledgeable
-      run: docker compose -f docker-compose-dev.yml exec -T app sh -c "cd db-migrations && npm install && npx knex migrate:latest && npx knex seed:run"
+      run: docker compose -f docker-compose-dev.yml exec -T frontend sh -c "cd db-migrations && npm install && npx knex migrate:latest && npx knex seed:run"
 
     - name: Install dependencies
       working-directory: knowledgeable
