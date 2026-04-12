@@ -23,19 +23,23 @@ jobs:
     - name: Start application
       working-directory: knowledgeable
       run: docker compose -f docker-compose-dev.yml up -d --build
-
-    - name: Wait for app
+    
+    - name: Wait for database
       working-directory: knowledgeable
-      run:
-        timeout 60 bash -c 'until curl -f http://localhost:8080; do sleep 2; done'
+      run: timeout 60 bash -c 'until docker compose -f docker-compose-dev.yml exec -T db pg_isready -U user; do sleep 2; done'
     
     - name: Run migrations + seeds
       working-directory: knowledgeable
-      run: docker compose -f docker-compose-dev.yml exec -T frontend sh -c "cd db-migrations && npm install && npx knex migrate:latest && npx knex seed:run"
-
+      run: docker compose -f docker-compose-dev.yml run --rm -e POSTGRES_DB=knowledge -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_HOST=db migrations sh -c "npm install && npx knex migrate:latest && npx knex seed:run"
     - name: Install dependencies
       working-directory: knowledgeable
       run: npm ci
+
+    - name: Wait for app
+      working-directory: knowledgeable
+      run: timeout 60 bash -c 'until curl -f http://localhost:8080; do sleep 2; done'
+    
+
 
     - name: Install Playwright Browsers
       working-directory: knowledgeable
