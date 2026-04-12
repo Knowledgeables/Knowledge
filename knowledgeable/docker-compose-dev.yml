@@ -28,13 +28,13 @@ services:
       DATABASE_URL: postgres://user:password@db:5432/knowledge?sslmode=disable
     depends_on:
       - db
-    migrations:
-      image: node:20
-      working_dir: /workspace/db-migrations
-      volumes:
-      - .:/workspace
-      depends_on:
-      - db
+  migrations:
+    image: node:20
+    working_dir: /workspace/db-migrations
+    volumes:
+    - .:/workspace
+    depends_on:
+    - db
   frontend:
     image: node:20
     working_dir: /workspace
