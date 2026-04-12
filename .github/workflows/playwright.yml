@@ -22,7 +22,7 @@ jobs:
 
     - name: Start application
       working-directory: knowledgeable
-      run: docker compose -f docker-compose-dev.yml up -d --build
+      run: APP_ENV=dev docker compose -f docker-compose-dev.yml up -d --build
     
     - name: Wait for database
       working-directory: knowledgeable
@@ -30,7 +30,19 @@ jobs:
     
     - name: Run migrations + seeds
       working-directory: knowledgeable
-      run: docker compose -f docker-compose-dev.yml run --rm -e POSTGRES_DB=knowledge -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_HOST=db migrations sh -c "npm install && npx knex migrate:latest && npx knex seed:run"
+      run: |
+        docker compose -f docker-compose-dev.yml run --rm \
+          -e POSTGRES_DB=knowledge \
+          -e POSTGRES_USER=user \
+          -e POSTGRES_PASSWORD=password \
+          -e POSTGRES_HOST=db \
+          migrations sh -c "
+            until nc -z db 5432; do sleep 1; done;
+            npm install &&
+            npx knex migrate:latest &&
+            npx knex seed:run
+          "
+
     - name: Install dependencies
       working-directory: knowledgeable
       run: npm ci
@@ -44,16 +56,18 @@ jobs:
     - name: Install Playwright Browsers
       working-directory: knowledgeable
       run: npx playwright install chromium --with-deps
-
+    
+    - name: Debug login response
+      run: |
+        curl -i -X POST http://localhost:8080/api/login \
+          -H "Content-Type: application/x-www-form-urlencoded" \
+          -d "username=admin&password=secret"
+   
     - name: Run Playwright smoke tests
       run: npx playwright test --grep @smoke
       working-directory: knowledgeable
 
-    - name: Debug login response
-      run: |
-        curl -i -X POST http://localhost:8080/api/login \
-        -H "Content-Type: application/x-www-form-urlencoded" \
-        -d "username=admin&password=secret"
+
     
     - name: Show running containers
       if: always()
