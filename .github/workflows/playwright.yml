@@ -49,6 +49,12 @@ jobs:
       run: npx playwright test --grep @smoke
       working-directory: knowledgeable
 
+    - name: Debug login response
+      run: |
+        curl -i -X POST http://localhost:8080/api/login \
+        -H "Content-Type: application/x-www-form-urlencoded" \
+        -d "username=admin&password=secret"
+    
     - name: Show running containers
       if: always()
       run: docker ps -a
