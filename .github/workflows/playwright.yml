@@ -32,16 +32,11 @@ jobs:
       working-directory: knowledgeable
       run: |
         docker compose -f docker-compose-dev.yml run --rm \
-          -e POSTGRES_DB=knowledge \
-          -e POSTGRES_USER=user \
-          -e POSTGRES_PASSWORD=password \
-          -e POSTGRES_HOST=db \
-          migrations sh -c "
-            until nc -z db 5432; do sleep 1; done;
-            npm install &&
-            npx knex migrate:latest &&
-            npx knex seed:run
-          "
+        -e POSTGRES_DB=knowledge \
+        -e POSTGRES_USER=user \
+        -e POSTGRES_PASSWORD=password \
+        -e POSTGRES_HOST=db \
+        migrations sh -c "npm install && npx knex migrate:latest && npx knex seed:run"
 
     - name: Install dependencies
       working-directory: knowledgeable
