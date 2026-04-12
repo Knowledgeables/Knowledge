@@ -28,6 +28,10 @@ jobs:
       working-directory: knowledgeable
       run:
         timeout 60 bash -c 'until curl -f http://localhost:8080; do sleep 2; done'
+    
+    - name: Run migrations + seeds
+      working-directory: knowledgeable
+      run: docker compose -f docker-compose-dev.yml exec -T app sh -c "cd db-migrations && npm install && npx knex migrate:latest && npx knex seed:run"
 
     - name: Install dependencies
       working-directory: knowledgeable
