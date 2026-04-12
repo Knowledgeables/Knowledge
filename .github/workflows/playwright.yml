@@ -31,7 +31,7 @@ jobs:
     - name: Run migrations + seeds
       working-directory: knowledgeable
       run: |
-        docker compose -f docker-compose-dev.yml run --rm \
+        docker compose -f docker-compose-dev.yml exec --rm \
         -e POSTGRES_DB=knowledge \
         -e POSTGRES_USER=user \
         -e POSTGRES_PASSWORD=password \
@@ -52,11 +52,6 @@ jobs:
       working-directory: knowledgeable
       run: npx playwright install chromium --with-deps
     
-    - name: Debug login response
-      run: |
-        curl -i -X POST http://localhost:8080/api/login \
-          -H "Content-Type: application/x-www-form-urlencoded" \
-          -d "username=admin&password=secret"
    
     - name: Run Playwright smoke tests
       run: npx playwright test --grep @smoke

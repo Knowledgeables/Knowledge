@@ -9,7 +9,7 @@ export async function seed(knex) {
       {
         username: 'admin',
         email: 'admin@dev.local',
-        password_hash: '$2a$12$Zd7hfqU8jdcyK0Q8oDxNOONbiU4GxPkY2eRR9Pw0hZQyhAZaHdkmG'
+        password_hash: '$2a$12$8fhiDpxQAlrTsZfQYLiKUeELzXABImIynuZSx3nwyNfIOofEg1W3i'       
       },
       {
         username: 'tester',
