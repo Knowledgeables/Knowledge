@@ -1,0 +1,116 @@
+language: en-US
+
+tone_instructions: >-
+  Be direct and concise. Prioritize: security → correctness → performance → style.
+  Explain why something is a problem. Optimize for fast feedback, small safe changes,
+  and production stability. Do not comment on formatting.
+
+reviews:
+  profile: assertive
+  auto_review:
+    enabled: true
+    drafts: false
+
+  path_instructions:
+
+    # ── Go backend ──────────────────────────────────────────────
+    - path: "**/*.go"
+      instructions: |
+        Security:
+        - All external input must be validated and sanitized (query, params, headers, body)
+        - No SQL string interpolation — parameterized queries only
+        - No use of unsafe or reflection unless justified
+        - Cookies must set Secure, HttpOnly, SameSite where relevant
+
+        Correctness:
+        - All errors must be handled — no ignored errors
+        - context.Context must be first argument in request-scoped functions
+        - HTTP handlers must not write to ResponseWriter before all logic succeeds
+        - Ensure proper status codes on all responses
+        - Flag goroutines without cancellation or lifecycle control
+
+        Resource safety:
+        - Missing defer for rows.Close(), files, locks must be flagged
+
+        Architecture:
+        - No global mutable state after init
+        - Business logic must not live in HTTP handlers (move to services)
+        - Handlers must remain thin — orchestration only
+
+        DevOps / Operability:
+        - All critical paths must be observable (logs or explicit errors)
+        - Errors must include enough context for debugging (no vague messages)
+        - Long-running operations must support cancellation via context
+        - Flag code that makes rollback or partial failure handling impossible
+
+    # ── Go tests ─────────────────────────────────────────────────
+    - path: "**/*_test.go"
+      instructions: |
+        Correctness:
+        - Must test error paths, not just happy path
+        - Use table-driven tests for multiple cases
+        - t.Fatal only when execution must stop
+
+        Isolation:
+        - No real DB, network, or filesystem in unit tests
+        - Use interfaces and mocks
+        - Integration tests must be gated (build tag or testing.Short)
+
+        DevOps / Feedback:
+        - Tests must be deterministic and fast (no flakiness, no sleeps)
+        - Flag tests that are slow or block feedback loops
+        - Each test must assert a clear outcome (no silent passes)
+        - Critical paths must have test coverage
+
+    # ── SSR HTML templates ──────────────────────────────────────
+    - path: "**/*.html"
+      instructions: |
+        Security:
+        - Never use template.HTML with user input (XSS risk)
+        - All dynamic values must use safe template bindings
+
+        Correctness:
+        - No business logic in templates
+        - Complex conditionals must be moved to handlers
+
+        DevOps / Maintainability:
+        - Templates must remain simple and predictable (no hidden logic)
+        - Flag duplication that increases change risk
+
+        Accessibility:
+        - Inputs require labels
+        - Images require alt text
+        - Buttons must have descriptive text
+
+    # ── JavaScript ──────────────────────────────────────────────
+    - path: "**/*.js"
+      instructions: |
+        Security:
+        - No sensitive data in localStorage or DOM
+        - fetch() must handle non-2xx responses and errors
+
+        Correctness:
+        - No inline event handlers — use addEventListener
+        - Event listeners must be cleaned up if elements are removed
+
+        Performance:
+        - Prefer class toggling over DOM reconstruction
+
+        DevOps / Stability:
+        - Avoid patterns that create inconsistent UI state after partial failure
+        - Network failures must degrade gracefully (no broken UI state)
+
+    # ── go.mod ──────────────────────────────────────────────────
+    - path: "go.mod"
+      instructions: |
+        Security:
+        - New dependencies must have a clear justification
+        - Avoid unnecessary dependencies (increase attack surface)
+
+        Correctness:
+        - Go version must be pinned
+        - go.mod and go.sum must be in sync
+
+        DevOps / Reliability:
+        - Dependency changes must be minimal and explicit (small batches)
+        - Flag large or unrelated dependency updates (hard to rollback)
