@@ -31,7 +31,7 @@ jobs:
     - name: Run migrations + seeds
       working-directory: knowledgeable
       run: |
-        docker compose -f docker-compose-dev.yml exec --rm \
+        docker compose -f docker-compose-dev.yml run --rm \
         -e POSTGRES_DB=knowledge \
         -e POSTGRES_USER=user \
         -e POSTGRES_PASSWORD=password \
