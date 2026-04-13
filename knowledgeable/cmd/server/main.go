@@ -13,34 +13,18 @@ import (
 	"time"
 
 	_ "knowledgeable/docs"
-
-	_ "modernc.org/sqlite"
 )
 
 func main() {
 
 	// db setup
-	database := db.Init(os.Getenv("DB_PATH"), "knowledge.sql")
+	database := db.InitPostgres()
 
 	defer func() {
 		if err := database.Close(); err != nil {
 			log.Printf("failed to close db: %v", err)
 		}
 	}()
-
-	// seed
-	if os.Getenv("APP_ENV") == "dev" {
-		log.Println("Seeding database (dev)")
-
-		seed, err := os.ReadFile("seed-dev.sql")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if _, err := database.Exec(string(seed)); err != nil {
-			log.Fatal(err)
-		}
-	}
 
 	// templates
 	var tmplLoader func() *template.Template

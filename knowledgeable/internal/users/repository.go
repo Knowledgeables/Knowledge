@@ -15,7 +15,7 @@ func NewRepository(db *sql.DB) *Repository {
 
 func (r *Repository) Register(user *User) error {
 	result, err := r.db.Exec(
-		"INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
+		"INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)",
 		user.Username,
 		user.Email,
 		user.PasswordHash,
@@ -37,7 +37,7 @@ func (r *Repository) Register(user *User) error {
 
 func (r *Repository) FindByUsername(username string) (*User, error) {
 	row := r.db.QueryRow(
-		"SELECT id, username, email, password_hash FROM users WHERE username = ?",
+		"SELECT id, username, email, password_hash FROM users WHERE username = $1",
 		username,
 	)
 
@@ -57,7 +57,7 @@ func (r *Repository) FindByUsername(username string) (*User, error) {
 
 func (r *Repository) FindById(id int64) (*User, error) {
 	row := r.db.QueryRow(
-		"SELECT id, username, email, password_hash FROM users WHERE id = ?",
+		"SELECT id, username, email, password_hash FROM users WHERE id = $1",
 		id,
 	)
 
@@ -82,7 +82,6 @@ func (r *Repository) FindAll() ([]User, error) {
 	if err != nil {
 		return nil, err
 	}
-	
 
 	var users []User
 

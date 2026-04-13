@@ -63,7 +63,7 @@ func (r *Repository) Search(query string, lang Language) ([]Page, int, error) {
 	err := r.db.QueryRow(`
         SELECT COUNT(*)
         FROM pages
-        WHERE language = ? AND LOWER(title) LIKE ?
+        WHERE language = $1 AND LOWER(title) LIKE $2
     `, lang, like).Scan(&count)
 	if err != nil {
 		return nil, 0, err
@@ -72,7 +72,7 @@ func (r *Repository) Search(query string, lang Language) ([]Page, int, error) {
 	rows, err := r.db.Query(`
         SELECT title, url
         FROM pages
-        WHERE language = ? AND LOWER(title) LIKE ?
+        WHERE language = $1 AND LOWER(title) LIKE $2
     `, lang, like)
 	if err != nil {
 		return nil, 0, err
@@ -105,7 +105,7 @@ func (r *Repository) FindByURL(url string) (*Page, error) {
 	row := r.db.QueryRow(`
 		SELECT title, url, language, content
 		FROM pages
-		WHERE url = ?
+		WHERE url = $1
 	`, url)
 
 	var p Page
