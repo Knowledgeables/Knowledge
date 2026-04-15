@@ -33,6 +33,11 @@ services:
     working_dir: /workspace/db-migrations
     volumes:
     - .:/workspace
+    environment:
+      POSTGRES_DB: knowledge
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: db
     depends_on:
     - db
   frontend:
