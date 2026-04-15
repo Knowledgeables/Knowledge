@@ -5,8 +5,8 @@ services:
     restart: always
     environment:
       POSTGRES_DB: knowledge
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -25,7 +25,7 @@ services:
 
     environment:
       APP_ENV: dev
-      DATABASE_URL: postgres://user:password@db:5432/knowledge?sslmode=disable
+      DATABASE_URL: ${DATABASE_URL}
     depends_on:
       - db
   migrations:
@@ -35,8 +35,8 @@ services:
     - .:/workspace
     environment:
       POSTGRES_DB: knowledge
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_HOST: db
     depends_on:
     - db
