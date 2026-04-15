@@ -33,6 +33,7 @@ jobs:
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> ~/app/.env
             echo "POSTGRES_DB=knowledge" >> ~/app/.env
             echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> ~/app/.env
+            echo "APP_DOMAIN=knowledgeable.one" >> ~/app/.env
           EOF
       - name: Deploy on server
         run: |
@@ -41,7 +42,7 @@ jobs:
             cd ~/app
             docker compose pull app db migrations
             docker compose down
-            docker compose up -d db app
+            docker compose up -d db app nginx
             timeout 60 bash -c "until docker compose exec -T db pg_isready -U user; do sleep 2; done"
             docker compose run --rm migrations sh -c "npm install && npx knex migrate:latest"
           EOF
