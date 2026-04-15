@@ -23,6 +23,25 @@ jobs:
         working-directory: knowledgeable
         run: go test ./...
 
+      - name: Start database for migrations
+        working-directory: knowledgeable
+        run: docker compose -f docker-compose-dev.yml up -d db
+
+      - name: Wait for database
+        working-directory: knowledgeable
+        run: |
+          timeout 60 bash -c 'until docker compose -f docker-compose-dev.yml exec -T db pg_isready -U user; do sleep 2; done'
+
+      - name: Run database migrations
+        working-directory: knowledgeable
+        run: |
+          docker compose -f docker-compose-dev.yml run --rm migrations sh -c "npm install && npx knex migrate:latest && npx knex seed:run"
+
+      - name: Tear down migration containers
+        if: always()
+        working-directory: knowledgeable
+        run: docker compose -f docker-compose-dev.yml down
+
       - name: Set up Docker Buildx
         run: docker buildx create --use
 
