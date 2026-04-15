@@ -4,7 +4,7 @@
  * @param {import('knex').Knex} knex
  */
 export async function seed(knex) {
-  // Ryd data (FK-safe rækkefølge)
+
  await knex('pages').truncate();
  await knex('users').truncate(); 
 
