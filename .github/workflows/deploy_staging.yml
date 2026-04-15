@@ -14,36 +14,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Add SSH key to runner
+      - name: Add SSH key
         run: |
           mkdir -p ~/.ssh/
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
 
-      - name: Deploy staging on server
+      - name: Deploy staging
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << "EOF"
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
 
-            echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+            set -e
+
+            echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
             cd ~/app
 
             docker compose -p staging -f docker-compose-staging.yml pull
 
-            docker compose -p staging -f docker-compose-staging.yml up -d
+            docker compose -p staging -f docker-compose-staging.yml up -d --remove-orphans
 
-            docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations \
-              sh -e -c "
-                echo 'Running migrations...'
-
-                for i in {1..5}; do
-                  npx knex migrate:latest && break
-                  echo 'Migration failed, retrying...'
-                  sleep 3
-                done
-
-                echo 'Running seeds...'
-                npx knex seed:run --specific=staging_init_data.js || true
-              "
+            docker compose -p staging -f docker-compose-staging.yml --profile tools up \
+              --abort-on-container-exit \
+              --exit-code-from migrations \
+              migrations
 
           EOF
