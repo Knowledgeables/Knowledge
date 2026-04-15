@@ -33,7 +33,7 @@ jobs:
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> ~/app/.env
             echo "POSTGRES_DB=knowledge" >> ~/app/.env
             echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> ~/app/.env
-            echo "APP_DOMAIN=knowledgeable.one" >> ~/app/.env
+            echo "APP_DOMAIN=www.knowledgeable.one" >> ~/app/.env
           EOF
       - name: Deploy on server
         run: |
