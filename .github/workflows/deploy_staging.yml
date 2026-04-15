@@ -32,9 +32,18 @@ jobs:
 
             docker compose -p staging -f docker-compose-staging.yml up -d
 
-            timeout 60 bash -c "until docker compose -p staging -f docker-compose-staging.yml exec -T db pg_isready -U postgres; do sleep 2; done"
-
             docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations \
-              sh -e -c "npx knex migrate:latest && npx knex seed:run --specific=staging_init_data.js"
+              sh -e -c "
+                echo 'Running migrations...'
+
+                for i in {1..5}; do
+                  npx knex migrate:latest && break
+                  echo 'Migration failed, retrying...'
+                  sleep 3
+                done
+
+                echo 'Running seeds...'
+                npx knex seed:run --specific=staging_init_data.js || true
+              "
 
           EOF

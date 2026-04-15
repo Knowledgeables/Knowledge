@@ -12,12 +12,19 @@ services:
     networks:
       - staging
 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   migrations:
     image: ghcr.io/knowledgeables/knowledge-migrations:latest
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: "no"
-    profiles: ["tools"]  
+    profiles: ["tools"]
     environment:
       POSTGRES_DB: knowledgeable
       POSTGRES_USER: postgres
@@ -30,7 +37,8 @@ services:
     image: ghcr.io/knowledgeables/knowledge:latest
     container_name: knowledgeable_app_staging
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: unless-stopped
     environment:
       POSTGRES_DB: knowledgeable
