@@ -44,5 +44,5 @@ jobs:
             docker compose down
             docker compose up -d db app nginx
             timeout 60 bash -c "until docker compose exec -T db pg_isready -U user; do sleep 2; done"
-            docker compose run --rm migrations sh -c "npm install && npx knex migrate:latest"
+            docker compose run --rm migrations npx knex migrate:latest
           EOF
