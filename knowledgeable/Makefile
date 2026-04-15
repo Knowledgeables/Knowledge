@@ -20,6 +20,7 @@ lint:
 
 dev-up:
 	docker compose -f docker-compose-dev.yml up -d
+	docker compose -f docker-compose-dev.yml exec -T db sh -c 'until pg_isready -U user; do sleep 2; done'
 	$(MAKE) dev-migrate
 
 dev-migrate:
