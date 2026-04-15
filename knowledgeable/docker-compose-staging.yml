@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: postgres_staging_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: knowledgeable
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data_staging:/var/lib/postgresql/data
+    networks:
+      - app_net
+
+  app:
+    image: ghcr.io/knowledgeables/knowledge:${IMAGE_TAG}
+    container_name: knowledgeable_app_staging
+    depends_on:
+      - db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: knowledgeable
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: db
+      APP_ENV: staging
+    ports:
+      - "8080:8080"
+    networks:
+      - app_net
+
+volumes:
+  postgres_data_staging:
+
+networks:
+  app_net:
+    driver: bridge
