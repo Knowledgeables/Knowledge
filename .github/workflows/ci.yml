@@ -36,5 +36,13 @@ jobs:
       - name: Build
         run: go build ./...
 
+      - name: Run database migrations
+        run: |
+          docker compose -f docker-compose-dev.yml run --rm migrations sh -c "npm install && npx knex migrate:latest && npx knex seed:run"
+
+      - name: Tear down migration containers
+        if: always()
+        run: docker compose -f docker-compose-dev.yml down
+
       - name: Test
         run: go test -v ./...
