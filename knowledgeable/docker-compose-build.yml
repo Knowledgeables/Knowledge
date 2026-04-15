@@ -5,6 +5,12 @@ services:
       context: .
       dockerfile: Dockerfile.prod
 
+  migrations:
+    image: ghcr.io/knowledgeables/knowledge-migrations:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.migrations
+
   nginx:
     image: ghcr.io/knowledgeables/knowledge_nginx:latest
     build:
