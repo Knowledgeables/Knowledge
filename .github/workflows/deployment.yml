@@ -40,7 +40,8 @@ jobs:
             echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
             cd ~/app
             docker compose pull app db migrations
+            docker compose down
             docker compose up -d db app
-            timeout 60 bash -c "until docker compose exec -T db pg_isready -U '${POSTGRES_USER}'; do sleep 2; done"
-            docker compose run --rm migrations npx knex migrate:latest
+            timeout 60 bash -c "until docker compose exec -T db pg_isready -U user; do sleep 2; done"
+            docker compose run --rm migrations sh -c "npm install && npx knex migrate:latest"
           EOF
