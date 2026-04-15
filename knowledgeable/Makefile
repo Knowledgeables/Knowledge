@@ -20,11 +20,10 @@ lint:
 
 dev-up:
 	docker compose -f docker-compose-dev.yml up -d
+	$(MAKE) dev-migrate
 
 dev-migrate:
 	docker compose -f docker-compose-dev.yml run --rm migrations sh -c "npm install && npx knex migrate:latest && npx knex seed:run"
-
-dev-init: dev-up dev-migrate
 
 dev-down:
 	docker compose -f docker-compose-dev.yml down
