@@ -52,7 +52,7 @@ jobs:
             docker compose -p staging -f docker-compose-staging.yml up -d
 
             echo "[DEPLOY] Checking containers"
-            docker compose -p staging ps
+            docker compose -p staging -f docker-compose-staging.yml ps
 
             echo "[DEPLOY] Staging deploy completed"
             EOF
