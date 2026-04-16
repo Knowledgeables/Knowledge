@@ -24,8 +24,6 @@ services:
     networks:
       - knowledgeable_network
 
-
-    
   migrations:
     image: ghcr.io/knowledgeables/knowledge-migrations:latest
     depends_on:
