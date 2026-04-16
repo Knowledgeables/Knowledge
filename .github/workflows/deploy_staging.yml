@@ -27,30 +27,32 @@ jobs:
 
             set -e
 
+            echo "[DEPLOY] Starting staging deploy"
+
+            echo "[DEPLOY] Logging into registry"
             echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
+            echo "[DEPLOY] Moving to app directory"
             cd ~/app
 
-            # -------------------------
-            # Pull images
-            # -------------------------
+            echo "[DEPLOY] Pulling images"
             docker compose -p staging -f docker-compose-staging.yml pull
 
-            # -------------------------
-            # Run migrations FIRST
-            # -------------------------
+            echo "[DEPLOY] Running migrations"
             docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations \
               sh -c "
-                echo 'Running migrations...'
+                echo '[MIGRATION] Running migrations...'
                 until npx knex migrate:latest; do
-                  echo 'Retrying...'
+                  echo '[MIGRATION] Retrying...'
                   sleep 3
                 done
               "
 
-            # -------------------------
-            # Start services AFTER schema is ready
-            # -------------------------
+            echo "[DEPLOY] Starting services"
             docker compose -p staging -f docker-compose-staging.yml up -d
 
+            echo "[DEPLOY] Checking containers"
+            docker compose -p staging -f docker-compose-staging.yml ps
+
+            echo "[DEPLOY] Staging deploy completed"
             EOF
