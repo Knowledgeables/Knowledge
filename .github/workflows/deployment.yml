@@ -20,27 +20,9 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
 
-      - name: Transfer compose
-        run: |
-          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
-            knowledgeable/docker-compose-prod.yml \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/docker-compose.yml
-
-      - name: Write env
-        run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            set -e
-
-            echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" > ~/app/.env
-            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> ~/app/.env
-            echo "POSTGRES_DB=knowledge" >> ~/app/.env
-            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> ~/app/.env
-            echo "APP_DOMAIN=www.knowledgeable.one" >> ~/app/.env
-          EOF
-
       - name: Deploy
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          ssh -T -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
 
             set -e
 
@@ -48,19 +30,21 @@ jobs:
 
             cd ~/app
 
-            docker compose pull
+            docker compose -p production -f docker-compose.yml pull
 
-            docker compose up -d db
+            docker compose -p production -f docker-compose.yml up -d db
 
-            until docker compose exec -T db pg_isready -U postgres; do
+            until docker compose -p production -f docker-compose.yml exec -T db pg_isready -U postgres; do
               sleep 2
             done
 
-            docker compose --profile tools up \
+            docker compose -p production -f docker-compose.yml --profile tools up \
               --abort-on-container-exit \
               --exit-code-from migrations \
               migrations
 
-            docker compose up -d --remove-orphans
+            docker compose -p production -f docker-compose.yml up -d app
+
+            docker compose -p production -f docker-compose.yml up -d nginx certbot
 
           EOF
