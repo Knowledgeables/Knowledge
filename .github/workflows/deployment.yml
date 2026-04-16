@@ -1,16 +1,13 @@
 name: CD - Deployment
-
 on:
   workflow_run:
     workflows: ["CD - Delivery"]
     types: [completed]
     branches: [main]
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
     steps:
       - uses: actions/checkout@v4
 
@@ -31,24 +28,17 @@ jobs:
         run: |
           ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << EOF
           set -e
-
-          CR_PAT="$CR_PAT"
-          DOCKER_USERNAME="$DOCKER_USERNAME"
-
-          echo "$CR_PAT" | docker login ghcr.io -u "$DOCKER_USERNAME" --password-stdin
-
+          export CR_PAT="$CR_PAT"
+          export DOCKER_USERNAME="$DOCKER_USERNAME"
+          echo "\$CR_PAT" | docker login ghcr.io -u "\$DOCKER_USERNAME" --password-stdin
           cd ~/app
-
           docker compose pull
           docker compose up -d db
-
           timeout 60 bash -c '
-          until docker compose exec -T db pg_isready -U $POSTGRES_USER -d knowledge;
-          do sleep 2;
-          done
+            until docker compose exec -T db pg_isready -U \$POSTGRES_USER -d knowledge;
+            do sleep 2;
+            done
           '
-
           docker compose run --rm migrations npx knex migrate:latest
-
           docker compose up -d app nginx
           EOF
