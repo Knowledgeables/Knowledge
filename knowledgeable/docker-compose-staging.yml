@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:16
-    container_name: postgres_staging_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: knowledgeable
@@ -11,42 +10,21 @@ services:
       - postgres_data_staging:/var/lib/postgresql/data
     networks:
       - staging
-
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d knowledgeable"]
       interval: 5s
       timeout: 3s
-      retries: 5
-
-  migrations:
-    image: ghcr.io/knowledgeables/knowledge-migrations:latest
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: "no"
-    profiles: ["tools"]
-    environment:
-      POSTGRES_DB: knowledgeable
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_HOST: db
-    networks:
-      - staging
+      retries: 10
 
   app:
     image: ghcr.io/knowledgeables/knowledge:latest
-    container_name: knowledgeable_app_staging
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/knowledgeable
+      APP_ENV: staging
     depends_on:
       db:
         condition: service_healthy
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: knowledgeable
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_HOST: db
-      APP_ENV: staging
-      DATABASE_URL: postgres://postgres:postgres@db:5432/knowledgeable?sslmode=disable
     ports:
       - "8081:8080"
     networks:

@@ -22,28 +22,35 @@ jobs:
 
       - name: Deploy staging on server
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << "EOF"
+         ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
 
-            echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+            set -e
+
+            echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
             cd ~/app
 
+            # -------------------------
+            # Pull images
+            # -------------------------
             docker compose -p staging -f docker-compose-staging.yml pull
 
-            docker compose -p staging -f docker-compose-staging.yml up -d
-
+            # -------------------------
+            # Run migrations FIRST
+            # -------------------------
             docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations \
-              sh -e -c "
+              sh -c "
                 echo 'Running migrations...'
-
-                for i in {1..5}; do
-                  npx knex migrate:latest && break
-                  echo 'Migration failed, retrying...'
+                until npx knex migrate:latest; do
+                  echo 'Retrying...'
                   sleep 3
                 done
-
-                echo 'Running seeds...'
-                npx knex seed:run --specific=staging_init_data.js || true
               "
 
-          EOF
+            # -------------------------
+            # Start services AFTER schema is ready
+            # -------------------------
+            docker compose -p staging -f docker-compose-staging.yml up -d
+
+            EOF
