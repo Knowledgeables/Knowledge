@@ -1,70 +1,48 @@
-services:
-  db:
-    image: postgres:15
-    container_name: postgres_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: knowledge
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - knowledgeable_network
+name: CD - Deployment
 
-  app:
-    image: ghcr.io/knowledgeables/knowledge:latest
-    container_name: knowledgeable
-    restart: unless-stopped
-    environment:
-      APP_ENV: production
-      DATABASE_URL: ${DATABASE_URL}
-    depends_on:
-      - db
-    networks:
-      - knowledgeable_network
+on:
+  workflow_run:
+    workflows: ["CD - Delivery"]
+    types: [completed]
+    branches: [main]
 
-  migrations:
-    image: ghcr.io/knowledgeables/knowledge-migrations:latest
-    depends_on:
-      - db
-    environment:
-      POSTGRES_DB: knowledge
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_HOST: db
-    networks:
-      - knowledgeable_network
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
-  nginx:
-    container_name: nginx
-    image: nginx:latest
-    restart: unless-stopped
-    env_file: .env
-    networks:
-      - knowledgeable_network 
-    ports:
-      - 80:80
-      - 443:443
-    depends_on:
-      - app 
-    volumes:
-      - ./nginx/secure/:/etc/nginx/templates/
-      - /etc/localtime:/etc/localtime:ro
-      - ./nginx/certbot/conf:/etc/letsencrypt
-      - ./nginx/certbot/www:/var/www/certbot
-      - ./nginx/99-autoreload.sh:/docker-entrypoint.d/99-autoreload.sh 
+    steps:
+      - uses: actions/checkout@v4
 
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - ./nginx/certbot/conf:/etc/letsencrypt
-      - ./nginx/certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"  # Renew certificates every 12 hours
+      - name: Add SSH key
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
+          chmod 600 ~/.ssh/ssh_key
 
-networks:
-  knowledgeable_network:
-    driver: bridge
+      - name: Deploy
+        run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
 
-volumes:
-  postgres_data:
+            set -e
+
+            echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+            cd ~/app
+
+            docker compose -p production -f docker-compose.yml pull
+
+            docker compose -p production -f docker-compose.yml up -d db
+
+            until docker compose -p production -f docker-compose.yml exec -T db pg_isready -U postgres; do
+              sleep 2
+            done
+
+            docker compose -p production -f docker-compose.yml --profile tools up \
+              --abort-on-container-exit \
+              --exit-code-from migrations \
+              migrations
+
+            docker compose -p production -f docker-compose.yml up -d app nginx
+
+          EOF
