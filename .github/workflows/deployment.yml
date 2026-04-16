@@ -2,9 +2,9 @@ name: CD - Deployment
 
 on:
   workflow_run:
-    workflows: [ "CD - Delivery" ]
-    types: [ completed ]
-    branches: [ main ]
+    workflows: ["CD - Delivery"]
+    types: [completed]
+    branches: [main]
 
 jobs:
   deploy:
