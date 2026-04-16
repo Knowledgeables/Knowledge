@@ -6,7 +6,9 @@ COPY db-migrations/package*.json db-migrations/
 RUN npm install --prefix db-migrations
 
 COPY db-migrations db-migrations
+RUN chown -R node:node /app/db-migrations
 
+USER node
 WORKDIR /app/db-migrations
 
 CMD ["npx", "knex", "--help"]
