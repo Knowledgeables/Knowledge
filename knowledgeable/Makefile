@@ -20,12 +20,12 @@ lint:
 	golangci-lint run
 
 dev-up:
-	docker compose --env-file .env -f docker-compose-dev.yml up -d
-	docker compose --env-file .env -f docker-compose-dev.yml exec -T db sh -c 'until pg_isready -U $$POSTGRES_USER; do sleep 2; done'
+	docker compose -f docker-compose-dev.yml up -d
+	docker compose -f docker-compose-dev.yml exec -T db sh -c "until pg_isready -U postgres; do sleep 2; done"
 	$(MAKE) dev-migrate
 
 dev-migrate:
-	docker compose --env-file .env -f docker-compose-dev.yml run --rm migrations sh -c "npx knex migrate:latest && npx knex seed:run --specific=dev_init_data.js"
+	docker compose -f docker-compose-dev.yml run --rm migrations sh -c "npx knex migrate:latest && npx knex seed:run --specific=dev_init_data.js"
 
 dev-down:
 	docker compose -f docker-compose-dev.yml down
