@@ -24,10 +24,14 @@ services:
     networks:
       - knowledgeable_network
 
+
+    
   migrations:
     image: ghcr.io/knowledgeables/knowledge-migrations:latest
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    command: ["npx", "knex", "migrate:latest"]
     environment:
       POSTGRES_DB: knowledge
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
@@ -35,6 +39,8 @@ services:
       POSTGRES_HOST: db
     networks:
       - knowledgeable_network
+
+  
 
   nginx:
     container_name: nginx
