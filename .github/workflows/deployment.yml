@@ -20,6 +20,10 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
 
+      - name: Ensure remote app directory exists
+        run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/app"
+
       - name: Transfer docker-compose-prod.yml to server
         run: |
           scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
@@ -34,15 +38,17 @@ jobs:
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             DATABASE_URL=${{ secrets.DATABASE_URL }}
             EOENV
+            chmod 600 ~/app/.env
           EOF
 
       - name: Deploy on server
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << "EOF"
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            set -e
             echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
             cd ~/app
-            docker compose pull app db migrations
-            docker compose up -d db app
-            timeout 60 bash -c "until docker compose exec -T db pg_isready -U '${POSTGRES_USER}'; do sleep 2; done"
+            docker compose pull app db migrations nginx
+            docker compose up -d db app nginx
+            docker compose exec -T db sh -c 'until pg_isready -U "$POSTGRES_USER"; do sleep 2; done'
             docker compose run --rm migrations npx knex migrate:latest
           EOF
