@@ -19,7 +19,31 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
 
-      - name: Deploy to production server
+      - name: Create deploy script
+        env:
+          CR_PAT: ${{ secrets.CR__PAT }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+        run: |
+          cat > /tmp/deploy.sh << 'SCRIPT'
+          set -e
+          echo "$CR_PAT" | docker login ghcr.io -u "$DOCKER_USERNAME" --password-stdin
+          cd ~/app
+          docker compose pull
+          docker compose up -d db
+          timeout 60 bash -c 'until docker compose exec -T db pg_isready -U $POSTGRES_USER -d knowledge; do sleep 2; done'
+          docker compose run --rm migrations npx knex migrate:latest
+          docker compose up -d app nginx
+          SCRIPT
+
+      - name: Copy deploy script to server
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        run: |
+          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no /tmp/deploy.sh $SSH_USER@$SSH_HOST:/tmp/deploy.sh
+
+      - name: Run deploy script on server
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
@@ -27,17 +51,5 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
-          set -e
-          echo "$CR_PAT" | docker login ghcr.io -u "$DOCKER_USERNAME" --password-stdin
-          cd ~/app
-          docker compose pull
-          docker compose up -d db
-          timeout 60 bash -c '
-            until docker compose exec -T db pg_isready -U $POSTGRES_USER -d knowledge;
-            do sleep 2;
-            done
-          '
-          docker compose run --rm migrations npx knex migrate:latest
-          docker compose up -d app nginx
-          EOF
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST \
+            "CR_PAT=$CR_PAT DOCKER_USERNAME=$DOCKER_USERNAME POSTGRES_USER=$POSTGRES_USER bash /tmp/deploy.sh"
