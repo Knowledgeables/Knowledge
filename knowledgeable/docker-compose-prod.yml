@@ -1,24 +1,47 @@
-name: CD - Deployment
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: knowledge
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - knowledgeable_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d knowledge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-on:
-  workflow_run:
-    workflows: ["CD - Delivery"]
-    types: [completed]
-    branches: [main]
+  app:
+    image: ghcr.io/knowledgeables/knowledge:latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - knowledgeable_network
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Add SSH key
-        run: |
-          mkdir -p ~/.ssh/
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
-          chmod 600 ~/.ssh/ssh_key
+  nginx:
+    image: nginx:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      app:
+        condition: service_started
+    volumes:
+      - ./nginx/secure/:/etc/nginx/templates/
+      - ./nginx/certbot/conf:/etc/letsencrypt
+      - ./nginx/certbot/www:/var/www/certbot
+    networks:
+      - knowledgeable_network
 
       - name: Deploy
         run: |

@@ -14,37 +14,55 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Add SSH key
+      # -------------------------
+      # SSH setup
+      # -------------------------
+      - name: Add SSH key to runner
         run: |
           mkdir -p ~/.ssh/
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
 
-      - name: Deploy
+      # -------------------------
+      # Deploy
+      # -------------------------
+      - name: Deploy to production server
         run: |
-          ssh -T -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
 
-            set -e
+          set -e
 
-            echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-            cd ~/app
+          cd ~/app
 
-            docker compose -p production -f docker-compose.yml pull
+          # -------------------------
+          # Pull latest images
+          # -------------------------
+          docker compose pull
 
-            docker compose -p production -f docker-compose.yml up -d db
+          # -------------------------
+          # Start DB first (no downtime)
+          # -------------------------
+          docker compose up -d db
 
-            until docker compose -p production -f docker-compose.yml exec -T db pg_isready -U postgres; do
-              sleep 2
-            done
+          # Wait for DB readiness
+          timeout 60 bash -c '
+          until docker compose exec -T db pg_isready -U $POSTGRES_USER -d knowledge;
+          do sleep 2;
+          done
+          '
 
-            docker compose -p production -f docker-compose.yml --profile tools up \
-              --abort-on-container-exit \
-              --exit-code-from migrations \
-              migrations
+          # -------------------------
+          # Run migrations BEFORE app
+          # -------------------------
+          docker compose run --rm migrations \
+            npx knex migrate:latest
 
-            docker compose -p production -f docker-compose.yml up -d app
-
-            docker compose -p production -f docker-compose.yml up -d nginx certbot
+          # -------------------------
+          # Start app + nginx AFTER DB is ready
+          # -------------------------
+          docker compose up -d app nginx
 
           EOF

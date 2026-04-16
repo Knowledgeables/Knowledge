@@ -22,21 +22,35 @@ jobs:
 
       - name: Deploy staging
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+         ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
 
             set -e
 
-            echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+            echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
             cd ~/app
 
+            # -------------------------
+            # Pull images
+            # -------------------------
             docker compose -p staging -f docker-compose-staging.yml pull
 
-            docker compose -p staging -f docker-compose-staging.yml up -d --remove-orphans
+            # -------------------------
+            # Run migrations FIRST
+            # -------------------------
+            docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations \
+              sh -c "
+                echo 'Running migrations...'
+                until npx knex migrate:latest; do
+                  echo 'Retrying...'
+                  sleep 3
+                done
+              "
 
-            docker compose -p staging -f docker-compose-staging.yml --profile tools up \
-              --abort-on-container-exit \
-              --exit-code-from migrations \
-              migrations
+            # -------------------------
+            # Start services AFTER schema is ready
+            # -------------------------
+            docker compose -p staging -f docker-compose-staging.yml up -d
 
-          EOF
+            EOF
