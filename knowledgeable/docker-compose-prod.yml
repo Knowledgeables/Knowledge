@@ -18,6 +18,7 @@ services:
 
   app:
     image: ghcr.io/knowledgeables/knowledge:latest
+    container_name: knowledgeable
     restart: unless-stopped
     environment:
       APP_ENV: production
@@ -40,8 +41,6 @@ services:
       POSTGRES_HOST: db
     networks:
       - knowledgeable_network
-
-  
 
   nginx:
     image: nginx:latest
