@@ -19,6 +19,11 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
 
+      - name: Ensure remote app directory exists
+        run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/app"
+
+      - name: Transfer docker-compose-prod.yml to server
       - name: Create deploy script
         env:
           CR_PAT: ${{ secrets.CR__PAT }}
@@ -41,6 +46,14 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            cat > ~/app/.env << 'EOENV'
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            EOENV
+            chmod 600 ~/app/.env
+          EOF
           scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no /tmp/deploy.sh $SSH_USER@$SSH_HOST:/tmp/deploy.sh
 
       - name: Run deploy script on server
@@ -51,5 +64,14 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
         run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            set -e
+            echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+            cd ~/app
+            docker compose pull app db migrations nginx
+            docker compose up -d db app nginx
+            docker compose exec -T db sh -c 'until pg_isready -U "$POSTGRES_USER"; do sleep 2; done'
+            docker compose run --rm migrations npx knex migrate:latest
+          EOF
           ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST \
             "CR_PAT=$CR_PAT DOCKER_USERNAME=$DOCKER_USERNAME POSTGRES_USER=$POSTGRES_USER bash /tmp/deploy.sh"
