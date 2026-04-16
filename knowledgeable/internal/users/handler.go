@@ -141,6 +141,7 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.service.Register(req.Username, req.Email, req.Password)
 	if err != nil {
+		log.Printf("RegisterAPI error: %v", err)
 		http.Error(w, "registration failed", http.StatusBadRequest)
 		return
 	}

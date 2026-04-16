@@ -53,5 +53,5 @@ jobs:
 
             docker compose run --rm migrations
 
-            docker compose up -d app nginx
+            docker compose up -d --force-recreate app nginx
           EOF
