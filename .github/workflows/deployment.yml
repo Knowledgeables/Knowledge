@@ -14,55 +14,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # -------------------------
-      # SSH setup
-      # -------------------------
       - name: Add SSH key to runner
         run: |
           mkdir -p ~/.ssh/
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
 
-      # -------------------------
-      # Deploy
-      # -------------------------
       - name: Deploy to production server
+        env:
+          CR_PAT: ${{ secrets.CR__PAT }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         run: |
           ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
-          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
 
           set -e
 
-          echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          echo "$CR_PAT" | docker login ghcr.io -u "$DOCKER_USERNAME" --password-stdin
 
           cd ~/app
 
-          # -------------------------
-          # Pull latest images
-          # -------------------------
           docker compose pull
 
-          # -------------------------
-          # Start DB first (no downtime)
-          # -------------------------
           docker compose up -d db
 
-          # Wait for DB readiness
           timeout 60 bash -c '
           until docker compose exec -T db pg_isready -U $POSTGRES_USER -d knowledge;
           do sleep 2;
           done
           '
 
-          # -------------------------
-          # Run migrations BEFORE app
-          # -------------------------
           docker compose run --rm migrations \
             npx knex migrate:latest
 
-          # -------------------------
-          # Start app + nginx AFTER DB is ready
-          # -------------------------
           docker compose up -d app nginx
 
           EOF
