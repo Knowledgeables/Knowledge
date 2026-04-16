@@ -6,6 +6,7 @@ help:
 	@echo   make lint
 	@echo   make dev-up
 	@echo   make dev-down
+	@echo   make dev-migrate
 	@echo   make dev-build
 	@echo   make dev-logs
 	@echo   make setup-hooks
@@ -24,7 +25,7 @@ dev-up:
 	$(MAKE) dev-migrate
 
 dev-migrate:
-	docker compose --env-file .env -f docker-compose-dev.yml run --rm migrations sh -c "npm install && npx knex migrate:latest && npx knex seed:run"
+	docker compose --env-file .env -f docker-compose-dev.yml run --rm migrations sh -c "npx knex migrate:latest && npx knex seed:run --specific=dev_init_data.js"
 
 dev-down:
 	docker compose -f docker-compose-dev.yml down

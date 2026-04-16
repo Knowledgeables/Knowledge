@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:15
-    container_name: postgres_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: knowledge
@@ -11,10 +10,14 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - knowledgeable_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d knowledge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   app:
     image: ghcr.io/knowledgeables/knowledge:latest
-    container_name: knowledgeable
     restart: unless-stopped
     environment:
       APP_ENV: production
@@ -37,34 +40,44 @@ services:
       - knowledgeable_network
 
   nginx:
-    container_name: nginx
     image: nginx:latest
     restart: unless-stopped
-    env_file: .env
-    networks:
-      - knowledgeable_network 
     ports:
-      - 80:80
-      - 443:443
+      - "80:80"
+      - "443:443"
     depends_on:
-      - app 
+      app:
+        condition: service_started
     volumes:
       - ./nginx/secure/:/etc/nginx/templates/
-      - /etc/localtime:/etc/localtime:ro
       - ./nginx/certbot/conf:/etc/letsencrypt
       - ./nginx/certbot/www:/var/www/certbot
-      - ./nginx/99-autoreload.sh:/docker-entrypoint.d/99-autoreload.sh 
+    networks:
+      - knowledgeable_network
 
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - ./nginx/certbot/conf:/etc/letsencrypt
-      - ./nginx/certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"  # Renew certificates every 12 hours
+      - name: Deploy
+        run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
 
-networks:
-  knowledgeable_network:
-    driver: bridge
+            set -e
 
-volumes:
-  postgres_data:
+            echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+            cd ~/app
+
+            docker compose -p production -f docker-compose.yml pull
+
+            docker compose -p production -f docker-compose.yml up -d db
+
+            until docker compose -p production -f docker-compose.yml exec -T db pg_isready -U postgres; do
+              sleep 2
+            done
+
+            docker compose -p production -f docker-compose.yml --profile tools up \
+              --abort-on-container-exit \
+              --exit-code-from migrations \
+              migrations
+
+            docker compose -p production -f docker-compose.yml up -d app nginx
+
+          EOF

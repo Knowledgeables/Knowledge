@@ -1,48 +1,55 @@
 name: CD - Deployment
-
 on:
   workflow_run:
-    workflows: [ "CD - Delivery" ]
-    types: [ completed ]
-    branches: [ main ]
-
+    workflows: ["CD - Delivery"]
+    types: [completed]
+    branches: [main]
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
+    if: github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
 
       - name: Add SSH key to runner
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh/
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
+          echo "$SSH_KEY" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
 
-      - name: Transfer docker-compose-prod.yml to server
+      - name: Create deploy script
+        env:
+          CR_PAT: ${{ secrets.CR__PAT }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
         run: |
-          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
-            knowledgeable/docker-compose-prod.yml \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/docker-compose.yml
+          cat > /tmp/deploy.sh << 'SCRIPT'
+          set -e
+          echo "$CR_PAT" | docker login ghcr.io -u "$DOCKER_USERNAME" --password-stdin
+          cd ~/app
+          docker compose pull
+          docker compose up -d db
+          timeout 60 bash -c 'until docker compose exec -T db pg_isready -U $POSTGRES_USER -d knowledge; do sleep 2; done'
+          docker compose run --rm migrations npx knex migrate:latest
+          docker compose up -d app nginx
+          SCRIPT
 
-      - name: Write remote production .env
+      - name: Copy deploy script to server
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            cat > ~/app/.env << 'EOENV'
-            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            EOENV
-          EOF
+          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no /tmp/deploy.sh $SSH_USER@$SSH_HOST:/tmp/deploy.sh
 
-      - name: Deploy on server
+      - name: Run deploy script on server
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          CR_PAT: ${{ secrets.CR__PAT }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << "EOF"
-            echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-            cd ~/app
-            docker compose pull app db migrations
-            docker compose up -d db app
-            timeout 60 bash -c "until docker compose exec -T db pg_isready -U '${POSTGRES_USER}'; do sleep 2; done"
-            docker compose run --rm migrations npx knex migrate:latest
-          EOF
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST \
+            "CR_PAT=$CR_PAT DOCKER_USERNAME=$DOCKER_USERNAME POSTGRES_USER=$POSTGRES_USER bash /tmp/deploy.sh"
