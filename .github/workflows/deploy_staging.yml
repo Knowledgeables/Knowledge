@@ -1,3 +1,4 @@
+
 name: CD - Staging Deployment
 on:
   workflow_run:
@@ -8,57 +9,29 @@ jobs:
   deploy-staging:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Add SSH key
         run: |
           mkdir -p ~/.ssh/
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
+
+
       - name: Copy compose file
         run: |
           scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
             knowledgeable/docker-compose-staging.yml \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/docker-compose-staging.yml
+
+      - name: Copy deploy script
+        run: |
+          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no .github/scripts/deploy-staging.sh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/deploy.sh
+      
       - name: Deploy staging
         run: |
-          cat > /tmp/deploy.sh << 'SCRIPT'
-          #!/bin/bash
-          set -e
-          echo "[DEPLOY] Starting staging deploy"
-          cd ~/app
-          echo "[DEPLOY] Logging into registry"
-          echo "$CR_PAT" | docker login ghcr.io -u "$DOCKER_USERNAME" --password-stdin
-          echo "[DEPLOY] Pulling images"
-          docker compose -p staging -f docker-compose-staging.yml pull
-          echo "[DEPLOY] Start DB"
-          docker compose -p staging -f docker-compose-staging.yml up -d db
-          echo "[DEPLOY] Wait for DB"
-          DB_READY=0
-          for i in {1..30}; do
-            if docker compose -p staging -f docker-compose-staging.yml exec -T db pg_isready -U postgres -d knowledgeable; then
-              echo "[DEPLOY] DB ready"
-              DB_READY=1
-              break
-            fi
-            echo "[DEPLOY] Waiting for DB... attempt $i/30"
-            sleep 5
-          done
-          if [ "$DB_READY" -eq 0 ]; then
-            echo "[DEPLOY] ERROR: DB never became ready"
-            exit 1
-          fi
-          echo "[DEPLOY] Run migrations"
-          docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations
-          echo "[DEPLOY] Start app"
-          docker compose -p staging -f docker-compose-staging.yml up -d --remove-orphans app
-          echo "[DEPLOY] Checking containers"
-          docker compose -p staging -f docker-compose-staging.yml ps
-          echo "[DEPLOY] Staging deploy completed"
-          SCRIPT
-          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
-            /tmp/deploy.sh \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/deploy.sh
           ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "CR_PAT='${{ secrets.CR__PAT }}' DOCKER_USERNAME='${{ secrets.DOCKER_USERNAME }}' bash ~/app/deploy.sh"
