@@ -24,7 +24,7 @@ jobs:
       - name: Copy compose file
         run: |
           scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
-            docker-compose-staging.yml \
+            knowledgeable/docker-compose-staging.yml \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/docker-compose-staging.yml
 
       - name: Deploy staging
