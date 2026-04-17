@@ -28,7 +28,7 @@ jobs:
 
       - name: Deploy staging
         run: |
-         ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
 
             set -e
