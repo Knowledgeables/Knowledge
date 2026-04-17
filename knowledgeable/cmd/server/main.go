@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"html/template"
+	_ "knowledgeable/docs"
 	"knowledgeable/internal/auth"
 	"knowledgeable/internal/db"
 	"knowledgeable/internal/pages"
@@ -10,21 +12,17 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
-
-	_ "knowledgeable/docs"
 )
 
 func main() {
 
+	log.Println("[APP] Starting application")
+
 	// db setup
 	database := db.InitPostgres()
-
-	defer func() {
-		if err := database.Close(); err != nil {
-			log.Printf("failed to close db: %v", err)
-		}
-	}()
 
 	// templates
 	var tmplLoader func() *template.Template
@@ -79,13 +77,36 @@ func main() {
 		},
 	)
 
-	log.Println("Server running on :8080")
-
 	srv := &http.Server{
 		Addr:         ":8080",
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
-	log.Fatal(srv.ListenAndServe())
+
+	// start server async
+	go func() {
+		log.Println("[APP] Server running on :8080")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("[APP] Server failed: %v", err)
+		}
+	}()
+
+	// shutdown handling
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	<-quit
+	log.Println("[APP] Shutting down...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("[APP] Forced shutdown: %v", err)
+	}
+
+	if err := database.Close(); err != nil {
+		log.Printf("failed to close db: %v", err)
+	}
 }
