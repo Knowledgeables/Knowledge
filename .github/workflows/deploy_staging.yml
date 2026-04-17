@@ -30,7 +30,7 @@ jobs:
       - name: Deploy staging
         run: |
          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
 
             set -e
 
@@ -68,5 +68,5 @@ jobs:
             docker compose -p staging -f docker-compose-staging.yml ps
 
             echo "[DEPLOY] Staging deploy completed"
-         EOF
+EOF
          
