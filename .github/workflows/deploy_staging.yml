@@ -48,7 +48,7 @@ jobs:
             docker compose -p staging -f docker-compose-staging.yml up -d db   
           
             echo "[DEPLOY] Wait for DB"
-            timeout 60 bash -c 'until docker compose -p staging -f docker-compose-staging.yml exec -T db pg_isready -U postgres -d knowledgeable; do sleep 2; done'
+            until docker compose -p staging -f docker-compose-staging.yml exec -T db pg_isready -U postgres -d knowledgeable; do sleep 2; done
 
 
             echo "[DEPLOY] Run migrations"
@@ -62,3 +62,4 @@ jobs:
 
             echo "[DEPLOY] Staging deploy completed"
          EOF
+         
