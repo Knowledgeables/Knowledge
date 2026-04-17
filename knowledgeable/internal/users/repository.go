@@ -14,24 +14,18 @@ func NewRepository(db *sql.DB) *Repository {
 }
 
 func (r *Repository) Register(user *User) error {
-	result, err := r.db.Exec(
-		"INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)",
+	err := r.db.QueryRow(
+		"INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id",
 		user.Username,
 		user.Email,
 		user.PasswordHash,
-	)
+	).Scan(&user.ID)
+
+	if err != nil {
+		return err
+	}
+
 	log.Println("User added: ", user.Username)
-
-	if err != nil {
-		return err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return err
-	}
-
-	user.ID = id
 	return nil
 }
 
