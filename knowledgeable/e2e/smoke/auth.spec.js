@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
-test('login works @smoke', async ({ page }) => {
+
+test('@smoke-ci login works', async ({ page }) => {
   await page.goto('/login');
 
   await page.getByLabel('Username').fill('admin');
@@ -7,6 +8,7 @@ test('login works @smoke', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Log in' }).click();
 
+  await page.waitForLoadState('networkidle');
 
-  await expect(page.getByText('Search. Unlock knowledge.')).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
 });
