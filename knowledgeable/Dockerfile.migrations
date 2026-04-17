@@ -9,4 +9,5 @@ COPY db-migrations db-migrations
 
 WORKDIR /app/db-migrations
 
-CMD ["npx", "knex", "--help"]
+ENTRYPOINT ["npx", "knex"]
+CMD ["migrate:latest"]
