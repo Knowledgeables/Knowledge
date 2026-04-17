@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:16
+    container_name: postgres_staging_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: knowledgeable
@@ -18,10 +19,11 @@ services:
 
   migrations:
     image: ghcr.io/knowledgeables/knowledge-migrations:latest
-    profiles: ["tools"]
     depends_on:
-      db:
-        condition: service_healthy
+        db:
+          condition: service_healthy
+    restart: "no"
+    profiles: ["tools"]
     environment:
       POSTGRES_DB: knowledgeable
       POSTGRES_USER: postgres
@@ -32,13 +34,18 @@ services:
 
   app:
     image: ghcr.io/knowledgeables/knowledge:latest
+    container_name: knowledgeable_app_staging
+    depends_on:
+        db:
+          condition: service_healthy
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/knowledgeable?sslmode=disable
+      POSTGRES_DB: knowledgeable
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: db
       APP_ENV: staging
-    depends_on:
-      db:
-        condition: service_healthy
+      DATABASE_URL: postgres://postgres:postgres@db:5432/knowledgeable?sslmode=disable
     ports:
       - "8081:8080"
     networks:
@@ -50,3 +57,5 @@ volumes:
 networks:
   staging:
     driver: bridge
+
+
