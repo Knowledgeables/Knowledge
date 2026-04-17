@@ -48,7 +48,7 @@ jobs:
 
       - name: Run database migrations
         run: |
-          docker compose -f docker-compose-dev.yml run --rm migrations sh -c "npm install && npx knex migrate:latest && npx knex seed:run"
+          docker compose -f docker-compose-dev.yml run --rm migrations sh -c "npm install && npx knex migrate:latest && npx knex seed:run --specific=dev_init_data.js"
 
       - name: Test
         run: go test -v ./...
