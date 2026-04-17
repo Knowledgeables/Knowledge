@@ -1,11 +1,10 @@
-name: CD - Staging Deployment
 
+name: CD - Staging Deployment
 on:
   workflow_run:
     workflows: [ "CD - Delivery" ]
     types: [ completed ]
     branches: [ main ]
-
 jobs:
   deploy-staging:
     runs-on: ubuntu-latest
@@ -29,8 +28,8 @@ jobs:
 
       - name: Deploy staging
         run: |
-         ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
 
             set -e
 
@@ -48,6 +47,7 @@ jobs:
             docker compose -p staging -f docker-compose-staging.yml up -d db   
           
             echo "[DEPLOY] Wait for DB"
+
             for i in {1..30}; do
               if docker compose -p staging -f docker-compose-staging.yml exec -T db pg_isready -U postgres -d knowledgeable; then
                 echo "[DEPLOY] DB ready"
@@ -57,7 +57,6 @@ jobs:
               done      
 
             docker compose -p staging -f docker-compose-staging.yml exec -T db pg_isready -U postgres -d knowledgeable
-
             echo "[DEPLOY] Run migrations"
             docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations npx knex migrate:latest
 
@@ -68,5 +67,5 @@ jobs:
             docker compose -p staging -f docker-compose-staging.yml ps
 
             echo "[DEPLOY] Staging deploy completed"
-EOF
+          EOF
          
