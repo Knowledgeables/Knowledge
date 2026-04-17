@@ -11,4 +11,5 @@ RUN chown -R node:node /app/db-migrations
 USER node
 WORKDIR /app/db-migrations
 
-CMD ["npx", "knex", "--help"]
+ENTRYPOINT ["npx", "knex"]
+CMD ["migrate:latest"]
