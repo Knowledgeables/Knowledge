@@ -51,21 +51,15 @@ jobs:
             timeout 60 bash -c 'until docker compose -p staging -f docker-compose-staging.yml exec -T db pg_isready -U postgres -d knowledgeable; do sleep 2; done'
 
 
-            echo "[DEPLOY] Running migrations"
-            docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations \
-              sh -c "
-                echo '[MIGRATION] Running migrations...'
-                until npx knex migrate:latest; do
-                  echo '[MIGRATION] Retrying...'
-                  sleep 3
-                done
-              "
+            echo "[DEPLOY] Run migrations"
+            docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations npx knex migrate:latest
 
-            echo "[DEPLOY] Starting APP"
-            docker compose -p staging -f docker-compose-staging.yml up -d app
+            echo "[DEPLOY] Start app"
+            docker compose  -p staging -f docker-compose-staging.yml up -d --remove-orphans app 
 
             echo "[DEPLOY] Checking containers"
             docker compose -p staging -f docker-compose-staging.yml ps
 
             echo "[DEPLOY] Staging deploy completed"
+
             EOF
