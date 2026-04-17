@@ -20,6 +20,13 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
 
+
+      - name: Copy compose file
+        run: |
+          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            docker-compose-staging.yml \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/docker-compose-staging.yml
+
       - name: Deploy staging
         run: |
          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
@@ -29,14 +36,20 @@ jobs:
 
             echo "[DEPLOY] Starting staging deploy"
 
+            cd ~/app
+
             echo "[DEPLOY] Logging into registry"
             echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-            echo "[DEPLOY] Moving to app directory"
-            cd ~/app
-
             echo "[DEPLOY] Pulling images"
             docker compose -p staging -f docker-compose-staging.yml pull
+
+            echo "[DEPLOY] Start DB"
+            docker compose -p staging -f docker-compose-staging.yml up -d db   
+          
+            echo "[DEPLOY] Wait for DB"
+            timeout 60 bash -c 'until docker compose -p staging -f docker-compose-staging.yml exec -T db pg_isready -U postgres -d knowledgeable; do sleep 2; done'
+
 
             echo "[DEPLOY] Running migrations"
             docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations \
@@ -48,8 +61,8 @@ jobs:
                 done
               "
 
-            echo "[DEPLOY] Starting services"
-            docker compose -p staging -f docker-compose-staging.yml up -d
+            echo "[DEPLOY] Starting APP"
+            docker compose -p staging -f docker-compose-staging.yml up -d app
 
             echo "[DEPLOY] Checking containers"
             docker compose -p staging -f docker-compose-staging.yml ps
