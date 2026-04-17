@@ -48,8 +48,15 @@ jobs:
             docker compose -p staging -f docker-compose-staging.yml up -d db   
           
             echo "[DEPLOY] Wait for DB"
-            timeout 60 bash -c 'until docker compose -p staging -f docker-compose-staging.yml exec -T db pg_isready -U postgres -d knowledgeable; do sleep 2; done'
+            for i in {1..30}; do
+              if docker compose -p staging -f docker-compose-staging.yml exec -T db pg_isready -U postgres -d knowledgeable; then
+                echo "[DEPLOY] DB ready"
+                break
+              fi
+              sleep 2
+              done      
 
+            docker compose -p staging -f docker-compose-staging.yml exec -T db pg_isready -U postgres -d knowledgeable
 
             echo "[DEPLOY] Run migrations"
             docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations npx knex migrate:latest
@@ -62,3 +69,4 @@ jobs:
 
             echo "[DEPLOY] Staging deploy completed"
          EOF
+         
