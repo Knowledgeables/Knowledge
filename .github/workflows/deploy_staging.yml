@@ -58,7 +58,7 @@ jobs:
 
             docker compose -p staging -f docker-compose-staging.yml exec -T db pg_isready -U postgres -d knowledgeable
             echo "[DEPLOY] Run migrations"
-            docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations npx knex migrate:latest
+            docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations
 
             echo "[DEPLOY] Start app"
             docker compose  -p staging -f docker-compose-staging.yml up -d --remove-orphans app 
