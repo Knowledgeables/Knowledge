@@ -33,7 +33,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: ["npx", "knex", "migrate:latest"]
+        
     environment:
       POSTGRES_DB: knowledge
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
