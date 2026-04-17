@@ -61,5 +61,4 @@ jobs:
             docker compose -p staging -f docker-compose-staging.yml ps
 
             echo "[DEPLOY] Staging deploy completed"
-
-            EOF
+         EOF
