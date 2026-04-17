@@ -20,7 +20,7 @@ func InitPostgres() *sql.DB {
 		log.Fatal(err)
 	}
 
-	log.Println("Connected to PostgreSQL")
+	log.Println("[APP] Connected to PostgreSQL")
 
 	return db
 }
