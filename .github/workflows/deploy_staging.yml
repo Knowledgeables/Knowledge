@@ -47,16 +47,22 @@ jobs:
             docker compose -p staging -f docker-compose-staging.yml up -d db   
           
             echo "[DEPLOY] Wait for DB"
-
+            DB_READY=0
             for i in {1..30}; do
               if docker compose -p staging -f docker-compose-staging.yml exec -T db pg_isready -U postgres -d knowledgeable; then
                 echo "[DEPLOY] DB ready"
+                DB_READY=1
                 break
               fi
-              sleep 2
+              echo "[DEPLOY] Waiting for DB... attempt $i/30"
+              sleep 5
               done      
 
-            docker compose -p staging -f docker-compose-staging.yml exec -T db pg_isready -U postgres -d knowledgeable
+              if [ "$DB_READY" -eq 0 ]; then
+                echo "[DEPLOY] ERROR: DB never became ready"
+                exit 1
+              fi
+
             echo "[DEPLOY] Run migrations"
             docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations
 
