@@ -31,12 +31,12 @@ func (r *Repository) Register(user *User) error {
 
 func (r *Repository) FindByUsername(username string) (*User, error) {
 	row := r.db.QueryRow(
-		"SELECT id, username, email, password_hash FROM users WHERE username = $1",
+		"SELECT id, username, email, password_hash, should_change_password FROM users WHERE username = $1",
 		username,
 	)
 
 	var user User
-	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash)
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.ShouldChangePassword)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -51,12 +51,12 @@ func (r *Repository) FindByUsername(username string) (*User, error) {
 
 func (r *Repository) FindById(id int64) (*User, error) {
 	row := r.db.QueryRow(
-		"SELECT id, username, email, password_hash FROM users WHERE id = $1",
+		"SELECT id, username, email, password_hash, should_change_password FROM users WHERE id = $1",
 		id,
 	)
 
 	var user User
-	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash)
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.ShouldChangePassword)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -67,6 +67,14 @@ func (r *Repository) FindById(id int64) (*User, error) {
 	}
 
 	return &user, nil
+}
+
+func (r *Repository) UpdatePassword(userID int64, newPasswordHash string) error {
+	_, err := r.db.Exec(
+		"UPDATE users SET password_hash = $1, should_change_password = false WHERE id = $2",
+		newPasswordHash, userID,
+	)
+	return err
 }
 
 func (r *Repository) FindAll() ([]User, error) {

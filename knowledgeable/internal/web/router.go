@@ -30,6 +30,7 @@ func SetupRoutes(
 	http.HandleFunc("/login", authHandler.Login)
 	http.HandleFunc("/api/login", authHandler.LoginAPI)
 	http.HandleFunc("/api/me", authHandler.Me)
+	http.HandleFunc("/change-password", authHandler.ChangePassword)
 
 	http.Handle("/metrics", promhttp.Handler())
 

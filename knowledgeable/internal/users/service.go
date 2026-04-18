@@ -11,6 +11,7 @@ type UserRepository interface {
 	FindByUsername(string) (*User, error)
 	FindById(int64) (*User, error)
 	FindAll() ([]User, error)
+	UpdatePassword(int64, string) error
 }
 
 type Service struct {
@@ -95,6 +96,19 @@ func (s *Service) Login(username, password string) (*User, error) {
 	}
 
 	return user, nil
+}
+
+func (s *Service) ChangePassword(userID int64, newPassword string) error {
+	if newPassword == "" {
+		return errors.New("missing password")
+	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.UpdatePassword(userID, string(hashed))
 }
 
 func (s *Service) GetAll() ([]User, error) {

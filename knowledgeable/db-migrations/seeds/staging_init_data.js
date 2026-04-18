@@ -15,13 +15,15 @@ export async function seed(knex) {
         username: 'e2e_user',
         email: 'e2e@staging.local',
         // password: "password123"
-        password_hash: '$2a$12$wH8Q8G0dQ2Q0qV2c9l6s2e2rG9x0k7v5n8wYcV3f7u9l6qQ8bG3y2'
+        password_hash: '$2a$12$wH8Q8G0dQ2Q0qV2c9l6s2e2rG9x0k7v5n8wYcV3f7u9l6qQ8bG3y2',
+        should_change_password: true
       },
       {
         username: 'admin',
         email: 'admin@staging.local',
         // password: "admin123"
-        password_hash: '$2a$12$8fhiDpxQAlrTsZfQYLiKUeELzXABImIynuZSx3nwyNfIOofEg1W3i'
+        password_hash: '$2a$12$8fhiDpxQAlrTsZfQYLiKUeELzXABImIynuZSx3nwyNfIOofEg1W3i',
+        should_change_password: true
       }
     ])
 
