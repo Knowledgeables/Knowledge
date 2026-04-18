@@ -24,7 +24,8 @@ if [ "$DB_READY" -eq 0 ]; then
   exit 1
 fi
 echo "[DEPLOY] Run migrations"
-docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations
+docker compose -p staging -f docker-compose-staging.yml --profile tools run migrations
+docker compose -p staging -f docker-compose-staging.yml --profile tools rm -f migrations
 echo "[DEPLOY] Start app"
 docker compose -p staging -f docker-compose-staging.yml up -d --remove-orphans app
 echo "[DEPLOY] Checking containers"
