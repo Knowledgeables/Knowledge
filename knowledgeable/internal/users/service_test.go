@@ -31,6 +31,10 @@ func (m *mockRepo) FindById(id int64) (*User, error) {
 	return nil, nil
 }
 
+func (m *mockRepo) UpdatePassword(userID int64, newPasswordHash string) error {
+	return m.err
+}
+
 func (m *mockRepo) FindAll() ([]User, error) {
 	if m.err != nil {
 		return nil, m.err

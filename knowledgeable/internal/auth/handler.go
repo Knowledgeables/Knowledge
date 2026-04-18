@@ -27,6 +27,7 @@ type MeResponse struct {
 type UserService interface {
 	Login(string, string) (*users.User, error)
 	GetByID(id int64) (*users.User, error)
+	ChangePassword(userID int64, newPassword string) error
 }
 
 type Handler struct {
@@ -156,7 +157,73 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 		Secure:   os.Getenv("APP_ENV") != "dev",
 	})
 
+	if user.ShouldChangePassword {
+		http.Redirect(w, r, "/change-password", http.StatusSeeOther)
+		return
+	}
+
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// ChangePassword godoc
+// @Summary Change password
+// @Description Force-change password for authenticated user
+// @Tags auth
+// @Produce html
+// @Success 303 {string} string "Redirect to home"
+// @Failure 400 {string} string "bad request"
+// @Failure 401 {string} string "unauthorized"
+// @Router /change-password [get,post]
+func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	userID, ok := Get(cookie.Value)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	if r.Method == http.MethodGet {
+		tmpl := h.loadTmpl()
+		if err := tmpl.ExecuteTemplate(w, "change_password.html", nil); err != nil {
+			http.Error(w, "template error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		password := strings.TrimSpace(r.FormValue("password"))
+		confirm := strings.TrimSpace(r.FormValue("confirm_password"))
+
+		if password == "" || confirm == "" {
+			http.Error(w, "missing fields", http.StatusBadRequest)
+			return
+		}
+
+		if password != confirm {
+			http.Error(w, "passwords do not match", http.StatusBadRequest)
+			return
+		}
+
+		if err := h.userService.ChangePassword(userID, password); err != nil {
+			http.Error(w, "failed to change password", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 }
 
 // Me godoc

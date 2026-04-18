@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs wc *)",
+      "Bash(go build *)"
+    ]
+  }
+}
