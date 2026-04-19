@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test('smoke search works', async ({ page }) => {
   await page.goto('/search');
 
-  await page.getByPlaceholder('Search...').fill('E2E_SEARCH_TARGET');
+  await page.getByPlaceholder('Search...').fill('g');
   await page.click('#search-button');
 
   const results = page.locator('#results a');
