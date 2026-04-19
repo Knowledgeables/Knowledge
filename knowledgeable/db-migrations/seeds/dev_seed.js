@@ -1,5 +1,5 @@
 export async function seed(knex) {
-  // ryd først (rigtig rækkefølge pga. FK hvis de findes)
+
   await knex('pages').del();
   await knex('users').del();
 
@@ -10,7 +10,7 @@ export async function seed(knex) {
         username: 'admin',
         email: 'admin@dev.local',
         password_hash: '$2a$12$8fhiDpxQAlrTsZfQYLiKUeELzXABImIynuZSx3nwyNfIOofEg1W3i',
-        should_change_password: true
+        should_change_password: false       
       },
       {
         username: 'tester',
