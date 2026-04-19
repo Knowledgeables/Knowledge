@@ -67,6 +67,9 @@ go-test:
 smoke-test: ## Run Playwright smoke tests (requires running app)
 	npx playwright test --project=smoke --reporter=line
 
+full-e2e: ## Run the full version of e2e playwright tests that runs on staging environment
+	npx playwright test --project=full --reporter=line
+
 # =========================
 # Code Quality
 # =========================
