@@ -9,12 +9,14 @@ export async function seed(knex) {
       {
         username: 'admin',
         email: 'admin@dev.local',
-        password_hash: '$2a$12$8fhiDpxQAlrTsZfQYLiKUeELzXABImIynuZSx3nwyNfIOofEg1W3i'       
+        password_hash: '$2a$12$8fhiDpxQAlrTsZfQYLiKUeELzXABImIynuZSx3nwyNfIOofEg1W3i',
+        should_change_password: false       
       },
       {
         username: 'tester',
         email: 'tester@dev.local',
-        password_hash: '$2a$12$sHphNz2knALIBeijiWoCqe3erFOhSY/Ke8kUt/09g3SkRySl0kTp2'
+        password_hash: '$2a$12$sHphNz2knALIBeijiWoCqe3erFOhSY/Ke8kUt/09g3SkRySl0kTp2',
+        should_change_password: true
       }
     ])
     .onConflict(['email'])

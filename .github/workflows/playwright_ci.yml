@@ -43,7 +43,7 @@ jobs:
           docker compose -f docker-compose-dev.yml run --rm migrations sh -c "
             npm ci &&
             npx knex migrate:latest &&
-            npx knex seed:run --specific=dev_init_data.js
+            npx knex seed:run --specific=dev_seed.js
           "
 
       # 4. Start app AFTER DB is ready

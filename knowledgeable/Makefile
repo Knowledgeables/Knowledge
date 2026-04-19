@@ -1,24 +1,46 @@
-.PHONY: help test lint dev-up dev-down dev-build dev-logs setup-hooks install-gosec
+.PHONY: help go-test smoke-test lint dev-up dev-down dev-build dev-logs setup-hooks dev-migrate hooks-run install-gosec swagger
 
+# =========================
+# Project Commands (make help)
+# =========================
 help:
-	@echo Available targets:
-	@echo   make test
-	@echo   make lint
-	@echo   make dev-up
-	@echo   make dev-down
-	@echo   make dev-migrate
-	@echo   make dev-build
-	@echo   make dev-logs
-	@echo   make setup-hooks
-	@echo   make install-gosec
-	@echo   make swagger
+	@echo "Available targets:"
+	@echo ""
+	@echo "Setup:"
+	@echo "  make setup-hooks"
+	@echo "  make install-gosec"
+	@echo ""
+	@echo "Development:"
+	@echo "  make dev-up"
+	@echo "  make dev-down"
+	@echo "  make dev-build"
+	@echo "  make dev-logs"
+	@echo "  make dev-migrate"
+	@echo ""
+	@echo "Testing:"
+	@echo "  make go-test"
+	@echo "  make smoke-test"
+	@echo ""
+	@echo "Quality:"
+	@echo "  make lint"
+	@echo "  make hooks-run"
+	@echo ""
+	@echo "Other:"
+	@echo "  make swagger"
 
-test:
-	go test ./... -count=1 -v
+# =========================
+# Setup (run once)
+# =========================
+setup-hooks:
+	prek install --hook-type pre-commit
+	prek install --hook-type commit-msg
 
-lint:
-	golangci-lint run
+install-gosec:
+	go install github.com/securego/gosec/v2/cmd/gosec@latest
 
+# =========================
+# Development Environment
+# =========================
 dev-up:
 	docker compose -f docker-compose-dev.yml up -d
 	docker compose -f docker-compose-dev.yml exec -T db sh -c "until pg_isready -U postgres; do sleep 2; done"
@@ -36,21 +58,28 @@ dev-build:
 dev-logs:
 	docker compose -f docker-compose-dev.yml logs -f
 
-## This target sets up the pre-commit hooks defined in .pre-commit-config.yaml
-## Prek install by default installs pre-commit hooks, but we also want to install commit-msg hooks for validating commit messages
-setup-hooks:
-	prek install --hook-type pre-commit
-	prek install --hook-type commit-msg
+# =========================
+# Testing
+# =========================
+go-test:
+	go test ./... -count=1 -v
 
-## This target is for running the pre-commit hooks manually, e.g. in CI pipelines
+smoke-test: ## Run Playwright smoke tests (requires running app)
+	npx playwright test --project=smoke --reporter=line
+
+# =========================
+# Code Quality
+# =========================
+lint:
+	golangci-lint run
+
 hooks-run:
 	prek run
 	setup-hooks.sh
 
-
-install-gosec:
-	go install github.com/securego/gosec/v2/cmd/gosec@latest
-
+# =========================
+# Tooling / Docs
+# =========================
 swagger:
 	rm -rf docs
 	swag init -g cmd/server/main.go -o docs
