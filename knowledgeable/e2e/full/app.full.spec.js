@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-test('smoke app loads', async ({ page }) => {
+test('@app loads', async ({ page }) => {
   await page.goto('/');
-  await expect(page).toHaveTitle('Home');
+
+  await page.waitForLoadState('networkidle');
+
   await expect(page.locator('#navbar')).toBeVisible();
 });

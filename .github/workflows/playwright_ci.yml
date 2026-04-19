@@ -70,7 +70,7 @@ jobs:
 
       # 9. Run tests
       - name: Run Playwright smoke tests
-        run: npx playwright test --grep @smoke-ci --reporter=line
+        run: npx playwright test --project=smoke --reporter=line
 
       # Debug
       - name: Show running containers
