@@ -1,7 +1,7 @@
 name: CD - Deployment
 on:
   workflow_run:
-    workflows: ["CD - Delivery"]
+    workflows: ["CD - Playwright Staging E2E"]
     types: [completed]
     branches: [main]
 jobs:
