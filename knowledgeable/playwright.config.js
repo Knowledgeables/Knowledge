@@ -34,18 +34,22 @@ export default defineConfig({
   },
 
   /* Configure projects for major browsers */
-  projects: [
+projects: [
   {
     name: 'smoke',
     testMatch: /.*\.smoke\.spec\.js/,
     use: { ...devices['Desktop Chrome'] },
   },
-    {
-    name: 'full',
-    testMatch: /.*\.spec\.js/,
+  {
+  name: 'full',
+  testMatch: /.*(?<!smoke|post-deploy)\.spec\.js/,
+  use: { ...devices['Desktop Chrome'] },
+  },
+  {
+    name: 'post-deploy',
+    testMatch: /.*\.post-deploy\.spec\.js/,
     use: { ...devices['Desktop Chrome'] },
   },
-  
 ],
 
     /* Test against mobile viewports. */

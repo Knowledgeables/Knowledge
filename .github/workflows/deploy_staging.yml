@@ -26,10 +26,15 @@ jobs:
             knowledgeable/docker-compose-staging.yml \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/docker-compose-staging.yml
 
-      - name: Copy staging deploy script
+      - name: Copy scripts
         run: |
-          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no .github/scripts/deploy-staging.sh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/deploy-staging.sh
-      
+          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            .github/scripts/deploy-staging.sh \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/deploy-staging.sh
+          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            .github/scripts/teardown-staging.sh \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/teardown-staging.sh
+
       - name: Deploy staging
         run: |
           ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
