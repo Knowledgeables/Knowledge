@@ -19,6 +19,7 @@ jobs:
           chmod 600 ~/.ssh/ssh_key
   
       - name: Install dependencies
+        working-directory: knowledgeable
         run: npm ci
 
       - name: Install Playwright browsers
