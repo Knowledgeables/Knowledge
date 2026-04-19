@@ -22,9 +22,11 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
+        working-directory: knowledgeable
         run: npx playwright install --with-deps
 
       - name: Run e2e tests
+        working-directory: knowledgeable
         run: npx playwright test --project=full --reporter=line
         env:
           BASE_URL: http://${{ secrets.SSH_HOST }}:8081
