@@ -1,4 +1,5 @@
 export async function seed(knex) {
+await knex('pages').del();
 await knex('pages').insert([
   {
     title: 'Search Systems',
@@ -19,6 +20,11 @@ await knex('pages').insert([
     title: 'Simple Strings',
     url: 'e2e://strings',
     content: 'string manipulation'
-  }
+  },
+  {
+  title: 'E2E_UNIQUE_SEARCH',
+  url: 'e2e://unique',
+  content: 'only-this-should-match-xyz123'
+}
 ]);
 }
