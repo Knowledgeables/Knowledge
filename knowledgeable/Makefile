@@ -46,8 +46,11 @@ dev-up:
 	docker compose -f docker-compose-dev.yml exec -T db sh -c "until pg_isready -U postgres; do sleep 2; done"
 	$(MAKE) dev-migrate
 
+SEED ?= dev_seed.js
+
 dev-migrate:
-	docker compose -f docker-compose-dev.yml run --rm migrations sh -c "npm install && npx knex migrate:latest && npx knex seed:run --specific=dev_seed.js"
+	docker compose -f docker-compose-dev.yml run --rm migrations sh -c "npx knex migrate:latest && \
+npx knex seed:run --specific=$(SEED)"
 
 dev-down:
 	docker compose -f docker-compose-dev.yml down
@@ -68,7 +71,11 @@ smoke-test: ## Run Playwright smoke tests (requires running app)
 	npx playwright test --project=smoke --reporter=line
 
 full-e2e: ## Run the full version of e2e playwright tests that runs on staging environment
+	$(MAKE) dev-down
+	$(MAKE) dev-up SEED=staging_seed.js
 	npx playwright test --project=full --reporter=line
+	$(MAKE) dev-down
+	$(MAKE) dev-up
 
 # =========================
 # Code Quality
