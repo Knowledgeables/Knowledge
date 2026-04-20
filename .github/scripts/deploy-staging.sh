@@ -28,7 +28,6 @@ docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm
 npx knex migrate:latest &&
 npx knex seed:run --specific=staging_seed.js
 "
-docker compose -p staging -f docker-compose-staging.yml --profile tools rm -f migrations
 echo "[DEPLOY] Start app"
 docker compose -p staging -f docker-compose-staging.yml up -d --remove-orphans app
 echo "[DEPLOY] Checking containers"
