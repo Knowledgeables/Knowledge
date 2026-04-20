@@ -23,8 +23,11 @@ if [ "$DB_READY" -eq 0 ]; then
   echo "[DEPLOY] ERROR: DB never became ready"
   exit 1
 fi
-echo "[DEPLOY] Run migrations"
-docker compose -p staging -f docker-compose-staging.yml --profile tools run migrations
+echo "[DEPLOY] Run migrations + seed"
+docker compose -p staging -f docker-compose-staging.yml --profile tools run migrations sh -c "
+  npx knex migrate:latest &&
+  npx knex seed:run --specific=staging_seed.js
+"
 docker compose -p staging -f docker-compose-staging.yml --profile tools rm -f migrations
 echo "[DEPLOY] Start app"
 docker compose -p staging -f docker-compose-staging.yml up -d --remove-orphans app

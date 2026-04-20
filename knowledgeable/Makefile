@@ -20,6 +20,7 @@ help:
 	@echo "Testing:"
 	@echo "  make go-test"
 	@echo "  make smoke-test"
+	@echo "  make full-e2e"
 	@echo ""
 	@echo "Quality:"
 	@echo "  make lint"
