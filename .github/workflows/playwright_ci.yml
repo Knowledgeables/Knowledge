@@ -83,7 +83,7 @@ jobs:
 
       # Report
       - name: Upload Playwright report  
-        if: ${{ !cancelled() }}
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report

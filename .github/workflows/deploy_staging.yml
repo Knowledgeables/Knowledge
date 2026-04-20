@@ -40,3 +40,9 @@ jobs:
           ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "CR_PAT='${{ secrets.CR__PAT }}' DOCKER_USERNAME='${{ secrets.DOCKER_USERNAME }}' bash ~/app/deploy-staging.sh"
+
+      - name: Wait for staging app
+        run: |
+          timeout 60 bash -c 'until curl -f http://${{ secrets.SSH_HOST }}:8081/health; do sleep 2; done'
+
+          
