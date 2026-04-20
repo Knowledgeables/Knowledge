@@ -1,7 +1,11 @@
-name: Build & Push Migrations Image
+name: CI - Build & Push Migrations Image
 
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   build:
