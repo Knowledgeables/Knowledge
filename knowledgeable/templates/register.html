@@ -27,6 +27,12 @@
                     <span class="text-gray-400 text-sm">Join the knowledgeables</span>
                 </div>
 
+                {{if .Error}}
+                <div class="w-72 bg-red-950/40 border border-red-800 rounded px-3 py-2 text-red-400 text-sm">
+                    {{.Error}}
+                </div>
+                {{end}}
+
                 <div class="flex flex-col w-full">
                     <label for="username" class="text-sm text-gray-400 mb-1">USERNAME:</label>
                     <input type="text" id="username" name="username"

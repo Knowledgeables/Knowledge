@@ -50,7 +50,7 @@ func main() {
 	// user
 	userRepo := users.NewRepository(database)
 	userService := users.NewService(userRepo)
-	userHandler := users.NewHandler(userService, tmplLoader)
+	userHandler := users.NewHandler(userService, tmplLoader, auth.Create)
 
 	// pages
 	pageRepo := pages.NewRepository(database)

@@ -36,6 +36,10 @@ type Handler struct {
 	loadTmpl    func() *template.Template
 }
 
+type LoginPageData struct {
+	Error string
+}
+
 func NewHandler(us UserService, load func() *template.Template) *Handler {
 	return &Handler{
 		userService: us,
@@ -63,7 +67,12 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := h.loadTmpl()
 
-	if err := tmpl.ExecuteTemplate(w, "login.html", nil); err != nil {
+	data := LoginPageData{}
+	if r.URL.Query().Get("error") == "invalid_credentials" {
+		data.Error = "Invalid username or password"
+	}
+
+	if err := tmpl.ExecuteTemplate(w, "login.html", data); err != nil {
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
@@ -141,7 +150,7 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userService.Login(req.Username, req.Password)
 	if err != nil {
 		slog.Warn("login failed")
-		http.Error(w, "invalid credentials", http.StatusUnauthorized)
+		http.Redirect(w, r, "/login?error=invalid_credentials", http.StatusSeeOther)
 		return
 	}
 

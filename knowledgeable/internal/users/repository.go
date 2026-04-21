@@ -2,7 +2,16 @@ package users
 
 import (
 	"database/sql"
-	"log"
+	"errors"
+	"log/slog"
+	"strings"
+
+	"github.com/lib/pq"
+)
+
+var (
+	ErrUsernameTaken = errors.New("username already taken")
+	ErrEmailTaken    = errors.New("email already taken")
 )
 
 type Repository struct {
@@ -22,10 +31,18 @@ func (r *Repository) Register(user *User) error {
 	).Scan(&user.ID)
 
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			if strings.Contains(pqErr.Constraint, "username") {
+				return ErrUsernameTaken
+			}
+			if strings.Contains(pqErr.Constraint, "email") {
+				return ErrEmailTaken
+			}
+		}
 		return err
 	}
 
-	log.Println("User added: ", user.Username)
+	slog.Info("user added", "user_id", user.ID) // #nosec G706 -- JSON handler escapes all values
 	return nil
 }
 
