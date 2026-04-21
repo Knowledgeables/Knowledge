@@ -46,7 +46,7 @@ services:
     image: nginx:latest
     restart: unless-stopped
     environment:
-      - APP_DOMAIN=${APP_DOMAIN :?APP_DOMAIN is required}
+      - APP_DOMAIN=${APP_DOMAIN:?APP_DOMAIN is required}
     ports:
       - "80:80"
       - "443:443"
