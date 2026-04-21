@@ -41,14 +41,16 @@ import { test, expect } from "@playwright/test";
   });
 
 
-test("authenticated user sees user-navbar", async ({ page, request }) => {
+test("authenticated user sees user-navbar", async ({ page, request, baseURL }) => {
   const username = `test_${Date.now()}`;
   const password = "test123";
 
   // register
-  await request.post("/api/register", {
-    data: { username, email: `${username}@test.com`, password },
-  });
+ const res = await request.post(`${baseURL}/api/register`, {
+  data: { username, email: `${username}@test.com`, password },
+});
+
+expect(res.ok()).toBeTruthy();
 
   // login via UI
   await page.goto("/login");
@@ -56,7 +58,7 @@ test("authenticated user sees user-navbar", async ({ page, request }) => {
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: /log in/i }).click();
 
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL(/\/$/);
 
   // assertions
   await expect(page.getByText(username)).toBeVisible();
