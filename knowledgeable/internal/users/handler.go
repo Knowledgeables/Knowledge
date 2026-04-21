@@ -5,11 +5,13 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"os"
 )
 
 type Handler struct {
-	service  UserService
-	loadTmpl func() *template.Template
+	service       UserService
+	loadTmpl      func() *template.Template
+	createSession func(int64) (string, error)
 }
 
 type RegisterRequest struct {
@@ -29,10 +31,11 @@ type UserService interface {
 	GetAll() ([]User, error)
 }
 
-func NewHandler(s UserService, load func() *template.Template) *Handler {
+func NewHandler(s UserService, load func() *template.Template, createSession func(int64) (string, error)) *Handler {
 	return &Handler{
-		service:  s,
-		loadTmpl: load,
+		service:       s,
+		loadTmpl:      load,
+		createSession: createSession,
 	}
 }
 
@@ -146,7 +149,22 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	sessionID, err := h.createSession(user.ID)
+	if err != nil {
+		slog.Error("register_api session failed", "error", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure is set dynamically based on APP_ENV
+		Name:     "session_id",
+		Value:    sessionID,
+		SameSite: http.SameSiteLaxMode,
+		HttpOnly: true,
+		Path:     "/",
+		Secure:   os.Getenv("APP_ENV") == "production",
+	})
+
 	slog.Info("user registered via api", "user_id", user.ID) // #nosec G706 -- JSON handler escapes all values
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

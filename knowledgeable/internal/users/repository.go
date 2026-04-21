@@ -2,7 +2,7 @@ package users
 
 import (
 	"database/sql"
-	"log"
+	"log/slog"
 )
 
 type Repository struct {
@@ -25,7 +25,7 @@ func (r *Repository) Register(user *User) error {
 		return err
 	}
 
-	log.Println("User added: ", user.Username)
+	slog.Info("user added", "user_id", user.ID) // #nosec G706 -- JSON handler escapes all values
 	return nil
 }
 
