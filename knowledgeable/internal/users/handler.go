@@ -90,7 +90,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		slog.Info("user registered", "username", user.Username) // #nosec G706 -- JSON handler escapes all values
+		slog.Info("user registered", "user_id", user.ID) // #nosec G706 -- JSON handler escapes all values
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -147,6 +147,6 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	slog.Info("user registered via api", "username", user.Username) // #nosec G706 -- JSON handler escapes all values
+	slog.Info("user registered via api", "user_id", user.ID) // #nosec G706 -- JSON handler escapes all values
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
