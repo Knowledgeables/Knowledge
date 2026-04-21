@@ -154,7 +154,7 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		HttpOnly: true,
 		Path:     "/",
-		Secure:   os.Getenv("APP_ENV") != "dev",
+		Secure: os.Getenv("APP_ENV") == "production",
 	})
 
 	if user.ShouldChangePassword {
