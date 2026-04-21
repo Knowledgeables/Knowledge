@@ -10,6 +10,7 @@ import (
 	"knowledgeable/internal/users"
 	"knowledgeable/internal/web"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,6 +20,7 @@ import (
 
 func main() {
 
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 	log.Println("[APP] Starting application")
 
 	// db setup

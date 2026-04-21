@@ -3,7 +3,7 @@ package users
 import (
 	"encoding/json"
 	"html/template"
-	"log"
+	"log/slog"
 	"net/http"
 )
 
@@ -44,7 +44,7 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	users, err := h.service.GetAll()
 	if err != nil {
-		log.Println("GetAll error:", err)
+		slog.Error("GetAll failed", "error", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
@@ -85,12 +85,12 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		user, err := h.service.Register(username, email, password)
 
 		if err != nil {
-			log.Println("Register error:", err)
+			slog.Error("register failed", "error", err)
 			http.Error(w, "invalid input", http.StatusBadRequest)
 			return
 		}
 
-		log.Printf("User created: %q", user.Username) // #nosec G706 -- username is quoted with %q
+		slog.Info("user registered", "user_id", user.ID) // #nosec G706 -- JSON handler escapes all values
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -141,12 +141,12 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.service.Register(req.Username, req.Email, req.Password)
 	if err != nil {
-		log.Printf("RegisterAPI error: %v", err)
+		slog.Error("register_api failed", "error", err)
 		http.Error(w, "registration failed", http.StatusBadRequest)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	log.Printf("User registered: %q", user.Username) // #nosec G706 -- username is quoted with %q
+	slog.Info("user registered via api", "user_id", user.ID) // #nosec G706 -- JSON handler escapes all values
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
