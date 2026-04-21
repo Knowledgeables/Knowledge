@@ -60,15 +60,22 @@ jobs:
 
       # 7. Cache Playwright browsers
       - uses: actions/cache@v4
+        id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}
+          key: playwright-${{ runner.os }}-${{ hashFiles('knowledgeable/package-lock.json') }}
 
       # 8. Install Playwright
       - name: Install Playwright Browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install chromium --with-deps
 
-      # 9. Run tests
+      # 9. If cache hit, still need to install system deps (but not the browser)
+      - name: Install system deps only
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      # 10. Run tests
       - name: Run Playwright smoke tests
         run: npx playwright test --project=smoke --reporter=line
 
