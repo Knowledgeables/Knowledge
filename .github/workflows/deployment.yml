@@ -41,22 +41,14 @@ jobs:
         run: |
           ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             set -e
-
             echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
             cd ~/app
 
             docker compose stop app
-
             docker image rm ghcr.io/knowledgeables/knowledge:latest || true
-
             docker compose pull app db migrations nginx
-
             docker compose up -d db
-
-            timeout 60 bash -c 'until docker compose exec -T db pg_isready -U "$POSTGRES_USER" -d knowledge; do sleep 2; done'
-
+            timeout 60 bash -c 'until docker compose exec -T db pg_isready -U "$(grep POSTGRES_USER .env | cut -d= -f2)"; do sleep 2; done'
             docker compose run --rm migrations
-
             docker compose up -d --force-recreate app nginx
           EOF
