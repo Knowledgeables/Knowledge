@@ -46,7 +46,7 @@ jobs:
 
             cd ~/app
 
-            docker compose down app
+            docker compose stop app
 
             docker image rm ghcr.io/knowledgeables/knowledge:latest || true
 
