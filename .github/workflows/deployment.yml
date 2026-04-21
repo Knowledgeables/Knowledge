@@ -55,7 +55,9 @@ jobs:
 
             docker compose run --rm migrations
 
-            docker compose up -d app nginx
+            docker compose up -d --no-deps --force-recreate app
+            docker compose up -d --no-deps nginx
+
 
             docker compose ps
 
