@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"knowledgeable/internal/users"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -86,6 +87,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err == nil {
 		Delete(cookie.Value)
+		slog.Info("user logged out")
 	}
 
 	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure is set dynamically based on APP_ENV
@@ -138,6 +140,7 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userService.Login(req.Username, req.Password)
 	if err != nil {
+		slog.Warn("login failed", "username", req.Username) // #nosec G706 -- JSON handler escapes all values
 		http.Error(w, "invalid credentials", http.StatusUnauthorized)
 		return
 	}
@@ -156,6 +159,8 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Secure:   os.Getenv("APP_ENV") != "dev",
 	})
+
+	slog.Info("user logged in", "username", user.Username) // #nosec G706 -- JSON handler escapes all values
 
 	if user.ShouldChangePassword {
 		http.Redirect(w, r, "/change-password", http.StatusSeeOther)

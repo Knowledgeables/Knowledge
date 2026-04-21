@@ -3,6 +3,7 @@ package pages
 import (
 	"encoding/json"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"strings"
 )
@@ -43,9 +44,11 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	} else {
 		results, count, err = h.service.Search(query, Language(lang))
 		if err != nil {
+			slog.Error("search failed", "query", query, "language", lang, "error", err) // #nosec G706 -- JSON handler escapes all values
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		slog.Info("search", "query", query, "language", lang, "results", count) // #nosec G706 -- JSON handler escapes all values
 	}
 
 	data := struct {
@@ -95,9 +98,11 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 	} else {
 		results, count, err = h.service.Search(query, Language(lang))
 		if err != nil {
+			slog.Error("search_api failed", "query", query, "language", lang, "error", err) // #nosec G706 -- JSON handler escapes all values
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		slog.Info("search_api", "query", query, "language", lang, "results", count) // #nosec G706 -- JSON handler escapes all values
 	}
 
 	w.Header().Set("Content-Type", "application/json")
