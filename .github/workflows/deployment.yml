@@ -30,6 +30,7 @@ jobs:
       - name: Write .env file on server
         run: |
           ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cat > ~/app/.env << 'EOENV'
+          APP_DOMAIN=${{ secrets.APP_DOMAIN }}
           POSTGRES_USER=${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
           DATABASE_URL=${{ secrets.DATABASE_URL }}
@@ -44,6 +45,10 @@ jobs:
             echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
             cd ~/app
+
+            docker compose down app
+
+            docker image rm ghcr.io/knowledgeables/knowledge:latest || true
 
             docker compose pull app db migrations nginx
 
