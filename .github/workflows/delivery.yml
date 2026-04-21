@@ -31,4 +31,6 @@ jobs:
 
       - name: Build and push all images
         working-directory: knowledgeable
+        env:
+          IMAGE_TAG: ${{ github.sha }}
         run: docker buildx bake -f docker-compose-build.yml --push
