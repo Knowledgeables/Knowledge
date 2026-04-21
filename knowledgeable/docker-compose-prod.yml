@@ -29,7 +29,7 @@ services:
       - knowledgeable_network
 
   migrations:
-    image: ghcr.io/knowledgeables/knowledge-migrations:latest
+    image: ghcr.io/knowledgeables/knowledge-migrations:${IMAGE_TAG}
     depends_on:
       db:
         condition: service_healthy

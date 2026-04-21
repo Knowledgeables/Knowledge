@@ -29,7 +29,7 @@ jobs:
 
       - name: Write .env file on server
         run: |
-          ssh ... "cat > ~/app/.env << 'EOENV'
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cat > ~/app/.env << 'EOENV'
           IMAGE_TAG=${{ github.event.workflow_run.head_sha }}
           APP_DOMAIN=${{ secrets.APP_DOMAIN }}
           POSTGRES_USER=${{ secrets.POSTGRES_USER }}
