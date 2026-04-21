@@ -26,6 +26,10 @@ type RegisterResponse struct {
 	Username string `json:"username"`
 }
 
+type RegisterPageData struct {
+	Error string
+}
+
 type UserService interface {
 	Register(string, string, string) (*User, error)
 	GetAll() ([]User, error)
@@ -69,7 +73,15 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		tmpl := h.loadTmpl()
 
-		if err := tmpl.ExecuteTemplate(w, "register.html", nil); err != nil {
+		data := RegisterPageData{}
+		switch r.URL.Query().Get("error") {
+		case "username_taken":
+			data.Error = "Username is already taken"
+		case "email_taken":
+			data.Error = "Email is already registered"
+		}
+
+		if err := tmpl.ExecuteTemplate(w, "register.html", data); err != nil {
 			http.Error(w, "template error", http.StatusInternalServerError)
 		}
 		return
@@ -145,7 +157,14 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 	user, err := h.service.Register(req.Username, req.Email, req.Password)
 	if err != nil {
 		slog.Error("register_api failed", "error", err)
-		http.Error(w, "registration failed", http.StatusBadRequest)
+		switch err {
+		case ErrUsernameTaken:
+			http.Redirect(w, r, "/register?error=username_taken", http.StatusSeeOther)
+		case ErrEmailTaken:
+			http.Redirect(w, r, "/register?error=email_taken", http.StatusSeeOther)
+		default:
+			http.Error(w, "registration failed", http.StatusBadRequest)
+		}
 		return
 	}
 

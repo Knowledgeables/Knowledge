@@ -133,9 +133,13 @@ func TestLoginAPI_InvalidCredentials(t *testing.T) {
 
 	res := rr.Result()
 
-	// korrekt status
-	if res.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("expected 401, got %d", res.StatusCode)
+	// should redirect back to login with error param
+	if res.StatusCode != http.StatusSeeOther {
+		t.Fatalf("expected 303, got %d", res.StatusCode)
+	}
+
+	if res.Header.Get("Location") != "/login?error=invalid_credentials" {
+		t.Fatalf("expected redirect to /login?error=invalid_credentials, got %s", res.Header.Get("Location"))
 	}
 
 	// ingen cookie
