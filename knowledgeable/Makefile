@@ -76,7 +76,7 @@ full-e2e: ## Run the full version of e2e playwright tests that runs on staging e
 	$(MAKE) dev-up SEED=staging_seed.js
 	npx playwright test --project=full --reporter=line
 	$(MAKE) dev-down
-	$(MAKE) dev-up
+	
 
 # =========================
 # Code Quality
