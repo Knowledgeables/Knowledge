@@ -29,6 +29,13 @@ jobs:
             knowledgeable/docker-compose-prod.yml \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/docker-compose.yml
 
+      - name: Transfer nginx config to server
+        run: |
+          ssh -i ~/.ssh/ssh_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/app/nginx/secure"
+          scp -i ~/.ssh/ssh_key -r \
+            knowledgeable/nginx/secure/. \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/nginx/secure/
+
       - name: Create .env file
         env:
           IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
