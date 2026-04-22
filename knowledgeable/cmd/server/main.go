@@ -6,6 +6,7 @@ import (
 	_ "knowledgeable/docs"
 	"knowledgeable/internal/auth"
 	"knowledgeable/internal/db"
+	"knowledgeable/internal/middleware"
 	"knowledgeable/internal/pages"
 	"knowledgeable/internal/users"
 	"knowledgeable/internal/web"
@@ -21,7 +22,7 @@ import (
 func main() {
 
 	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
-    resp, err := http.Get("http://localhost:8080/health")
+		resp, err := http.Get("http://localhost:8080/health")
 		if err != nil {
 			os.Exit(1)
 		}
@@ -29,8 +30,8 @@ func main() {
 		if resp.StatusCode != http.StatusOK {
 			os.Exit(1)
 		}
-    os.Exit(0)
-}
+		os.Exit(0)
+	}
 
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 	log.Println("[APP] Starting application")
@@ -93,6 +94,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:         ":8080",
+		Handler:      middleware.Tracking(middleware.PageView(http.DefaultServeMux)),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
