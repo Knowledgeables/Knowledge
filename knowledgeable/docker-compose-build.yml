@@ -10,9 +10,3 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.migrations
-
-  nginx:
-    image: ghcr.io/knowledgeables/knowledge_nginx:${IMAGE_TAG:-latest}
-    build:
-      context: ./network
-      dockerfile: Dockerfile
