@@ -20,6 +20,11 @@ type CrawlerTargetsResponse struct {
 	Count   int           `json:"count"`
 }
 
+type CrawlerIngestResponse struct {
+	Upserted int `json:"upserted"`
+	Received int `json:"received"`
+}
+
 type Handler struct {
 	service  *Service
 	loadTmpl func() *template.Template
@@ -177,6 +182,58 @@ func (h *Handler) CrawlerTargetsAPI(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(CrawlerTargetsResponse{
 		Targets: targets,
 		Count:   len(targets),
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// CrawlerIngestAPI godoc
+// @Summary Ingest crawled pages
+// @Description Upsert crawler results into pages table
+// @Tags crawler
+// @Accept json
+// @Produce json
+// @Param X-Crawler-Key header string true "Crawler authentication key"
+// @Param body body []pages.CrawlerIngestItem true "Crawler pages payload"
+// @Success 200 {object} pages.CrawlerIngestResponse
+// @Failure 400 {string} string "invalid request"
+// @Failure 401 {string} string "unauthorized"
+// @Failure 405 {string} string "method not allowed"
+// @Failure 500 {string} string "internal error"
+// @Router /api/crawler/ingest [post]
+func (h *Handler) CrawlerIngestAPI(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	expectedKey := os.Getenv("CRAWLER_KEY")
+	if expectedKey == "" {
+		expectedKey = "dev-key"
+	}
+	if r.Header.Get("X-Crawler-Key") != expectedKey {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var items []CrawlerIngestItem
+	if err := json.NewDecoder(r.Body).Decode(&items); err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	upserted, err := h.service.IngestCrawlerPages(items)
+	if err != nil {
+		slog.Error("crawler ingest failed", "error", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(CrawlerIngestResponse{
+		Upserted: upserted,
+		Received: len(items),
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

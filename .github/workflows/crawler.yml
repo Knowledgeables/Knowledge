@@ -30,7 +30,7 @@ jobs:
         env:
           BACKEND_URL: ${{ secrets.CRAWLER_BACKEND_URL }}
           CRAWLER_KEY: ${{ secrets.CRAWLER_KEY }}
-          ENABLE_INGEST: "false"
+          ENABLE_INGEST: "true"
           MAX_TARGETS: "20"
           MAX_PAGES: "50"
           MAX_DEPTH: "1"

@@ -23,6 +23,7 @@ func SetupRoutes(
 	http.HandleFunc("/search", pageHandler.Search)
 	http.HandleFunc("/api/search", pageHandler.SearchAPI)
 	http.HandleFunc("/api/crawler/targets", pageHandler.CrawlerTargetsAPI)
+	http.HandleFunc("/api/crawler/ingest", pageHandler.CrawlerIngestAPI)
 
 	http.HandleFunc("/register", userHandler.Register)
 	http.HandleFunc("/api/register", userHandler.RegisterAPI)

@@ -26,6 +26,13 @@ type CrawlSignal struct {
 	LastSeen    sql.NullTime `json:"lastSeen" swaggertype:"string"`
 }
 
+type CrawlerIngestItem struct {
+	Title    string   `json:"title"`
+	URL      string   `json:"url"`
+	Language Language `json:"language"`
+	Content  string   `json:"content"`
+}
+
 func NewPage(title, url, content string) Page {
 	return Page{
 		Title:    title,
