@@ -11,55 +11,53 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Add SSH key to runner
+      - name: Setup SSH
         run: |
-          mkdir -p ~/.ssh/
+          mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Ensure remote app directory exists
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/app"
+          ssh -i ~/.ssh/ssh_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/app"
 
       - name: Transfer docker-compose-prod.yml to server
         run: |
-          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+          scp -i ~/.ssh/ssh_key \
             knowledgeable/docker-compose-prod.yml \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/docker-compose.yml
 
-      - name: Write .env file on server
+      - name: Create .env file
+        env:
+          IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
+          APP_DOMAIN: ${{ secrets.APP_DOMAIN }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cat > ~/app/.env << 'EOENV'
-          IMAGE_TAG=${{ github.event.workflow_run.head_sha }}
-          APP_DOMAIN=${{ secrets.APP_DOMAIN }}
-          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          DATABASE_URL=${{ secrets.DATABASE_URL }}
-          EOENV
-          chmod 600 ~/app/.env"
+          umask 077
+          printf 'IMAGE_TAG=%s\n'         "$IMAGE_TAG"         >  .env
+          printf 'APP_DOMAIN=%s\n'        "$APP_DOMAIN"        >> .env
+          printf 'POSTGRES_USER=%s\n'     "$POSTGRES_USER"     >> .env
+          printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD" >> .env
+          printf 'DATABASE_URL=%s\n'      "$DATABASE_URL"      >> .env
 
-      - name: Deploy
+      - name: Transfer .env to server
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            set -e
+          scp -i ~/.ssh/ssh_key .env ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/.env
+          ssh -i ~/.ssh/ssh_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "chmod 600 ~/app/.env"
+          rm -f .env
 
+      - name: Deploy on server
+        run: |
+          ssh -i ~/.ssh/ssh_key \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << "EOF"
+            set -euo pipefail
             echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
             cd ~/app
-
-            docker compose pull app db migrations nginx
-
-            docker compose up -d db
-
-            timeout 60 bash -c 'until docker compose exec -T db pg_isready -U "$POSTGRES_USER" -d knowledge; do sleep 2; done'
-
-            docker compose run --rm migrations
-
-            docker compose up -d --no-deps --force-recreate --pull always app
-            docker compose up -d --no-deps nginx
-
-
+            docker compose pull
+            docker compose up -d --remove-orphans
             docker compose ps
-
-            docker compose logs --tail=20
           EOF
