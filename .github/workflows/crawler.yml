@@ -1,0 +1,38 @@
+name: Crawler - Scheduled
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: knowledgeable
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install crawler dependency
+        run: npm install jsdom
+
+      - name: Run crawler
+        env:
+          BACKEND_URL: ${{ secrets.CRAWLER_BACKEND_URL }}
+          CRAWLER_KEY: ${{ secrets.CRAWLER_KEY }}
+          ENABLE_INGEST: "true"
+          MAX_TARGETS: "20"
+          MAX_PAGES: "50"
+          MAX_DEPTH: "1"
+          CRAWL_DELAY_MS: "1000"
+        run: node scripts/crawler.js
