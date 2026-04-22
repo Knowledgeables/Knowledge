@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"knowledgeable/internal/auth"
 	"knowledgeable/internal/middleware"
+	"knowledgeable/internal/observability"
 	"log/slog"
 	"net/http"
 	"os"
@@ -69,28 +70,31 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 		results, count, err = h.service.Search(query, Language(lang))
 		if err != nil {
 			slog.Error("search_failed",
-				"event", "search_failed",
-				"tracking_id", trackingID,
-				"user_id", userID,
-				"query", query,
-				"language", lang,
-				"error", err.Error(),
+				observability.LogAttrs("search_failed", trackingID, userID,
+					"query", query,
+					"language", lang,
+					"error", err.Error(),
+				)...,
 			)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		slog.Info("search",
-			"event", "search",
-			"tracking_id", trackingID,
-			"user_id", userID,
-			"query", query,
-			"language", lang,
-			"results", count,
-		) // #nosec G706 -- JSON handler escapes all values
-		slog.Info("search", "query", query, "language", lang, "results", count) // #nosec G706 -- JSON handler escapes all values
+			observability.LogAttrs("search", trackingID, userID,
+				"query", query,
+				"language", lang,
+				"results", count,
+			)...,
+		)
 		if err := h.service.RecordSignal(query, Language(lang)); err != nil {
-			slog.Warn("record search signal failed", "query", query, "language", lang, "error", err) // #nosec G706 -- JSON handler escapes all values
+			slog.Warn("record search signal failed",
+				observability.LogAttrs("search_signal_failed", trackingID, userID,
+					"query", query,
+					"language", lang,
+					"error", err.Error(),
+				)...,
+			)
 		}
 	}
 
@@ -112,16 +116,6 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// SearchAPI godoc
-// @Summary Search
-// @Description Search pages by query and optional language
-// @Tags pages
-// @Produce json
-// @Param q query string true "Search query"
-// @Param language query string false "Language code"
-// @Success 200 {object} pages.SearchResponse
-// @Failure 500 {string} string "internal error"
-// @Router /api/search [get]
 func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 
 	trackingID := middleware.GetTrackingID(r)
@@ -146,9 +140,7 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 
 	if query == "" {
 		slog.Info("search_empty",
-			"event", "search_empty",
-			"tracking_id", trackingID,
-			"user_id", userID,
+			observability.LogAttrs("search_empty", trackingID, userID)...,
 		)
 		results = []Page{}
 		count = 0
@@ -156,26 +148,32 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 		results, count, err = h.service.Search(query, Language(lang))
 		if err != nil {
 			slog.Error("search_failed",
-				"event", "search_failed",
-				"tracking_id", trackingID,
-				"user_id", userID,
-				"query", query,
-				"language", lang,
-				"error", err.Error(),
+				observability.LogAttrs("search_failed", trackingID, userID,
+					"query", query,
+					"language", lang,
+					"error", err.Error(),
+				)...,
 			)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		slog.Info("search",
-			"event", "search",
-			"tracking_id", trackingID,
-			"user_id", userID,
-			"query", query,
-			"language", lang,
-			"results", count,
+			observability.LogAttrs("search", trackingID, userID,
+				"query", query,
+				"language", lang,
+				"results", count,
+			)...,
 		)
+
 		if err := h.service.RecordSignal(query, Language(lang)); err != nil {
-			slog.Warn("record search_api signal failed", "query", query, "language", lang, "error", err) // #nosec G706 -- JSON handler escapes all values
+			slog.Warn("record search_api signal failed",
+				observability.LogAttrs("search_api_signal_failed", trackingID, userID,
+					"query", query,
+					"language", lang,
+					"error", err.Error(),
+				)...,
+			)
 		}
 	}
 
@@ -190,18 +188,6 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// CrawlerTargetsAPI godoc
-// @Summary Get top crawl targets
-// @Description Returns top search signals for crawler seed targets
-// @Tags crawler
-// @Produce json
-// @Param X-Crawler-Key header string true "Crawler authentication key"
-// @Param limit query int false "Max targets to return (default 20, max 100)"
-// @Success 200 {object} pages.CrawlerTargetsResponse
-// @Failure 401 {string} string "unauthorized"
-// @Failure 405 {string} string "method not allowed"
-// @Failure 500 {string} string "internal error"
-// @Router /api/crawler/targets [get]
 func (h *Handler) CrawlerTargetsAPI(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -244,20 +230,6 @@ func (h *Handler) CrawlerTargetsAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// CrawlerIngestAPI godoc
-// @Summary Ingest crawled pages
-// @Description Upsert crawler results into pages table
-// @Tags crawler
-// @Accept json
-// @Produce json
-// @Param X-Crawler-Key header string true "Crawler authentication key"
-// @Param body body []pages.CrawlerIngestItem true "Crawler pages payload"
-// @Success 200 {object} pages.CrawlerIngestResponse
-// @Failure 400 {string} string "invalid request"
-// @Failure 401 {string} string "unauthorized"
-// @Failure 405 {string} string "method not allowed"
-// @Failure 500 {string} string "internal error"
-// @Router /api/crawler/ingest [post]
 func (h *Handler) CrawlerIngestAPI(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -273,7 +245,7 @@ func (h *Handler) CrawlerIngestAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	const maxBodySize = 10 * 1024 * 1024 // 10 MB
+	const maxBodySize = 10 * 1024 * 1024
 	r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
 
 	var items []CrawlerIngestItem

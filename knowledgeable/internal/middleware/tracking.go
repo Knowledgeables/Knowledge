@@ -36,7 +36,7 @@ func Tracking(next http.Handler) http.Handler {
 				Path:     "/",
 				HttpOnly: true,
 				SameSite: http.SameSiteLaxMode,
-				Secure:   os.Getenv("APP_ENV") != "dev",
+				Secure:   os.Getenv("APP_ENV") == "production",
 			})
 		} else { // if cookie already exists in browser from before. use it again.
 			trackingID = cookie.Value

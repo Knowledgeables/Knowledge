@@ -115,7 +115,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   -1,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Secure:   os.Getenv("APP_ENV") != "dev",
+		Secure:   os.Getenv("APP_ENV") == "production",
 	})
 
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -293,7 +293,7 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		slog.Debug("unauthorized",
-			observability.LogAttrs("unauthorized", trackingID, nil)...,
+			observability.LogAttrs("auth.unauthorized", trackingID, nil)...,
 		)
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return

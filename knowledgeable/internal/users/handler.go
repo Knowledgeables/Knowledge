@@ -111,9 +111,9 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			slog.Warn("register_failed",
-				"event", "register_failed",
-				"tracking_id", trackingID,
-				"error", err.Error(),
+				observability.LogAttrs("register_failed", trackingID, nil,
+					"error", err.Error(),
+				)...,
 			)
 
 			http.Error(w, "invalid input", http.StatusBadRequest)
@@ -177,9 +177,9 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		slog.Warn("register_failed",
-			"event", "register_failed",
-			"tracking_id", trackingID,
-			"error", err.Error(),
+			observability.LogAttrs("register_failed", trackingID, nil,
+				"error", err.Error(),
+			)...,
 		)
 
 		switch err {
@@ -196,9 +196,9 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 	sessionID, err := h.createSession(user.ID)
 	if err != nil {
 		slog.Error("session_failed",
-			"event", "session_failed",
-			"tracking_id", trackingID,
-			"error", err.Error(),
+			observability.LogAttrs("session_failed", trackingID, &user.ID,
+				"error", err.Error(),
+			)...,
 		)
 	}
 
@@ -212,9 +212,7 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 	})
 
 	slog.Info("register",
-		"event", "register",
-		"tracking_id", trackingID,
-		"user_id", user.ID,
+		observability.LogAttrs("register", trackingID, &user.ID)...,
 	) // #nosec G706 -- JSON handler escapes all values
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
