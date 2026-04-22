@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,6 +23,13 @@ const cookieName = "tracking_id"
 // It also injects tracking id in the request context
 func Tracking(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if !shouldTrack(r) {
+			ctx := context.WithValue(r.Context(), sessionKey, "")
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
+		}
+
 		var trackingID string
 
 		// attempts to collect the already existd ing cookie
@@ -82,9 +90,16 @@ func PageView(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		wrapped := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+
 		next.ServeHTTP(wrapped, r)
+
+		if !isPageview(r, wrapped.statusCode) {
+			return
+		}
+
 		duration := time.Since(start)
-		slog.Info("pageview", // #nosec G706 -- JSON handler escapes all values
+
+		slog.Info("pageview",
 			"event", "pageview",
 			"tracking_id", GetTrackingID(r),
 			"path", r.URL.Path,
@@ -93,6 +108,42 @@ func PageView(next http.Handler) http.Handler {
 			"duration_ms", duration.Milliseconds(),
 		)
 	})
+}
+func isPageview(r *http.Request, status int) bool {
+	path := r.URL.Path
+
+	if path == "/health" {
+		return false
+	}
+
+	if strings.HasPrefix(path, "/static/") {
+		return false
+	}
+
+	// only GET methods count as page view
+	if r.Method != http.MethodGet {
+		return false
+	}
+
+	if status >= 300 {
+		return false
+	}
+
+	return true
+}
+
+func shouldTrack(r *http.Request) bool {
+	path := r.URL.Path
+
+	if path == "/health" {
+		return false
+	}
+	
+	if strings.HasPrefix(path, "/static/") {
+		return false
+	}
+
+	return true
 }
 
 type responseWriter struct {
