@@ -2,6 +2,7 @@ package pages
 
 import (
 	"encoding/json"
+	"errors"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -217,8 +218,16 @@ func (h *Handler) CrawlerIngestAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	const maxBodySize = 10 * 1024 * 1024 // 10 MB
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
+
 	var items []CrawlerIngestItem
 	if err := json.NewDecoder(r.Body).Decode(&items); err != nil {
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(err, &maxBytesErr) {
+			http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
+			return
+		}
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
