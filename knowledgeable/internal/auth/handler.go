@@ -3,6 +3,8 @@ package auth
 import (
 	"encoding/json"
 	"html/template"
+	"knowledgeable/internal/middleware"
+	"knowledgeable/internal/observability"
 	"knowledgeable/internal/users"
 	"log/slog"
 	"net/http"
@@ -93,20 +95,27 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	trackingID := middleware.GetTrackingID(r)
+
+	userID, _ := ResolveFromRequest(r)
+
 	cookie, err := r.Cookie("session_id")
 	if err == nil {
 		Delete(cookie.Value)
-		slog.Info("user logged out")
 	}
 
-	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure is set dynamically based on APP_ENV
+	slog.Info("logout",
+		observability.LogAttrs("auth.logout", trackingID, userID)...,
+	)
+
+	http.SetCookie(w, &http.Cookie{  // #nosec G124
 		Name:     "session_id",
 		Value:    "",
 		Path:     "/",
-		MaxAge:   -1, // slet cookie
+		MaxAge:   -1,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Secure:   os.Getenv("APP_ENV") != "dev",
+		Secure:   os.Getenv("APP_ENV") == "production",
 	})
 
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -126,6 +135,9 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} string "internal error"
 // @Router /api/login [post]
 func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
+
+	
+	trackingID := middleware.GetTrackingID(r)
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -149,7 +161,13 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userService.Login(req.Username, req.Password)
 	if err != nil {
-		slog.Warn("login failed")
+
+		slog.Warn("login failed",
+			observability.LogAttrs("auth.login_failed", trackingID, nil,
+				"error", err.Error(),
+			)...,
+		)
+
 		http.Redirect(w, r, "/login?error=invalid_credentials", http.StatusSeeOther)
 		return
 	}
@@ -160,16 +178,19 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure is set dynamically based on APP_ENV
+	http.SetCookie(w, &http.Cookie{ // #nosec G124
 		Name:     "session_id",
 		Value:    sessionID,
 		SameSite: http.SameSiteLaxMode,
 		HttpOnly: true,
 		Path:     "/",
-		Secure: os.Getenv("APP_ENV") == "production",
+		Secure:   os.Getenv("APP_ENV") == "production",
 	})
 
-	slog.Info("user logged in", "user_id", user.ID) // #nosec G706 -- JSON handler escapes all values
+
+	slog.Info("login",
+		observability.LogAttrs("auth.login", trackingID, &user.ID)...,
+	)
 
 	if user.ShouldChangePassword {
 		http.Redirect(w, r, "/change-password", http.StatusSeeOther)
@@ -189,14 +210,22 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {string} string "unauthorized"
 // @Router /change-password [get,post]
 func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	trackingID := middleware.GetTrackingID(r)
+
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
+		slog.Debug("unauthorized change of password",
+			observability.LogAttrs("auth.unauthorized", trackingID, nil)...,
+		)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	userID, ok := Get(cookie.Value)
 	if !ok {
+		slog.Debug("unauthorized",
+			observability.LogAttrs("auth.unauthorized", trackingID, nil)...,
+		)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -229,9 +258,19 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err := h.userService.ChangePassword(userID, password); err != nil {
+			slog.Error("password_change_failed",
+				observability.LogAttrs("auth.password_change_failed", trackingID, &userID,
+					"error", err.Error(),
+				)...,
+			)
+
 			http.Error(w, "failed to change password", http.StatusInternalServerError)
 			return
 		}
+
+		slog.Info("password_changed",
+			observability.LogAttrs("auth.password_changed", trackingID, &userID)...,
+		)
 
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -249,21 +288,33 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {string} string "unauthorized"
 // @Router /api/me [get]
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
+	trackingID := middleware.GetTrackingID(r)
 
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
+		slog.Debug("unauthorized",
+			observability.LogAttrs("auth.unauthorized", trackingID, nil)...,
+		)
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
 	userID, ok := Get(cookie.Value)
 	if !ok {
+		slog.Debug("unauthorized",
+			observability.LogAttrs("auth.unauthorized", trackingID, nil)...,
+		)
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
 	user, err := h.userService.GetByID(userID)
 	if err != nil {
+		slog.Warn("me_failed",
+			observability.LogAttrs("auth.me_failed", trackingID, &userID,
+				"error", err.Error(),
+			)...,
+		)
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -276,6 +327,11 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if err := json.NewEncoder(w).Encode(res); err != nil {
+		slog.Error("me_encode_failed",
+			observability.LogAttrs("auth.me_encode_failed", trackingID, &userID,
+				"error", err.Error(),
+			)...,
+		)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
