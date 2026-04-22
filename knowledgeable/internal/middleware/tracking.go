@@ -4,8 +4,9 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"time"
 	"os"
+	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -38,8 +39,22 @@ func Tracking(next http.Handler) http.Handler {
 				SameSite: http.SameSiteLaxMode,
 				Secure:   os.Getenv("APP_ENV") == "production",
 			})
-		} else { // if cookie already exists in browser from before. use it again.
-			trackingID = cookie.Value
+		} else {
+			if _, err := uuid.Parse(cookie.Value); err == nil {
+				// cookie is a valid UUID, use it
+				trackingID = cookie.Value
+			} else {
+				// cookie exists but is not a valid UUID, generate a new one
+				trackingID = uuid.New().String()
+				http.SetCookie(w, &http.Cookie{ // #nosec G124
+					Name:     cookieName,
+					Value:    trackingID,
+					Path:     "/",
+					HttpOnly: true,
+					SameSite: http.SameSiteLaxMode,
+					Secure:   os.Getenv("APP_ENV") == "production",
+				})
+			}
 		}
 
 		// put t racking id into request context
@@ -64,28 +79,28 @@ func GetTrackingID(r *http.Request) string {
 }
 
 func PageView(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        start := time.Now()
-        wrapped := &responseWriter{ResponseWriter: w, statusCode: 200}
-        next.ServeHTTP(wrapped, r)
-        duration := time.Since(start)
-        slog.Info("pageview", // #nosec G706 -- JSON handler escapes all values
-            "event", "pageview",
-            "tracking_id", GetTrackingID(r),
-            "path", r.URL.Path,
-            "method", r.Method,
-            "status", wrapped.statusCode,
-            "duration_ms", duration.Milliseconds(),
-        )
-    })
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		wrapped := &responseWriter{ResponseWriter: w, statusCode: 200}
+		next.ServeHTTP(wrapped, r)
+		duration := time.Since(start)
+		slog.Info("pageview", // #nosec G706 -- JSON handler escapes all values
+			"event", "pageview",
+			"tracking_id", GetTrackingID(r),
+			"path", r.URL.Path,
+			"method", r.Method,
+			"status", wrapped.statusCode,
+			"duration_ms", duration.Milliseconds(),
+		)
+	})
 }
 
 type responseWriter struct {
-    http.ResponseWriter
-    statusCode int
+	http.ResponseWriter
+	statusCode int
 }
 
 func (rw *responseWriter) WriteHeader(code int) {
-    rw.statusCode = code
-    rw.ResponseWriter.WriteHeader(code)
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
 }
