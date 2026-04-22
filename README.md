@@ -4,7 +4,7 @@ A knowledge management web application — rewritten from a legacy Flash/Python 
 
 [![Go CI](https://github.com/Knowledgeables/Knowledge/actions/workflows/ci.yml/badge.svg)](https://github.com/Knowledgeables/Knowledge/actions/workflows/ci.yml)
 [![Security Scan](https://github.com/Knowledgeables/Knowledge/actions/workflows/security_scan.yml/badge.svg)](https://github.com/Knowledgeables/Knowledge/actions/workflows/security_scan.yml)
-[![E2E Tests](https://github.com/Knowledgeables/Knowledge/actions/workflows/playwright.yml/badge.svg)](https://github.com/Knowledgeables/Knowledge/actions/workflows/playwright.yml)
+[![E2E Tests](https://github.com/Knowledgeables/Knowledge/actions/workflows/playwright_ci.yml/badge.svg)](https://github.com/Knowledgeables/Knowledge/actions/workflows/playwright_ci.yml)
 [![Latest Release](https://img.shields.io/github/v/release/Knowledgeables/Knowledge)](https://github.com/Knowledgeables/Knowledge/releases/latest)
 [![Go Version](https://img.shields.io/badge/go-1.25-00ADD8?logo=go)](https://go.dev/)
 
@@ -19,6 +19,8 @@ Knowledgeable is a searchable knowledge-base platform supporting multiple langua
 - User registration and authentication with `bcrypt` password hashing
 - Full-text page search with multi-language support (EN / DA)
 - Swagger/OpenAPI documentation (`/swagger/`)
+- Health check endpoint
+- Prometheus metrics endpoint (`/metrics`)
 - Docker-first development and production environments
 - Automated semantic versioning driven by Conventional Commits
 
@@ -27,11 +29,12 @@ Knowledgeable is a searchable knowledge-base platform supporting multiple langua
 | Layer | Technology |
 |---|---|
 | Language | Go 1.25 |
-| Database | SQLite (`modernc.org/sqlite`) |
-| Frontend | HTML templates + Tailwind CSS |
-| E2E Testing | Playwright |
+| Database | PostgreSQL 15 |
+| Frontend | HTML templates + Tailwind CSS 3.4.19 |
+| E2E Testing | Playwright (TypeScript) |
 | Containerisation | Docker + Docker Compose |
 | CI/CD | GitHub Actions |
+| Reverse Proxy | Nginx |
 | Security scanning | Gosec + GitHub SARIF |
 | API docs | Swagger |
 
@@ -40,27 +43,35 @@ Knowledgeable is a searchable knowledge-base platform supporting multiple langua
 Every change goes through the following pipeline before reaching production:
 
 ```
-Pull Request
-    └── Go CI (lint → build → test)
-            │
+Pull Request → main
+    ├── Go CI          (lint → build → DB setup → migrations → go test)
+    └── Playwright     (smoke tests)
+
 Push to main
-    ├── Auto Release  (conventional commit → semver tag)
-    ├── E2E Tests     (Playwright smoke tests)
-    └── Delivery      (build & push Docker image to GHCR)
-            └── Deployment (SSH → pull image → redeploy)
+    ├── Auto Release   (conventional commit → semver tag)
+    ├── Delivery       (build & push Docker images to GHCR)
+    │       └── Deployment      (SSH → pull image → redeploy production)
+    └── Build Migration Image   (build & push Dockerfile.migrations to GHCR)
+
+Staging
+    ├── Deploy Staging  (SSH deploy to staging server)
+    └── Playwright      (full Playwright suite on staging)
 
 Daily (00:00 UTC)
-    └── Security Scan (Gosec → SARIF → GitHub Security tab)
+    └── Security Scan  (Gosec → SARIF → GitHub Security tab)
 ```
 
-| Workflow | Trigger | Purpose |
+| Workflow file | Trigger | Purpose |
 |---|---|---|
-| `Go CI` | PR → main | golangci-lint, build, go test |
-| `Security scan` | Daily + manual | Gosec, uploads SARIF to GitHub Security |
-| `E2E Tests` | Push / PR → main | Playwright smoke tests |
-| `Auto Release` | Push → main | Bumps semver tag from commit type |
-| `Delivery` | Push → main | Builds multi-stage Docker image, pushes to GHCR |
-| `Deployment` | After Delivery | SSH deploy to production server |
+| `ci.yml` | PR → main | golangci-lint, build, DB setup, migrations, go test |
+| `playwright_ci.yml` | PR → main | Playwright smoke tests |
+| `security_scan.yml` | Daily + manual | Gosec, uploads SARIF to GitHub Security |
+| `release.yml` | Push → main | Bumps semver tag from Conventional Commits |
+| `delivery.yml` | Push → main | Builds multi-stage Docker images, pushes to GHCR |
+| `deployment.yml` | After Delivery | SSH deploy to production server |
+| `deploy_staging.yml` | Manual / staging trigger | SSH deploy to staging server |
+| `playwright_staging.yml` | After staging deploy | Playwright tests against staging environment |
+| `build-and-push-migration.yml` | Push → main | Builds and pushes migration Docker image to GHCR |
 
 ## Getting Started
 
@@ -114,7 +125,9 @@ The hooks run automatically before every commit and check:
 
 ```bash
 make lint        # Run golangci-lint manually
-make test        # Run all Go tests
+make go-test     # Run all Go tests
+make smoke-test  # Run Playwright smoke tests (requires running app)
+make full-e2e    # Run full Playwright integration tests (staging)
 make swagger     # Regenerate Swagger docs
 ```
 
@@ -123,7 +136,7 @@ make swagger     # Regenerate Swagger docs
 ```
 Knowledge/
 ├── .github/
-│   ├── workflows/          # CI/CD pipelines
+│   ├── workflows/          # 8+ CI/CD pipelines
 │   └── ISSUE_TEMPLATE/     # Bug, feature, chore, docs templates
 ├── docs/
 │   ├── legacy-analysis.md     # Issues found in the old system
@@ -132,20 +145,29 @@ Knowledge/
 │   ├── cmd/server/main.go  # Application entry point
 │   ├── internal/
 │   │   ├── auth/           # Login / session handling
-│   │   ├── config/         # App configuration
-│   │   ├── db/             # SQLite init & connection
+│   │   ├── db/             # PostgreSQL init & connection
 │   │   ├── pages/          # Page search — handler/service/repo
 │   │   ├── users/          # User management — handler/service/repo
 │   │   └── web/            # Router and middleware
+│   ├── db-migrations/      # Knex.js migrations & seeds
+│   ├── e2e/
+│   │   ├── smoke/          # Playwright smoke tests
+│   │   └── full/           # Playwright full integration tests
 │   ├── frontend/           # Tailwind source
 │   ├── templates/          # HTML templates
-│   ├── tests/              # Integration & Playwright tests
+│   ├── static/             # Compiled CSS + JS
+│   ├── monitoring/         # Prometheus config
+│   ├── nginx/              # Nginx reverse proxy config
 │   ├── Dockerfile.dev
 │   ├── Dockerfile.prod
+│   ├── Dockerfile.migrations
 │   ├── docker-compose-dev.yml
 │   ├── docker-compose-prod.yml
-│   ├── knowledge.sql       # Schema (auto-applied on startup)
-│   └── Makefile
+│   ├── docker-compose-staging.yml
+│   ├── docker-compose-build.yml
+│   ├── knowledge.sql       # Legacy schema (replaced by Knex.js migrations)
+│   ├── Makefile
+│   └── playwright.config.js
 ├── CONTRIBUTING.md
 └── README.md
 ```

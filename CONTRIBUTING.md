@@ -23,7 +23,7 @@ Requirements:
 
 - Docker Desktop installed
 - make installed
-- Go version 1.24 installed
+- Go version 1.25 installed
 - Make commands must run in a bash-compatible terminal
 
 Now you have access to the development environment used by all the developers on the team.
@@ -45,12 +45,29 @@ This downloads the prek framework and allows you to run the following command
 make setup-hooks
 ```
 
-This commands installs the 3 hooks for you inside /.git/hooks and then checks 5 things. 
-- Checks if the commit is over 400 lines of code and warns you if it is
-- Runs golang-lint before committing, to make sure the code you provided is bulletproof
-- Checks the commit message, to make sure you are following the provided conventions
-- Runs go test ./.., to ensure the test still work
-- Runs go-sec ./.., to ensure there are no security issues in the new code
+This command installs 5 hooks inside `/.git/hooks` that check:
+- Commit size — warns if the diff exceeds 400 lines of code
+- `golangci-lint` — static analysis to catch code issues before committing
+- `gosec` — security scanner to catch vulnerabilities in new code
+- Commit message format — enforces Conventional Commits
+- `go test ./...` — full test suite must pass
+
+## Environment Variables
+
+The project uses a `.env` file inside `knowledgeable/` for database credentials.
+This file is gitignored — you need to create it yourself before running anything.
+
+Create `knowledgeable/.env` with the following content:
+
+```env
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+DATABASE_URL=postgres://postgres:postgres@db:5432/knowledge?sslmode=disable
+```
+
+The Docker Compose files fall back to these same defaults if no `.env` is present,
+so the values above will work out of the box for local development. Change them
+if you need a different setup.
 
 ## Dev Flow
 
@@ -61,8 +78,9 @@ Start the development environment from the `knowledgeable/` directory:
 This builds from `Dockerfile.dev`, mounts the entire source tree into the
 container, and starts the app on http://localhost:8080.
 
-The database is created automatically at `./data/dev.db` on first run.
-With `APP_ENV=dev`, the seed data from `seed-dev.sql` is also applied.
+The PostgreSQL database is started automatically as a container. Knex.js
+migrations run on startup via the migrations container, and dev seed data
+from `db-migrations/seeds/dev_seed.js` is applied automatically.
 
 To stop:
 
@@ -80,26 +98,29 @@ On the server, from the `knowledgeable/` directory:
     docker compose -f docker-compose-prod.yml pull
     docker compose -f docker-compose-prod.yml up -d
 
-This starts two containers:
+This starts four containers:
+- **postgres** — PostgreSQL 15 database, data persisted in a named volume
+- **migrations** — runs Knex.js migrations then exits
 - **app** — the Go server on internal port 8080
 - **nginx** — reverse proxy, exposed on port 80
 
-The database file lives at `./data/prod.db` on the host, mounted into
-the container. It persists across deploys and restarts.
+The database persists across deploys in a named Docker volume.
 
-To deploy a new version, run the same two commands again. The old container
-is replaced; the data volume is untouched.
+To deploy a new version, run the same two commands again. The old containers
+are replaced; the data volume is untouched.
 
 
 ## Docker Files
 
-| File                      | Purpose                                      |
-|---------------------------|----------------------------------------------|
-| `Dockerfile.dev`          | Dev image — mounts source, supports live reload |
-| `Dockerfile.prod`         | Multi-stage prod build — outputs minimal image  |
-| `docker-compose-dev.yml`  | Local development                            |
-| `docker-compose-prod.yml` | Production — uses published images           |
-| `docker-compose-build.yml`| Builds and tags images for GHCR              |
+| File                          | Purpose                                         |
+|-------------------------------|-------------------------------------------------|
+| `Dockerfile.dev`              | Dev image — mounts source, supports live reload |
+| `Dockerfile.prod`             | Multi-stage prod build — outputs minimal image  |
+| `Dockerfile.migrations`       | Runs Knex.js migrations against PostgreSQL      |
+| `docker-compose-dev.yml`      | Local development                               |
+| `docker-compose-prod.yml`     | Production — uses published images              |
+| `docker-compose-staging.yml`  | Staging environment                             |
+| `docker-compose-build.yml`    | Builds and tags images for GHCR                 |
 
 To build and push new images (CI does this automatically on merge to main):
 
@@ -109,19 +130,18 @@ To build and push new images (CI does this automatically on merge to main):
 
 ## Database Migrations
 
-Schema initialization runs automatically on startup in **both dev and prod**.
+Schema changes are managed with **Knex.js** migrations in `db-migrations/`.
+The `Dockerfile.migrations` container runs all pending migrations automatically
+on every deploy — no manual step is required.
 
-When the server starts, it runs `knowledge.sql` against the database,
-creating all tables if they do not exist. No manual step is required —
-a fresh database is fully initialized on first boot.
+Migration files live in `db-migrations/migrations/` and seed files in
+`db-migrations/seeds/`. In dev, `dev_seed.js` is applied automatically.
+In staging/prod, no seed runs unless explicitly triggered.
 
-In dev (`APP_ENV=dev`), `seed-dev.sql` is also run on startup to populate
-test data. This does not run in production.
-
-If you change the schema:
-1. Update `knowledge.sql` with the new table/column definitions
-2. For existing databases, write a manual `ALTER TABLE` or coordinate
-   a data migration with the team (a migration library is tracked in #81)
+If you need to change the schema:
+1. Create a new migration file: `cd knowledgeable/db-migrations && npx knex migrate:make <name>`
+2. Write the `up` (apply) and `down` (rollback) functions
+3. The migration runs automatically on next deploy
 
 
 
