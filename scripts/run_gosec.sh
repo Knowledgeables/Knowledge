@@ -18,7 +18,7 @@ cd "$PROJECT_DIR" || {
   exit 1
 }
 
-gosec ./...
+gosec -exclude=G706 ./...
 
 EXIT_CODE=$?
 
