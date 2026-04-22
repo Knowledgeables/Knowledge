@@ -20,6 +20,18 @@ import (
 
 func main() {
 
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+    resp, err := http.Get("http://localhost:8080/health")
+		if err != nil {
+			os.Exit(1)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		if resp.StatusCode != http.StatusOK {
+			os.Exit(1)
+		}
+    os.Exit(0)
+}
+
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 	log.Println("[APP] Starting application")
 
