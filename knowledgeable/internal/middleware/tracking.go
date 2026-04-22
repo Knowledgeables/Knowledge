@@ -81,7 +81,7 @@ func GetTrackingID(r *http.Request) string {
 func PageView(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		wrapped := &responseWriter{ResponseWriter: w, statusCode: 200}
+		wrapped := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
 		next.ServeHTTP(wrapped, r)
 		duration := time.Since(start)
 		slog.Info("pageview", // #nosec G706 -- JSON handler escapes all values
@@ -97,12 +97,22 @@ func PageView(next http.Handler) http.Handler {
 
 type responseWriter struct {
 	http.ResponseWriter
-	statusCode int
+	statusCode  int
+	wroteHeader bool
 }
 
 func (rw *responseWriter) WriteHeader(code int) {
-    if rw.statusCode == 200 {
-        rw.statusCode = code
-    }
-    rw.ResponseWriter.WriteHeader(code)
+	if rw.wroteHeader {
+		return
+	}
+	rw.wroteHeader = true
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
+func (rw *responseWriter) Write(b []byte) (int, error) {
+	if !rw.wroteHeader {
+		rw.WriteHeader(http.StatusOK)
+	}
+	return rw.ResponseWriter.Write(b)
 }
