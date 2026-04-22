@@ -22,6 +22,7 @@ func SetupRoutes(
 
 	http.HandleFunc("/search", pageHandler.Search)
 	http.HandleFunc("/api/search", pageHandler.SearchAPI)
+	http.HandleFunc("/api/crawler/targets", pageHandler.CrawlerTargetsAPI)
 
 	http.HandleFunc("/register", userHandler.Register)
 	http.HandleFunc("/api/register", userHandler.RegisterAPI)
@@ -41,5 +42,4 @@ func SetupRoutes(
 
 	http.HandleFunc("/", dashboardHandler)
 
-	
 }

@@ -19,6 +19,13 @@ type Page struct {
 	Content     string       `db:"content"`
 }
 
+type CrawlSignal struct {
+	Query       string       `json:"query"`
+	Language    Language     `json:"language"`
+	SignalCount int          `json:"signalCount"`
+	LastSeen    sql.NullTime `json:"lastSeen" swaggertype:"string"`
+}
+
 func NewPage(title, url, content string) Page {
 	return Page{
 		Title:    title,

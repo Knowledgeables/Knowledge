@@ -5,12 +5,19 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 )
 
 type SearchResponse struct {
 	Results []Page `json:"results"`
 	Count   int    `json:"count"`
+}
+
+type CrawlerTargetsResponse struct {
+	Targets []CrawlSignal `json:"targets"`
+	Count   int           `json:"count"`
 }
 
 type Handler struct {
@@ -49,6 +56,9 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		slog.Info("search", "query", query, "language", lang, "results", count) // #nosec G706 -- JSON handler escapes all values
+		if err := h.service.RecordSignal(query, Language(lang)); err != nil {
+			slog.Warn("record search signal failed", "query", query, "language", lang, "error", err) // #nosec G706 -- JSON handler escapes all values
+		}
 	}
 
 	data := struct {
@@ -103,6 +113,9 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		slog.Info("search_api", "query", query, "language", lang, "results", count) // #nosec G706 -- JSON handler escapes all values
+		if err := h.service.RecordSignal(query, Language(lang)); err != nil {
+			slog.Warn("record search_api signal failed", "query", query, "language", lang, "error", err) // #nosec G706 -- JSON handler escapes all values
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -110,6 +123,60 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(SearchResponse{
 		Results: results,
 		Count:   count,
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// CrawlerTargetsAPI godoc
+// @Summary Get top crawl targets
+// @Description Returns top search signals for crawler seed targets
+// @Tags crawler
+// @Produce json
+// @Param X-Crawler-Key header string true "Crawler authentication key"
+// @Param limit query int false "Max targets to return (default 20, max 100)"
+// @Success 200 {object} pages.CrawlerTargetsResponse
+// @Failure 401 {string} string "unauthorized"
+// @Failure 405 {string} string "method not allowed"
+// @Failure 500 {string} string "internal error"
+// @Router /api/crawler/targets [get]
+func (h *Handler) CrawlerTargetsAPI(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	expectedKey := os.Getenv("CRAWLER_KEY")
+	if expectedKey == "" {
+		expectedKey = "dev-key"
+	}
+	if r.Header.Get("X-Crawler-Key") != expectedKey {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	limit := 20
+	if rawLimit := strings.TrimSpace(r.URL.Query().Get("limit")); rawLimit != "" {
+		parsed, err := strconv.Atoi(rawLimit)
+		if err != nil {
+			http.Error(w, "invalid limit", http.StatusBadRequest)
+			return
+		}
+		limit = parsed
+	}
+
+	targets, err := h.service.GetTopSignals(limit)
+	if err != nil {
+		slog.Error("crawler targets query failed", "error", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(CrawlerTargetsResponse{
+		Targets: targets,
+		Count:   len(targets),
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

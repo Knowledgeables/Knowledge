@@ -123,3 +123,53 @@ func (r *Repository) FindByURL(url string) (*Page, error) {
 
 	return &p, nil
 }
+
+func (r *Repository) RecordSignal(query string, lang Language) error {
+	normalizedQuery := strings.ToLower(strings.TrimSpace(query))
+	if normalizedQuery == "" {
+		return nil
+	}
+
+	_, err := r.db.Exec(`
+		INSERT INTO crawl_signals (query, language, signal_count, first_seen, last_seen)
+		VALUES ($1, $2, 1, NOW(), NOW())
+		ON CONFLICT (query, language)
+		DO UPDATE SET
+			signal_count = crawl_signals.signal_count + 1,
+			last_seen = NOW()
+	`, normalizedQuery, string(lang))
+
+	return err
+}
+
+func (r *Repository) GetTopSignals(limit int) ([]CrawlSignal, error) {
+	rows, err := r.db.Query(`
+		SELECT query, language, signal_count, last_seen
+		FROM crawl_signals
+		ORDER BY signal_count DESC, last_seen DESC
+		LIMIT $1
+	`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("rows close error: %v", err)
+		}
+	}()
+
+	var signals []CrawlSignal
+	for rows.Next() {
+		var s CrawlSignal
+		if err := rows.Scan(&s.Query, &s.Language, &s.SignalCount, &s.LastSeen); err != nil {
+			return nil, err
+		}
+		signals = append(signals, s)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return signals, nil
+}
