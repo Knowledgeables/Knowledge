@@ -2,7 +2,9 @@ package middleware
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
+	"time"
 	"os"
 	"github.com/google/uuid"
 )
@@ -59,4 +61,31 @@ func GetTrackingID(r *http.Request) string {
 		}
 	}
 	return ""
+}
+
+func PageView(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        start := time.Now()
+        wrapped := &responseWriter{ResponseWriter: w, statusCode: 200}
+        next.ServeHTTP(wrapped, r)
+        duration := time.Since(start)
+        slog.Info("pageview", // #nosec G706 -- JSON handler escapes all values
+            "event", "pageview",
+            "tracking_id", GetTrackingID(r),
+            "path", r.URL.Path,
+            "method", r.Method,
+            "status", wrapped.statusCode,
+            "duration_ms", duration.Milliseconds(),
+        )
+    })
+}
+
+type responseWriter struct {
+    http.ResponseWriter
+    statusCode int
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+    rw.statusCode = code
+    rw.ResponseWriter.WriteHeader(code)
 }
