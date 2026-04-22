@@ -43,6 +43,7 @@ jobs:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CRAWLER_KEY: ${{ secrets.CRAWLER_KEY }}
         run: |
           umask 077
           printf 'IMAGE_TAG=%s\n'         "$IMAGE_TAG"         >  .env
@@ -50,6 +51,7 @@ jobs:
           printf 'POSTGRES_USER=%s\n'     "$POSTGRES_USER"     >> .env
           printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD" >> .env
           printf 'DATABASE_URL=%s\n'      "$DATABASE_URL"      >> .env
+          printf 'CRAWLER_KEY=%s\n'       "$CRAWLER_KEY"       >> .env
 
       - name: Transfer .env to server
         run: |
