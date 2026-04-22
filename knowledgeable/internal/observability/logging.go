@@ -1,6 +1,6 @@
 package observability
 
-func LogAttrs(event, trackingID string, userID *int64, extra ...any) []any {
+func LogAttrs(event, trackingID string, userID *int64, extra ...any) []any { // #nosec G706
 	isAnonymous := userID == nil
 
 	attrs := []any{
