@@ -101,6 +101,8 @@ type responseWriter struct {
 }
 
 func (rw *responseWriter) WriteHeader(code int) {
-	rw.statusCode = code
-	rw.ResponseWriter.WriteHeader(code)
+    if rw.statusCode == 200 {
+        rw.statusCode = code
+    }
+    rw.ResponseWriter.WriteHeader(code)
 }
