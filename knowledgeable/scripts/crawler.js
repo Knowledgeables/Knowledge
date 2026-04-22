@@ -5,7 +5,7 @@ const visitedUrls = new Set();
 const pagesToIngest = [];
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080';
-const CRAWLER_KEY = process.env.CRAWLER_KEY || 'dev-key';
+const CRAWLER_KEY = process.env.CRAWLER_KEY;
 const TARGETS_ENDPOINT = process.env.TARGETS_ENDPOINT || '/api/crawler/targets';
 const INGEST_ENDPOINT = process.env.INGEST_ENDPOINT || '/api/crawler/ingest';
 
