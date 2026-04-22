@@ -11,19 +11,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Add SSH key to runner
+      - name: Setup SSH
         run: |
-          mkdir -p ~/.ssh/
+          mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Ensure remote app directory exists
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/app"
+          ssh -i ~/.ssh/ssh_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/app"
 
       - name: Transfer docker-compose-prod.yml to server
         run: |
-          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+          scp -i ~/.ssh/ssh_key \
             knowledgeable/docker-compose-prod.yml \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/docker-compose.yml
 
@@ -35,20 +37,22 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          printf 'IMAGE_TAG=%s\n' "$IMAGE_TAG" > .env
-          printf 'APP_DOMAIN=%s\n' "$APP_DOMAIN" >> .env
-          printf 'POSTGRES_USER=%s\n' "$POSTGRES_USER" >> .env
+          umask 077
+          printf 'IMAGE_TAG=%s\n'         "$IMAGE_TAG"         >  .env
+          printf 'APP_DOMAIN=%s\n'        "$APP_DOMAIN"        >> .env
+          printf 'POSTGRES_USER=%s\n'     "$POSTGRES_USER"     >> .env
           printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD" >> .env
-          printf 'DATABASE_URL=%s\n' "$DATABASE_URL" >> .env
+          printf 'DATABASE_URL=%s\n'      "$DATABASE_URL"      >> .env
 
       - name: Transfer .env to server
         run: |
-          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
-            .env ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/.env
+          scp -i ~/.ssh/ssh_key .env ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/.env
+          ssh -i ~/.ssh/ssh_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "chmod 600 ~/app/.env"
+          rm -f .env
 
       - name: Deploy on server
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+          ssh -i ~/.ssh/ssh_key \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << "EOF"
             set -euo pipefail
             echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
