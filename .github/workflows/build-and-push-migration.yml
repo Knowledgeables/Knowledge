@@ -1,0 +1,27 @@
+name: CI - Build & Push Migrations Image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: knowledgeable
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      - name: Build and push migrations image
+        run: |
+          docker build -t ghcr.io/knowledgeables/knowledge-migrations:latest -f Dockerfile.migrations .
+          docker push ghcr.io/knowledgeables/knowledge-migrations:latest

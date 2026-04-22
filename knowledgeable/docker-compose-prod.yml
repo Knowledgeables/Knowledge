@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:15
-    container_name: postgres_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: knowledge
@@ -11,25 +10,18 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - knowledgeable_network
-
-  app:
-    image: ghcr.io/knowledgeables/knowledge:latest
-    container_name: knowledgeable
-    restart: unless-stopped
-    environment:
-      APP_ENV: production
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-    depends_on:
-      - db
-    networks:
-      - knowledgeable_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d knowledge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   migrations:
-    image: ghcr.io/knowledgeables/knowledge-migrations:latest
+    image: ghcr.io/knowledgeables/knowledge-migrations:${IMAGE_TAG}
+    restart: "no"
     depends_on:
       db:
         condition: service_healthy
-    command: ["npx", "knex", "migrate:latest"]
     environment:
       POSTGRES_DB: knowledge
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
@@ -38,37 +30,47 @@ services:
     networks:
       - knowledgeable_network
 
-  
+  app:
+    image: ghcr.io/knowledgeables/knowledge:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+    networks:
+      - knowledgeable_network
+    healthcheck:
+      test: ["CMD", "/app/server", "healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   nginx:
-    container_name: nginx
     image: nginx:latest
     restart: unless-stopped
-    env_file: .env
-    networks:
-      - knowledgeable_network 
+    environment:
+      - APP_DOMAIN=${APP_DOMAIN:?APP_DOMAIN is required}
     ports:
-      - 80:80
-      - 443:443
+      - "80:80"
+      - "443:443"
     depends_on:
-      - app 
+      app:
+        condition: service_healthy
     volumes:
       - ./nginx/secure/:/etc/nginx/templates/
-      - /etc/localtime:/etc/localtime:ro
       - ./nginx/certbot/conf:/etc/letsencrypt
       - ./nginx/certbot/www:/var/www/certbot
-      - ./nginx/99-autoreload.sh:/docker-entrypoint.d/99-autoreload.sh 
+    networks:
+      - knowledgeable_network
 
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - ./nginx/certbot/conf:/etc/letsencrypt
-      - ./nginx/certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"  # Renew certificates every 12 hours
+volumes:
+  postgres_data:
 
 networks:
   knowledgeable_network:
     driver: bridge
-
-volumes:
-  postgres_data:

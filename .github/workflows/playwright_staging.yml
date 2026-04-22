@@ -1,0 +1,74 @@
+name: CD - Playwright Staging E2E
+on:
+  workflow_run:
+    workflows: [ "CD - Staging Deployment" ]
+    types: [ completed ]
+    branches: [ main ]
+jobs:
+  run-playwright-full:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: knowledgeable/package-lock.json
+
+      - name: Add SSH key
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
+          chmod 600 ~/.ssh/ssh_key
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+  
+      - name: Install dependencies
+        working-directory: knowledgeable
+        run: npm ci
+
+      - name: Get Playwright version
+        id: playwright-version
+        working-directory: knowledgeable
+        run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }} 
+        
+      - name: Install Playwright browsers (and deps)
+        working-directory: knowledgeable
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
+            npx playwright install-deps
+          else
+            npx playwright install --with-deps
+          fi
+
+      - name: Run e2e tests
+        working-directory: knowledgeable
+        run: npx playwright test --project=full --reporter=line
+        env:
+          BASE_URL: http://${{ secrets.SSH_HOST }}:8081
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: knowledgeable/playwright-report/
+          retention-days: 30
+
+      - name: Teardown staging
+        if: always()
+        run: |
+          ssh -i ~/.ssh/ssh_key \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "bash ~/app/teardown-staging.sh"

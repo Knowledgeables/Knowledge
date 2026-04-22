@@ -1,18 +1,12 @@
 services:
   app:
-    image: ghcr.io/knowledgeables/knowledge:latest
+    image: ghcr.io/knowledgeables/knowledge:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile.prod
 
   migrations:
-    image: ghcr.io/knowledgeables/knowledge-migrations:latest
+    image: ghcr.io/knowledgeables/knowledge-migrations:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile.migrations
-
-  nginx:
-    image: ghcr.io/knowledgeables/knowledge_nginx:latest
-    build:
-      context: ./network
-      dockerfile: Dockerfile

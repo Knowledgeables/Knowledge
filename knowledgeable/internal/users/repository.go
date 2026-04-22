@@ -2,7 +2,16 @@ package users
 
 import (
 	"database/sql"
-	"log"
+	"errors"
+	"log/slog"
+	"strings"
+
+	"github.com/lib/pq"
+)
+
+var (
+	ErrUsernameTaken = errors.New("username already taken")
+	ErrEmailTaken    = errors.New("email already taken")
 )
 
 type Repository struct {
@@ -14,35 +23,37 @@ func NewRepository(db *sql.DB) *Repository {
 }
 
 func (r *Repository) Register(user *User) error {
-	result, err := r.db.Exec(
-		"INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)",
+	err := r.db.QueryRow(
+		"INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id",
 		user.Username,
 		user.Email,
 		user.PasswordHash,
-	)
-	log.Println("User added: ", user.Username)
+	).Scan(&user.ID)
 
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			if strings.Contains(pqErr.Constraint, "username") {
+				return ErrUsernameTaken
+			}
+			if strings.Contains(pqErr.Constraint, "email") {
+				return ErrEmailTaken
+			}
+		}
 		return err
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return err
-	}
-
-	user.ID = id
+	slog.Info("user added", "user_id", user.ID) // #nosec G706 -- JSON handler escapes all values
 	return nil
 }
 
 func (r *Repository) FindByUsername(username string) (*User, error) {
 	row := r.db.QueryRow(
-		"SELECT id, username, email, password_hash FROM users WHERE username = $1",
+		"SELECT id, username, email, password_hash, should_change_password FROM users WHERE username = $1",
 		username,
 	)
 
 	var user User
-	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash)
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.ShouldChangePassword)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -57,12 +68,12 @@ func (r *Repository) FindByUsername(username string) (*User, error) {
 
 func (r *Repository) FindById(id int64) (*User, error) {
 	row := r.db.QueryRow(
-		"SELECT id, username, email, password_hash FROM users WHERE id = $1",
+		"SELECT id, username, email, password_hash, should_change_password FROM users WHERE id = $1",
 		id,
 	)
 
 	var user User
-	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash)
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.ShouldChangePassword)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -73,6 +84,14 @@ func (r *Repository) FindById(id int64) (*User, error) {
 	}
 
 	return &user, nil
+}
+
+func (r *Repository) UpdatePassword(userID int64, newPasswordHash string) error {
+	_, err := r.db.Exec(
+		"UPDATE users SET password_hash = $1, should_change_password = false WHERE id = $2",
+		newPasswordHash, userID,
+	)
+	return err
 }
 
 func (r *Repository) FindAll() ([]User, error) {

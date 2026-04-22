@@ -1,30 +1,42 @@
 package main
 
 import (
+	"context"
 	"html/template"
+	_ "knowledgeable/docs"
 	"knowledgeable/internal/auth"
 	"knowledgeable/internal/db"
 	"knowledgeable/internal/pages"
 	"knowledgeable/internal/users"
 	"knowledgeable/internal/web"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
-
-	_ "knowledgeable/docs"
 )
 
 func main() {
 
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+    resp, err := http.Get("http://localhost:8080/health")
+		if err != nil {
+			os.Exit(1)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		if resp.StatusCode != http.StatusOK {
+			os.Exit(1)
+		}
+    os.Exit(0)
+}
+
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+	log.Println("[APP] Starting application")
+
 	// db setup
 	database := db.InitPostgres()
-
-	defer func() {
-		if err := database.Close(); err != nil {
-			log.Printf("failed to close db: %v", err)
-		}
-	}()
 
 	// templates
 	var tmplLoader func() *template.Template
@@ -50,7 +62,7 @@ func main() {
 	// user
 	userRepo := users.NewRepository(database)
 	userService := users.NewService(userRepo)
-	userHandler := users.NewHandler(userService, tmplLoader)
+	userHandler := users.NewHandler(userService, tmplLoader, auth.Create)
 
 	// pages
 	pageRepo := pages.NewRepository(database)
@@ -79,13 +91,36 @@ func main() {
 		},
 	)
 
-	log.Println("Server running on :8080")
-
 	srv := &http.Server{
 		Addr:         ":8080",
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
-	log.Fatal(srv.ListenAndServe())
+
+	// start server async
+	go func() {
+		log.Println("[APP] Server running on :8080")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("[APP] Server failed: %v", err)
+		}
+	}()
+
+	// shutdown handling
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	<-quit
+	log.Println("[APP] Shutting down...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("[APP] Forced shutdown: %v", err)
+	}
+
+	if err := database.Close(); err != nil {
+		log.Printf("failed to close db: %v", err)
+	}
 }

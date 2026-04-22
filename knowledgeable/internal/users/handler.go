@@ -3,13 +3,15 @@ package users
 import (
 	"encoding/json"
 	"html/template"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 )
 
 type Handler struct {
-	service  UserService
-	loadTmpl func() *template.Template
+	service       UserService
+	loadTmpl      func() *template.Template
+	createSession func(int64) (string, error)
 }
 
 type RegisterRequest struct {
@@ -24,15 +26,20 @@ type RegisterResponse struct {
 	Username string `json:"username"`
 }
 
+type RegisterPageData struct {
+	Error string
+}
+
 type UserService interface {
 	Register(string, string, string) (*User, error)
 	GetAll() ([]User, error)
 }
 
-func NewHandler(s UserService, load func() *template.Template) *Handler {
+func NewHandler(s UserService, load func() *template.Template, createSession func(int64) (string, error)) *Handler {
 	return &Handler{
-		service:  s,
-		loadTmpl: load,
+		service:       s,
+		loadTmpl:      load,
+		createSession: createSession,
 	}
 }
 
@@ -44,7 +51,7 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	users, err := h.service.GetAll()
 	if err != nil {
-		log.Println("GetAll error:", err)
+		slog.Error("GetAll failed", "error", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
@@ -66,7 +73,15 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		tmpl := h.loadTmpl()
 
-		if err := tmpl.ExecuteTemplate(w, "register.html", nil); err != nil {
+		data := RegisterPageData{}
+		switch r.URL.Query().Get("error") {
+		case "username_taken":
+			data.Error = "Username is already taken"
+		case "email_taken":
+			data.Error = "Email is already registered"
+		}
+
+		if err := tmpl.ExecuteTemplate(w, "register.html", data); err != nil {
 			http.Error(w, "template error", http.StatusInternalServerError)
 		}
 		return
@@ -85,12 +100,12 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		user, err := h.service.Register(username, email, password)
 
 		if err != nil {
-			log.Println("Register error:", err)
+			slog.Error("register failed", "error", err)
 			http.Error(w, "invalid input", http.StatusBadRequest)
 			return
 		}
 
-		log.Printf("User created: %q", user.Username) // #nosec G706 -- username is quoted with %q
+		slog.Info("user registered", "user_id", user.ID) // #nosec G706 -- JSON handler escapes all values
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -141,11 +156,34 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.service.Register(req.Username, req.Email, req.Password)
 	if err != nil {
-		http.Error(w, "registration failed", http.StatusBadRequest)
+		slog.Error("register_api failed", "error", err)
+		switch err {
+		case ErrUsernameTaken:
+			http.Redirect(w, r, "/register?error=username_taken", http.StatusSeeOther)
+		case ErrEmailTaken:
+			http.Redirect(w, r, "/register?error=email_taken", http.StatusSeeOther)
+		default:
+			http.Error(w, "registration failed", http.StatusBadRequest)
+		}
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	log.Printf("User registered: %q", user.Username) // #nosec G706 -- username is quoted with %q
+	sessionID, err := h.createSession(user.ID)
+	if err != nil {
+		slog.Error("register_api session failed", "error", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure is set dynamically based on APP_ENV
+		Name:     "session_id",
+		Value:    sessionID,
+		SameSite: http.SameSiteLaxMode,
+		HttpOnly: true,
+		Path:     "/",
+		Secure:   os.Getenv("APP_ENV") == "production",
+	})
+
+	slog.Info("user registered via api", "user_id", user.ID) // #nosec G706 -- JSON handler escapes all values
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

@@ -4,6 +4,7 @@ dotenv.config({});
 /**
  * @type { import("knex").Knex.Config }
  */
+
 export default {
   client: 'postgresql',
   connection: {
@@ -14,5 +15,8 @@ export default {
   },
   migrations: {
     tableName: 'knex_migrations'
+  },
+  seeds: {
+    directory: './seeds'
   }
 };

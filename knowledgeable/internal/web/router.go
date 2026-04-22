@@ -29,9 +29,17 @@ func SetupRoutes(
 	http.HandleFunc("/logout", authHandler.Logout)
 	http.HandleFunc("/login", authHandler.Login)
 	http.HandleFunc("/api/login", authHandler.LoginAPI)
-    http.HandleFunc("/api/me", authHandler.Me)
+	http.HandleFunc("/api/me", authHandler.Me)
+	http.HandleFunc("/change-password", authHandler.ChangePassword)
 
 	http.Handle("/metrics", promhttp.Handler())
 
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+
 	http.HandleFunc("/", dashboardHandler)
+
+	
 }

@@ -1,0 +1,98 @@
+name: CI - Playwright Smoke Test
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    env:
+      POSTGRES_DB: knowledge
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    defaults:
+      run:
+        working-directory: knowledgeable
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: knowledgeable/go.mod
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      # 1. Start DB only
+      - name: Start database
+        run: docker compose -f docker-compose-dev.yml up -d db
+
+      # 2. Wait for DB
+      - name: Wait for database
+        run: timeout 60 bash -c 'until docker compose -f docker-compose-dev.yml exec -T db pg_isready -U "${POSTGRES_USER}"; do sleep 2; done'
+
+      # 3. Run migrations + seeds
+      - name: Run migrations + seeds
+        run: |
+          docker compose -f docker-compose-dev.yml run --rm migrations sh -c "
+            npm ci &&
+            npx knex migrate:latest &&
+            npx knex seed:run --specific=dev_seed.js
+          "
+
+      # 4. Start app AFTER DB is ready
+      - name: Start application
+        run: APP_ENV=dev docker compose -f docker-compose-dev.yml up -d --build app
+
+      # 5. Install Node deps (Playwright)
+      - name: Install dependencies
+        run: npm ci
+
+      # 6. Wait for app readiness
+      - name: Wait for app
+        run: timeout 60 bash -c 'until curl -f http://localhost:8080/health; do sleep 2; done'
+
+      # 7. Cache Playwright browsers
+      - uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('knowledgeable/package-lock.json') }}
+
+      # 8. Install Playwright
+      - name: Install Playwright Browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium --with-deps
+
+      # 9. If cache hit, still need to install system deps (but not the browser)
+      - name: Install system deps only
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      # 10. Run tests
+      - name: Run Playwright smoke tests
+        run: npx playwright test --project=smoke --reporter=line
+
+      # Debug
+      - name: Show running containers
+        if: always()
+        run: docker ps -a
+
+      - name: Show logs
+        if: always()
+        run: docker compose -f docker-compose-dev.yml logs
+
+      # Report
+      - name: Upload Playwright report  
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: knowledgeable/playwright-report/
+          retention-days: 30

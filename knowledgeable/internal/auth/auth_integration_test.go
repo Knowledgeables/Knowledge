@@ -24,6 +24,10 @@ func (s *successUserService) GetByID(id int64) (*users.User, error) {
 	}, nil
 }
 
+func (s *successUserService) ChangePassword(userID int64, newPassword string) error {
+	return nil
+}
+
 // HAPPY PATH
 func TestLoginAPI_SetsSessionCookie(t *testing.T) {
 
@@ -99,6 +103,10 @@ func (s *failUserService) GetByID(id int64) (*users.User, error) {
 	return nil, errors.New("user not found")
 }
 
+func (s *failUserService) ChangePassword(userID int64, newPassword string) error {
+	return errors.New("change password failed")
+}
+
 func TestLoginAPI_InvalidCredentials(t *testing.T) {
 
 	userService := &failUserService{}
@@ -125,9 +133,13 @@ func TestLoginAPI_InvalidCredentials(t *testing.T) {
 
 	res := rr.Result()
 
-	// korrekt status
-	if res.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("expected 401, got %d", res.StatusCode)
+	// should redirect back to login with error param
+	if res.StatusCode != http.StatusSeeOther {
+		t.Fatalf("expected 303, got %d", res.StatusCode)
+	}
+
+	if res.Header.Get("Location") != "/login?error=invalid_credentials" {
+		t.Fatalf("expected redirect to /login?error=invalid_credentials, got %s", res.Header.Get("Location"))
 	}
 
 	// ingen cookie
