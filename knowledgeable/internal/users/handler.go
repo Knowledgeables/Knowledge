@@ -3,6 +3,8 @@ package users
 import (
 	"encoding/json"
 	"html/template"
+	"knowledgeable/internal/middleware"
+	"knowledgeable/internal/observability"
 	"log/slog"
 	"net/http"
 	"os"
@@ -49,9 +51,15 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	trackingID := middleware.GetTrackingID(r)
+
 	users, err := h.service.GetAll()
 	if err != nil {
-		slog.Error("GetAll failed", "error", err)
+		slog.Error("get_users_failed",
+			"event", "get_users_failed",
+			"tracking_id", trackingID,
+			"error", err.Error(),
+		)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
@@ -99,13 +107,22 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 		user, err := h.service.Register(username, email, password)
 
+		trackingID := middleware.GetTrackingID(r)
+
 		if err != nil {
-			slog.Error("register failed", "error", err)
+			slog.Warn("register_failed",
+				"event", "register_failed",
+				"tracking_id", trackingID,
+				"error", err.Error(),
+			)
+
 			http.Error(w, "invalid input", http.StatusBadRequest)
 			return
 		}
 
-		slog.Info("user registered", "user_id", user.ID) // #nosec G706 -- JSON handler escapes all values
+		slog.Info("register",
+			observability.LogAttrs("register", trackingID, &user.ID)...,
+		) // #nosec G706 -- JSON handler escapes all values
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -155,8 +172,16 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := h.service.Register(req.Username, req.Email, req.Password)
+
+	trackingID := middleware.GetTrackingID(r)
+
 	if err != nil {
-		slog.Error("register_api failed", "error", err)
+		slog.Warn("register_failed",
+			"event", "register_failed",
+			"tracking_id", trackingID,
+			"error", err.Error(),
+		)
+
 		switch err {
 		case ErrUsernameTaken:
 			http.Redirect(w, r, "/register?error=username_taken", http.StatusSeeOther)
@@ -170,9 +195,11 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 
 	sessionID, err := h.createSession(user.ID)
 	if err != nil {
-		slog.Error("register_api session failed", "error", err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
+		slog.Error("session_failed",
+			"event", "session_failed",
+			"tracking_id", trackingID,
+			"error", err.Error(),
+		)
 	}
 
 	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure is set dynamically based on APP_ENV
@@ -184,6 +211,10 @@ func (h *Handler) RegisterAPI(w http.ResponseWriter, r *http.Request) {
 		Secure:   os.Getenv("APP_ENV") == "production",
 	})
 
-	slog.Info("user registered via api", "user_id", user.ID) // #nosec G706 -- JSON handler escapes all values
+	slog.Info("register",
+		"event", "register",
+		"tracking_id", trackingID,
+		"user_id", user.ID,
+	) // #nosec G706 -- JSON handler escapes all values
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
