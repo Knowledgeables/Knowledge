@@ -46,6 +46,7 @@ services:
       POSTGRES_HOST: db
       APP_ENV: staging
       DATABASE_URL: postgres://postgres:postgres@db:5432/knowledgeable?sslmode=disable
+      CRAWLER_KEY: ${CRAWLER_KEY}
     ports:
       - "8081:8080"
     networks:

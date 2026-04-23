@@ -26,6 +26,33 @@ jobs:
       - name: Install crawler dependency
         run: npm install jsdom
 
+      - name: Debug crawler auth preflight (temporary)
+        env:
+          BACKEND_URL: ${{ secrets.CRAWLER_BACKEND_URL }}
+          CRAWLER_KEY: ${{ secrets.CRAWLER_KEY }}
+        run: |
+          set -euo pipefail
+          echo "BACKEND_URL=$BACKEND_URL"
+
+          if [ -z "${CRAWLER_KEY:-}" ]; then
+            echo "ERROR: CRAWLER_KEY is empty in workflow context"
+            exit 1
+          fi
+
+          echo "CRAWLER_KEY is set"
+          echo "CRAWLER_KEY length: ${#CRAWLER_KEY}"
+
+          target_status=$(curl -sS -o /tmp/crawler-targets.json -w "%{http_code}" \
+            -H "X-Crawler-Key: $CRAWLER_KEY" \
+            "$BACKEND_URL/api/crawler/targets?limit=1")
+
+          echo "targets status: $target_status"
+          if [ "$target_status" != "200" ]; then
+            echo "targets response (truncated):"
+            head -c 400 /tmp/crawler-targets.json || true
+            echo
+          fi
+
       - name: Run crawler
         env:
           BACKEND_URL: ${{ secrets.CRAWLER_BACKEND_URL }}

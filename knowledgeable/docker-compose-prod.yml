@@ -36,6 +36,7 @@ services:
     environment:
       APP_ENV: production
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      CRAWLER_KEY: ${CRAWLER_KEY:?CRAWLER_KEY is required}
     depends_on:
       db:
         condition: service_healthy
