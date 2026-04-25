@@ -52,6 +52,18 @@ This commands installs the 3 hooks for you inside /.git/hooks and then checks 5 
 - Runs go test ./.., to ensure the test still work
 - Runs go-sec ./.., to ensure there are no security issues in the new code
 
+## Script Placement
+
+Use this rule when creating new scripts:
+
+- Place repository-level automation in `scripts/` at repo root
+- Place application runtime scripts in `knowledgeable/scripts/`
+
+Examples:
+
+- Pre-commit helper scripts belong in `scripts/`
+- The crawler belongs in `knowledgeable/scripts/`
+
 ## Dev Flow
 
 Start the development environment from the `knowledgeable/` directory:
