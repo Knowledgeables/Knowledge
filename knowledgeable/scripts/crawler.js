@@ -24,6 +24,15 @@ function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function unwrapWaybackUrl(urlString) {
+    const waybackPattern = /^https?:\/\/web\.archive\.org\/web\/\d+\*?\/(https?:\/\/.+)$/;
+    const match = urlString.match(waybackPattern);
+    if (match) {
+        return match[1];
+    }
+    return urlString;
+}
+
 function asSeedURL(rawTarget) {
     const trimmed = (rawTarget || '').trim();
     if (!trimmed) {
@@ -131,7 +140,7 @@ async function crawlPage(pageUrl, depth = 0) {
 
         pagesToIngest.push({
             title,
-            url: cleanUrl.href,
+            url: unwrapWaybackUrl(cleanUrl.href),
             language: 'en',
             content: mainContent
         });
