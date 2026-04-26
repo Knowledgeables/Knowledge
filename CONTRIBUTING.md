@@ -69,6 +69,18 @@ The Docker Compose files fall back to these same defaults if no `.env` is presen
 so the values above will work out of the box for local development. Change them
 if you need a different setup.
 
+## Script Placement
+
+Use this rule when creating new scripts:
+
+- Place repository-level automation in `scripts/` at repo root
+- Place application runtime scripts in `knowledgeable/scripts/`
+
+Examples:
+
+- Pre-commit helper scripts belong in `scripts/`
+- The crawler belongs in `knowledgeable/scripts/`
+
 ## Dev Flow
 
 Start the development environment from the `knowledgeable/` directory:

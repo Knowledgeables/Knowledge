@@ -54,7 +54,7 @@ function guestNav() {
       <div class="w-64 flex gap-3">
 
             <a href="/login" class="h-9 w-full px-4 flex items-center justify-center gap-2 rounded-lg
-               text-sm text-gray-400 hover:text-white hover:bg-white/5 transition" id="login-button">
+                             text-sm text-gray-400 hover:text-white hover:bg-white/5 transition" id="nav-login" data-legacy-id="login-button">
                 <i data-lucide="log-in" class="w-4 h-4"></i>
                 Login
             </a>
@@ -108,12 +108,16 @@ transition">
 
 
 export async function renderNavbar() {
-    const user = await getCurrentUser();
     const nav = document.getElementById("navbar");
     if (!nav) return;
 
-    const content = user ? userNav(user) : guestNav();
-    nav.innerHTML = baseNav(content);
+    // Render a usable guest navbar immediately to avoid flaky selector timing.
+    nav.innerHTML = baseNav(guestNav());
+
+    const user = await getCurrentUser();
+    if (user) {
+        nav.innerHTML = baseNav(userNav(user));
+    }
 
     if (window.lucide) {
         lucide.createIcons();

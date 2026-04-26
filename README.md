@@ -131,6 +131,18 @@ make full-e2e    # Run full Playwright integration tests (staging)
 make swagger     # Regenerate Swagger docs
 ```
 
+### Script Placement
+
+Use this convention when adding scripts:
+
+- `scripts/` (repo root): repository-level automation used by hooks and CI helpers
+- `knowledgeable/scripts/`: application runtime scripts used by the Knowledgeable service itself
+
+Examples:
+
+- Commit hooks and quality checks stay in `scripts/`
+- The crawler stays in `knowledgeable/scripts/`
+
 ## Project Structure
 
 ```
