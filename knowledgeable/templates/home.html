@@ -77,18 +77,24 @@
     <script src="/static/js/navbarAuth.js" type="module"></script>
     <script>
         const input = document.getElementById('search-input');
-        const btn = document.getElementById('search-go-button');
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                window.location.href = '/search?q=' + encodeURIComponent(input.value);
-            }
-        });
-        btn.addEventListener('click', function(e) {
-            if (input.value.trim()) {
-                e.preventDefault();
-                window.location.href = '/search?q=' + encodeURIComponent(input.value);
-            }
-        });
+        const btn = document.getElementById('search-button');
+
+        if (input) {
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    window.location.href = '/search?q=' + encodeURIComponent(input.value);
+                }
+            });
+        }
+
+        if (btn && input) {
+            btn.addEventListener('click', function(e) {
+                if (input.value.trim()) {
+                    e.preventDefault();
+                    window.location.href = '/search?q=' + encodeURIComponent(input.value);
+                }
+            });
+        }
     </script>
 
 
