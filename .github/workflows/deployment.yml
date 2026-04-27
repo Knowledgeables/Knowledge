@@ -44,7 +44,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           CRAWLER_KEY: ${{ secrets.CRAWLER_KEY }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
         run: |
           umask 077
