@@ -6,6 +6,7 @@ import (
 	_ "knowledgeable/docs"
 	"knowledgeable/internal/auth"
 	"knowledgeable/internal/db"
+	"knowledgeable/internal/email"
 	"knowledgeable/internal/middleware"
 	"knowledgeable/internal/pages"
 	"knowledgeable/internal/users"
@@ -71,7 +72,11 @@ func main() {
 	pageHandler := pages.NewHandler(pageService, tmplLoader)
 
 	// auth
-	authHandler := auth.NewHandler(userService, tmplLoader)
+	emailSender := email.NewResendSender(
+		os.Getenv("RESEND_API_KEY"),
+		os.Getenv("FROM_EMAIL"),
+	)
+	authHandler := auth.NewHandler(userService, tmplLoader, emailSender, os.Getenv("APP_BASE_URL"))
 
 	// routes
 	web.SetupRoutes(

@@ -26,6 +26,9 @@ services:
     environment:
       APP_ENV: dev
       DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@db:5432/knowledge?sslmode=disable}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      FROM_EMAIL: ${FROM_EMAIL}
+      APP_BASE_URL: ${APP_BASE_URL}
     depends_on:
       - db
   migrations:

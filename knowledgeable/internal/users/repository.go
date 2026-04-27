@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/lib/pq"
 )
@@ -92,6 +93,75 @@ func (r *Repository) UpdatePassword(userID int64, newPasswordHash string) error 
 		newPasswordHash, userID,
 	)
 	return err
+}
+
+func (r *Repository) FindByEmail(email string) (*User, error) {
+	row := r.db.QueryRow(
+		"SELECT id, username, email, password_hash, should_change_password FROM users WHERE email = $1",
+		email,
+	)
+
+	var user User
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.ShouldChangePassword)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *Repository) CreatePasswordResetToken(userID int64, tokenHash string, expiresAt time.Time) error {
+	_, err := r.db.Exec(
+		"INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
+		userID, tokenHash, expiresAt,
+	)
+	return err
+}
+
+func (r *Repository) FindPasswordResetToken(tokenHash string) (*PasswordResetToken, error) {
+	row := r.db.QueryRow(
+		"SELECT id, user_id, token_hash, expires_at, used_at, created_at FROM password_reset_tokens WHERE token_hash = $1",
+		tokenHash,
+	)
+
+	var token PasswordResetToken
+	var usedAt sql.NullTime
+	err := row.Scan(&token.ID, &token.UserID, &token.TokenHash, &token.ExpiresAt, &usedAt, &token.CreatedAt)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if usedAt.Valid {
+		token.UsedAt = &usedAt.Time
+	}
+
+	return &token, nil
+}
+
+func (r *Repository) MarkTokenUsed(id int64) error {
+	res, err := r.db.Exec(
+		"UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1 AND used_at IS NULL AND expires_at > NOW()",
+		id,
+	)
+	if err != nil {
+		return err
+	}
+	ra, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if ra == 0 {
+		return errors.New("token already used or expired")
+	}
+	return nil
 }
 
 func (r *Repository) FindAll() ([]User, error) {

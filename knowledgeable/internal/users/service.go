@@ -1,7 +1,11 @@
 package users
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -9,9 +13,13 @@ import (
 type UserRepository interface {
 	Register(*User) error
 	FindByUsername(string) (*User, error)
+	FindByEmail(string) (*User, error)
 	FindById(int64) (*User, error)
 	FindAll() ([]User, error)
 	UpdatePassword(int64, string) error
+	CreatePasswordResetToken(userID int64, tokenHash string, expiresAt time.Time) error
+	FindPasswordResetToken(tokenHash string) (*PasswordResetToken, error)
+	MarkTokenUsed(id int64) error
 }
 
 type Service struct {
@@ -109,6 +117,59 @@ func (s *Service) ChangePassword(userID int64, newPassword string) error {
 	}
 
 	return s.repo.UpdatePassword(userID, string(hashed))
+}
+
+func (s *Service) GetByEmail(email string) (*User, error) {
+	if email == "" {
+		return nil, errors.New("missing email")
+	}
+	return s.repo.FindByEmail(email)
+}
+
+func (s *Service) CreateResetToken(userID int64) (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	rawToken := hex.EncodeToString(b)
+
+	sum := sha256.Sum256([]byte(rawToken))
+	tokenHash := hex.EncodeToString(sum[:])
+
+	if err := s.repo.CreatePasswordResetToken(userID, tokenHash, time.Now().Add(time.Hour)); err != nil {
+		return "", err
+	}
+
+	return rawToken, nil
+}
+
+func (s *Service) ConsumeResetToken(rawToken string) (int64, error) {
+	if rawToken == "" {
+		return 0, errors.New("missing token")
+	}
+
+	sum := sha256.Sum256([]byte(rawToken))
+	tokenHash := hex.EncodeToString(sum[:])
+
+	token, err := s.repo.FindPasswordResetToken(tokenHash)
+	if err != nil {
+		return 0, err
+	}
+	if token == nil {
+		return 0, errors.New("invalid token")
+	}
+	if time.Now().After(token.ExpiresAt) {
+		return 0, errors.New("token expired")
+	}
+	if token.UsedAt != nil {
+		return 0, errors.New("token already used")
+	}
+
+	if err := s.repo.MarkTokenUsed(token.ID); err != nil {
+		return 0, err
+	}
+
+	return token.UserID, nil
 }
 
 func (s *Service) GetAll() ([]User, error) {
