@@ -10,7 +10,7 @@ echo "Running golangci-lint in $PROJECT_DIR ..."
 if ! command -v golangci-lint > /dev/null 2>&1; then
   echo "ERROR: golangci-lint is not installed or not in PATH."
   echo "Install v${REQUIRED_VERSION#v}:"
-  echo "  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b \$(go env GOPATH)/bin $REQUIRED_VERSION"
+  echo "   go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.4  "
   exit 1
 fi
 
