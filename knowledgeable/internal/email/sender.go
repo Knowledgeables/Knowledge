@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
 type Sender interface {
@@ -23,7 +24,7 @@ func NewResendSender(apiKey, fromAddr string) *ResendSender {
 	return &ResendSender{
 		apiKey:   apiKey,
 		fromAddr: fromAddr,
-		client:   &http.Client{},
+		client:   &http.Client{Timeout: 10 * time.Second},
 	}
 }
 
@@ -39,7 +40,6 @@ func (r *ResendSender) Send(to, subject, html string) error {
 		slog.Info("email (dev mode — no RESEND_API_KEY set)",
 			"to", to,
 			"subject", subject,
-			"body", html,
 		)
 		return nil
 	}
@@ -65,7 +65,7 @@ func (r *ResendSender) Send(to, subject, html string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)

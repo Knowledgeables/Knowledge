@@ -6,11 +6,13 @@ import (
 	"html/template"
 	"knowledgeable/internal/middleware"
 	"knowledgeable/internal/observability"
+	"knowledgeable/internal/ratelimit"
 	"knowledgeable/internal/users"
 	"log/slog"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 type LoginRequest struct {
@@ -42,10 +44,12 @@ type EmailSender interface {
 }
 
 type Handler struct {
-	userService UserService
-	loadTmpl    func() *template.Template
-	emailSender EmailSender
-	baseURL     string
+	userService    UserService
+	loadTmpl       func() *template.Template
+	emailSender    EmailSender
+	baseURL        string
+	forgotLimiter  *ratelimit.IPLimiter
+	resetLimiter   *ratelimit.IPLimiter
 }
 
 type LoginPageData struct {
@@ -64,10 +68,12 @@ type ResetPasswordPageData struct {
 
 func NewHandler(us UserService, load func() *template.Template, emailSender EmailSender, baseURL string) *Handler {
 	return &Handler{
-		userService: us,
-		loadTmpl:    load,
-		emailSender: emailSender,
-		baseURL:     baseURL,
+		userService:   us,
+		loadTmpl:      load,
+		emailSender:   emailSender,
+		baseURL:       baseURL,
+		forgotLimiter: ratelimit.NewIPLimiter(5, 15*time.Minute),
+		resetLimiter:  ratelimit.NewIPLimiter(10, 15*time.Minute),
 	}
 }
 
@@ -394,6 +400,16 @@ func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ip := ratelimit.RealIP(r)
+
+	if !h.forgotLimiter.Allow(ip) {
+		slog.Warn("forgot_password_rate_limited",
+			observability.LogAttrs("auth.forgot_password", trackingID, nil, "ip", ip)...,
+		)
+		http.Error(w, "too many requests", http.StatusTooManyRequests)
+		return
+	}
+
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
@@ -405,11 +421,16 @@ func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	emailDomain := emailDomainOf(emailAddr)
+
+	slog.Info("forgot_password_requested",
+		observability.LogAttrs("auth.forgot_password", trackingID, nil, "email_domain", emailDomain, "ip", ip)...,
+	)
+
 	user, err := h.userService.GetByEmail(emailAddr)
 	if err != nil || user == nil {
-		// Don't reveal whether the email exists
 		slog.Info("forgot_password_unknown_email",
-			observability.LogAttrs("auth.forgot_password", trackingID, nil, "email", emailAddr)...,
+			observability.LogAttrs("auth.forgot_password", trackingID, nil, "email_domain", emailDomain)...,
 		)
 		http.Redirect(w, r, "/forgot-password?sent=1", http.StatusSeeOther)
 		return
@@ -420,7 +441,7 @@ func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		slog.Error("forgot_password_token_failed",
 			observability.LogAttrs("auth.forgot_password", trackingID, &user.ID, "error", err.Error())...,
 		)
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		http.Redirect(w, r, "/forgot-password?sent=1", http.StatusSeeOther)
 		return
 	}
 
@@ -434,12 +455,12 @@ func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		slog.Error("forgot_password_email_failed",
 			observability.LogAttrs("auth.forgot_password", trackingID, &user.ID, "error", err.Error())...,
 		)
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		http.Redirect(w, r, "/forgot-password?sent=1", http.StatusSeeOther)
 		return
 	}
 
 	slog.Info("forgot_password_sent",
-		observability.LogAttrs("auth.forgot_password", trackingID, &user.ID)...,
+		observability.LogAttrs("auth.forgot_password", trackingID, &user.ID, "email_domain", emailDomain)...,
 	)
 
 	http.Redirect(w, r, "/forgot-password?sent=1", http.StatusSeeOther)
@@ -479,6 +500,16 @@ func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ip := ratelimit.RealIP(r)
+
+	if !h.resetLimiter.Allow(ip) {
+		slog.Warn("reset_password_rate_limited",
+			observability.LogAttrs("auth.reset_password", trackingID, nil, "ip", ip)...,
+		)
+		http.Error(w, "too many requests", http.StatusTooManyRequests)
+		return
+	}
+
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
@@ -494,9 +525,16 @@ func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if password != confirm {
+		slog.Debug("reset_password_mismatch",
+			observability.LogAttrs("auth.reset_password", trackingID, nil)...,
+		)
 		http.Redirect(w, r, "/reset-password?token="+token+"&error=passwords_mismatch", http.StatusSeeOther)
 		return
 	}
+
+	slog.Info("reset_password_attempted",
+		observability.LogAttrs("auth.reset_password", trackingID, nil)...,
+	)
 
 	userID, err := h.userService.ConsumeResetToken(token)
 	if err != nil {
@@ -520,4 +558,11 @@ func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	)
 
 	http.Redirect(w, r, "/login?reset=1", http.StatusSeeOther)
+}
+
+func emailDomainOf(email string) string {
+	if i := strings.LastIndex(email, "@"); i >= 0 {
+		return email[i+1:]
+	}
+	return "unknown"
 }

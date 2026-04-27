@@ -147,11 +147,21 @@ func (r *Repository) FindPasswordResetToken(tokenHash string) (*PasswordResetTok
 }
 
 func (r *Repository) MarkTokenUsed(id int64) error {
-	_, err := r.db.Exec(
-		"UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1",
+	res, err := r.db.Exec(
+		"UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1 AND used_at IS NULL AND expires_at > NOW()",
 		id,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	ra, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if ra == 0 {
+		return errors.New("token already used or expired")
+	}
+	return nil
 }
 
 func (r *Repository) FindAll() ([]User, error) {

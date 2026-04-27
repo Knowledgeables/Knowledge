@@ -39,7 +39,7 @@ services:
       CRAWLER_KEY: ${CRAWLER_KEY:?CRAWLER_KEY is required}
       RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY is required}
       FROM_EMAIL: ${FROM_EMAIL:?FROM_EMAIL is required}
-      APP_BASE_URL: ${APP_BASE_URL}
+      APP_BASE_URL: ${APP_BASE_URL:?APP_BASE_URL is required}
     depends_on:
       db:
         condition: service_healthy
