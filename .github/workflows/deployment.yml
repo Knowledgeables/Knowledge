@@ -44,14 +44,19 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           CRAWLER_KEY: ${{ secrets.CRAWLER_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
         run: |
           umask 077
-          printf 'IMAGE_TAG=%s\n'         "$IMAGE_TAG"         >  .env
-          printf 'APP_DOMAIN=%s\n'        "$APP_DOMAIN"        >> .env
-          printf 'POSTGRES_USER=%s\n'     "$POSTGRES_USER"     >> .env
-          printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD" >> .env
-          printf 'DATABASE_URL=%s\n'      "$DATABASE_URL"      >> .env
-          printf 'CRAWLER_KEY=%s\n'       "$CRAWLER_KEY"       >> .env
+          printf 'IMAGE_TAG=%s\n'         "$IMAGE_TAG"           >  .env
+          printf 'APP_DOMAIN=%s\n'        "$APP_DOMAIN"          >> .env
+          printf 'POSTGRES_USER=%s\n'     "$POSTGRES_USER"       >> .env
+          printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD"   >> .env
+          printf 'DATABASE_URL=%s\n'      "$DATABASE_URL"        >> .env
+          printf 'CRAWLER_KEY=%s\n'       "$CRAWLER_KEY"         >> .env
+          printf 'RESEND_API_KEY=%s\n'    "$RESEND_API_KEY"      >> .env
+          printf 'FROM_EMAIL=%s\n'        "$FROM_EMAIL"          >> .env
+          printf 'APP_BASE_URL=https://%s\n' "$APP_DOMAIN"       >> .env
 
       - name: Transfer .env to server
         run: |
