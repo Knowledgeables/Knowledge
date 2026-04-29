@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(xargs wc *)",
-      "Bash(go build *)",
-      "Bash(grep -E \"\\(\\\\.go|\\\\.sql|\\\\.env|\\\\.yaml|\\\\.yml\\)$\")"
-    ]
-  }
-}
