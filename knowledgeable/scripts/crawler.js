@@ -10,8 +10,8 @@ const TARGETS_ENDPOINT = process.env.TARGETS_ENDPOINT || '/api/crawler/targets';
 const INGEST_ENDPOINT = process.env.INGEST_ENDPOINT || '/api/crawler/ingest';
 
 const MAX_TARGETS = Number(process.env.MAX_TARGETS || 20);
-const MAX_PAGES = Number(process.env.MAX_PAGES || 50);
-const MAX_DEPTH = Number(process.env.MAX_DEPTH || 1);
+const MAX_PAGES = Number(process.env.MAX_PAGES || 200);
+const MAX_DEPTH = Number(process.env.MAX_DEPTH || 2);
 const CRAWL_DELAY_MS = Number(process.env.CRAWL_DELAY_MS || 1000);
 const ENABLE_INGEST = String(process.env.ENABLE_INGEST || 'false').toLowerCase() === 'true';
 
