@@ -100,6 +100,37 @@ func (r *Repository) Search(query string, lang Language) ([]Page, int, error) {
 	return pages, count, nil
 }
 
+func (r *Repository) GetExistingURLs() ([]string, error) {
+	rows, err := r.db.Query(`
+		SELECT DISTINCT url
+		FROM pages
+		ORDER BY url
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("rows close error: %v", err)
+		}
+	}()
+
+	var urls []string
+	for rows.Next() {
+		var url string
+		if err := rows.Scan(&url); err != nil {
+			return nil, err
+		}
+		urls = append(urls, url)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return urls, nil
+}
+
 func (r *Repository) FindByURL(url string) (*Page, error) {
 
 	row := r.db.QueryRow(`

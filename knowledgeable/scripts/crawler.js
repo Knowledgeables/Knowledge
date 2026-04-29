@@ -106,6 +106,28 @@ async function getSeedURLs() {
     }
 }
 
+async function getExistingURLs() {
+    try {
+        const url = new URL('/api/crawler/existing-urls', BACKEND_URL);
+        const response = await fetch(url, {
+            headers: {
+                'X-Crawler-Key': CRAWLER_KEY
+            }
+        });
+
+        if (!response.ok) {
+            console.warn(`[WARN] existing-urls endpoint failed: ${response.status}`);
+            return [];
+        }
+
+        const payload = await response.json();
+        return Array.isArray(payload.urls) ? payload.urls : [];
+    } catch (error) {
+        console.warn(`[WARN] Failed to load existing URLs: ${error.message}`);
+        return [];
+    }
+}
+
 async function crawlPage(pageUrl, depth = 0) {
     if (pagesToIngest.length >= MAX_PAGES) {
         return;
@@ -207,6 +229,11 @@ async function sendBatchToBackend() {
 async function main() {
     const seedURLs = await getSeedURLs();
     console.log(`[INFO] Using ${seedURLs.length} seed targets`);
+
+    const existingURLs = await getExistingURLs();
+    const existingURLSet = new Set(existingURLs);
+    console.log(`[INFO] Found ${existingURLs.length} existing URLs in database`);
+    existingURLSet.forEach((url) => visitedUrls.add(url));
 
     for (const seedURL of seedURLs) {
         if (pagesToIngest.length >= MAX_PAGES) {

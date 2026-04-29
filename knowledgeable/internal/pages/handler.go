@@ -26,6 +26,11 @@ type CrawlerIngestResponse struct {
 	Received int `json:"received"`
 }
 
+type CrawlerExistingURLsResponse struct {
+	URLs  []string `json:"urls"`
+	Count int      `json:"count"`
+}
+
 type Handler struct {
 	service  *Service
 	loadTmpl func() *template.Template
@@ -183,6 +188,49 @@ func (h *Handler) CrawlerTargetsAPI(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(CrawlerTargetsResponse{
 		Targets: targets,
 		Count:   len(targets),
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// CrawlerExistingURLsAPI godoc
+// @Summary Get existing crawler URLs
+// @Description Return list of all URLs already in database
+// @Tags crawler
+// @Produce json
+// @Param X-Crawler-Key header string true "Crawler authentication key"
+// @Success 200 {object} pages.CrawlerExistingURLsResponse
+// @Failure 401 {string} string "unauthorized"
+// @Failure 405 {string} string "method not allowed"
+// @Failure 500 {string} string "internal error"
+// @Router /api/crawler/existing-urls [get]
+func (h *Handler) CrawlerExistingURLsAPI(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	expectedKey := os.Getenv("CRAWLER_KEY")
+	if expectedKey == "" {
+		expectedKey = "dev-key"
+	}
+	if r.Header.Get("X-Crawler-Key") != expectedKey {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	urls, err := h.service.GetExistingURLs()
+	if err != nil {
+		slog.Error("crawler existing urls query failed", "error", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(CrawlerExistingURLsResponse{
+		URLs:  urls,
+		Count: len(urls),
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
