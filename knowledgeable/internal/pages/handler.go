@@ -69,9 +69,22 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if query == "" {
+
+		slog.Info("search_empty",
+			observability.LogAttrs("search_empty", trackingID, userID)...,
+		)
 		results = []Page{}
 		count = 0
 	} else {
+
+		// the intent of the search request
+		slog.Info("search",
+			observability.LogAttrs("search", trackingID, userID,
+				"query", query,
+				"language", lang,
+			)...,
+		)
+
 		results, count, err = h.service.Search(query, Language(lang))
 		if err != nil {
 			slog.Error("search_failed",
@@ -85,13 +98,15 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		slog.Info("search",
-			observability.LogAttrs("search", trackingID, userID,
+		// the outcome of the search query
+		slog.Info("search_result",
+			observability.LogAttrs("search_result", trackingID, userID,
 				"query", query,
 				"language", lang,
 				"results", count,
 			)...,
 		)
+
 		if err := h.service.RecordSignal(query, Language(lang)); err != nil {
 			slog.Warn("record search signal failed",
 				observability.LogAttrs("search_signal_failed", trackingID, userID,
@@ -150,6 +165,14 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 		results = []Page{}
 		count = 0
 	} else {
+		// the intend of the search requets
+		slog.Info("search",
+			observability.LogAttrs("search", trackingID, userID,
+				"query", query,
+				"language", lang,
+			)...,
+		)
+
 		results, count, err = h.service.Search(query, Language(lang))
 		if err != nil {
 			slog.Error("search_failed",
@@ -163,8 +186,9 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		slog.Info("search",
-			observability.LogAttrs("search", trackingID, userID,
+		// the outcome of the search query
+		slog.Info("search_result",
+			observability.LogAttrs("search_result", trackingID, userID,
 				"query", query,
 				"language", lang,
 				"results", count,
@@ -173,7 +197,7 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 
 		if err := h.service.RecordSignal(query, Language(lang)); err != nil {
 			slog.Warn("record search_api signal failed",
-				observability.LogAttrs("search_api_signal_failed", trackingID, userID,
+				observability.LogAttrs("search_signal_failed", trackingID, userID,
 					"query", query,
 					"language", lang,
 					"error", err.Error(),
