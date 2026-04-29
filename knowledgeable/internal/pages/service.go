@@ -76,3 +76,6 @@ func (s *Service) IngestCrawlerPages(items []CrawlerIngestItem) (int, error) {
 
 	return s.repo.UpsertCrawlerPages(validated)
 }
+
+
+

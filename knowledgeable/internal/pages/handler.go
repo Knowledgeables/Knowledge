@@ -9,6 +9,7 @@ import (
 	"knowledgeable/internal/observability"
 	"log/slog"
 	"net/http"
+	urlpkg "net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -362,7 +363,6 @@ func (h *Handler) CrawlerIngestAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 // Redirect godoc
 // @Summary Redirect and track search click
 // @Description Logs click event and redirects user to target URL
@@ -374,29 +374,60 @@ func (h *Handler) CrawlerIngestAPI(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {string} string "invalid url"
 // @Router /r [get]
 func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
+
 	trackingID := middleware.GetTrackingID(r)
 
+	var userID *int64
+	if cookie, err := r.Cookie("session_id"); err == nil {
+		if id, ok := auth.Get(cookie.Value); ok {
+			userID = &id
+		}
+	}
+
 	query := r.URL.Query().Get("q")
-	url := r.URL.Query().Get("url")
+	urlStr := r.URL.Query().Get("url")
 	posStr := r.URL.Query().Get("pos")
 
-	pos, _ := strconv.Atoi(posStr)
+	pos, err := strconv.Atoi(posStr)
+	if err != nil {
+		pos = -1
+	}
 
-	// ❗ VALIDATION (vigtigt)
-	if url == "" || !strings.HasPrefix(url, "http") {
+	if urlStr == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	if query == "" {
+		http.Redirect(w, r, urlStr, http.StatusFound)
+		return
+	}
+
+	u, err := urlpkg.Parse(urlStr)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
 		http.Error(w, "invalid url", http.StatusBadRequest)
 		return
 	}
 
-	// log click
+	// ensures url already exists in db to prevend open redirect
+	page, err := h.service.FindByURL(urlStr)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	if page == nil {
+		http.Error(w, "unknown url", http.StatusBadRequest)
+		return
+	}
+
 	slog.Info("search_click",
-		observability.LogAttrs("search_click", trackingID, nil,
+		observability.LogAttrs("search_click", trackingID, userID,
 			"query", query,
-			"url", url,
+			"url", urlStr,
 			"position", pos,
 		)...,
 	)
 
-	// redirect
-	http.Redirect(w, r, url, http.StatusFound)
+	http.Redirect(w, r, urlStr, http.StatusFound)
 }
