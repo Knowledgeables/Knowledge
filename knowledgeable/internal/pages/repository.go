@@ -100,6 +100,37 @@ func (r *Repository) Search(query string, lang Language) ([]Page, int, error) {
 	return pages, count, nil
 }
 
+func (r *Repository) GetExistingURLs() ([]string, error) {
+	rows, err := r.db.Query(`
+		SELECT DISTINCT url
+		FROM pages
+		ORDER BY url
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("rows close error: %v", err)
+		}
+	}()
+
+	var urls []string
+	for rows.Next() {
+		var url string
+		if err := rows.Scan(&url); err != nil {
+			return nil, err
+		}
+		urls = append(urls, url)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return urls, nil
+}
+
 func (r *Repository) FindByURL(url string) (*Page, error) {
 
 	row := r.db.QueryRow(`
@@ -138,14 +169,32 @@ func (r *Repository) RecordSignal(query string, lang Language) error {
 			signal_count = crawl_signals.signal_count + 1,
 			last_seen = NOW()
 	`, normalizedQuery, string(lang))
+	if err != nil {
+		return err
+	}
+
+	_, err = r.db.Exec(`
+		INSERT INTO crawl_signal_events (query, language, seen_at)
+		VALUES ($1, $2, NOW())
+	`, normalizedQuery, string(lang))
 
 	return err
 }
 
 func (r *Repository) GetTopSignals(limit int) ([]CrawlSignal, error) {
+	// Keep event storage bounded; crawler only needs recent behavior.
+	if _, err := r.db.Exec(`
+		DELETE FROM crawl_signal_events
+		WHERE seen_at < NOW() - INTERVAL '7 days'
+	`); err != nil {
+		return nil, err
+	}
+
 	rows, err := r.db.Query(`
-		SELECT query, language, signal_count, last_seen
-		FROM crawl_signals
+		SELECT query, language, COUNT(*)::int AS signal_count, MAX(seen_at) AS last_seen
+		FROM crawl_signal_events
+		WHERE seen_at >= NOW() - INTERVAL '24 hours'
+		GROUP BY query, language
 		ORDER BY signal_count DESC, last_seen DESC
 		LIMIT $1
 	`, limit)

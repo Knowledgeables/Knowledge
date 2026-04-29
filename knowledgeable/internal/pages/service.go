@@ -42,6 +42,10 @@ func (s *Service) GetTopSignals(limit int) ([]CrawlSignal, error) {
 	return s.repo.GetTopSignals(limit)
 }
 
+func (s *Service) GetExistingURLs() ([]string, error) {
+	return s.repo.GetExistingURLs()
+}
+
 func (s *Service) IngestCrawlerPages(items []CrawlerIngestItem) (int, error) {
 	validated := make([]CrawlerIngestItem, 0, len(items))
 	for _, item := range items {
