@@ -8,12 +8,22 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080';
 const CRAWLER_KEY = process.env.CRAWLER_KEY;
 const TARGETS_ENDPOINT = process.env.TARGETS_ENDPOINT || '/api/crawler/targets';
 const INGEST_ENDPOINT = process.env.INGEST_ENDPOINT || '/api/crawler/ingest';
+const ALLOWED_HOSTS = (process.env.ALLOWED_HOSTS || '').split(',').map((host) => host.trim().toLowerCase()).filter(Boolean);
+const SEED_URL_TEMPLATES = (process.env.SEED_URL_TEMPLATES || 'https://en.wikipedia.org/wiki/{query},https://www.britannica.com/search?query={query},https://developer.mozilla.org/en-US/search?q={query},https://stackoverflow.com/search?q={query},https://kubernetes.io/search/?q={query},https://docs.docker.com/search/?q={query},https://go.dev/search?q={query}')
+    .split(',')
+    .map((template) => template.trim())
+    .filter(Boolean);
 
 const MAX_TARGETS = Number(process.env.MAX_TARGETS || 20);
 const MAX_PAGES = Number(process.env.MAX_PAGES || 200);
 const MAX_DEPTH = Number(process.env.MAX_DEPTH || 2);
 const CRAWL_DELAY_MS = Number(process.env.CRAWL_DELAY_MS || 1000);
 const ENABLE_INGEST = String(process.env.ENABLE_INGEST || 'false').toLowerCase() === 'true';
+
+const BLOCKED_EXTENSIONS = new Set([
+    '.pdf', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp',
+    '.zip', '.rar', '.7z', '.gz', '.tar', '.mp3', '.mp4', '.avi', '.mov', '.webm'
+]);
 
 const FALLBACK_START_URLS = (process.env.FALLBACK_START_URLS || 'https://en.wikipedia.org/wiki/Docker_(software)')
     .split(',')
@@ -33,17 +43,20 @@ function unwrapWaybackUrl(urlString) {
     return urlString;
 }
 
-function asSeedURL(rawTarget) {
+function asSeedURLs(rawTarget) {
     const trimmed = (rawTarget || '').trim();
     if (!trimmed) {
-        return '';
+        return [];
     }
 
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-        return trimmed;
+        return [trimmed];
     }
 
-    return `https://en.wikipedia.org/wiki/${encodeURIComponent(trimmed)}`;
+    const encodedQuery = encodeURIComponent(trimmed);
+    return SEED_URL_TEMPLATES
+        .map((template) => template.includes('{query}') ? template.replaceAll('{query}', encodedQuery) : `${template}${encodedQuery}`)
+        .filter(Boolean);
 }
 
 function extractTitle(document, fallbackURL) {
@@ -72,6 +85,47 @@ function extractMainContent(document) {
         .trim();
 }
 
+function isAllowedHost(hostname, seedHostname) {
+    const host = (hostname || '').toLowerCase();
+    const seedHost = (seedHostname || '').toLowerCase();
+
+    if (ALLOWED_HOSTS.length > 0) {
+        return ALLOWED_HOSTS.includes(host);
+    }
+
+    return host === seedHost;
+}
+
+function hasBlockedExtension(pathname) {
+    const lowerPath = (pathname || '').toLowerCase();
+    for (const ext of BLOCKED_EXTENSIONS) {
+        if (lowerPath.endsWith(ext)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function shouldFollowUrl(candidateUrl, seedHostname) {
+    if (!candidateUrl) {
+        return false;
+    }
+
+    if (!['http:', 'https:'].includes(candidateUrl.protocol)) {
+        return false;
+    }
+
+    if (!isAllowedHost(candidateUrl.hostname, seedHostname)) {
+        return false;
+    }
+
+    if (hasBlockedExtension(candidateUrl.pathname)) {
+        return false;
+    }
+
+    return true;
+}
+
 async function getSeedURLs() {
     try {
         const url = new URL(TARGETS_ENDPOINT, BACKEND_URL);
@@ -90,15 +144,16 @@ async function getSeedURLs() {
         const payload = await response.json();
         const targets = Array.isArray(payload.targets) ? payload.targets : [];
         const urls = targets
-            .map((target) => asSeedURL(target.query))
+            .flatMap((target) => asSeedURLs(target.query))
             .filter(Boolean);
+        const uniqueUrls = Array.from(new Set(urls));
 
-        if (urls.length === 0) {
+        if (uniqueUrls.length === 0) {
             console.warn('[WARN] No targets returned from API, using fallback URL list');
             return FALLBACK_START_URLS;
         }
 
-        return urls;
+        return uniqueUrls;
     } catch (error) {
         console.warn(`[WARN] Failed to load targets from API: ${error.message}`);
         console.warn('[WARN] Falling back to static start URL list');
@@ -135,6 +190,7 @@ async function crawlPage(pageUrl, depth = 0) {
 
     const cleanUrl = new URL(pageUrl);
     cleanUrl.hash = '';
+    const seedHostname = cleanUrl.hostname;
 
     if (visitedUrls.has(cleanUrl.href)) {
         return;
@@ -182,14 +238,27 @@ async function crawlPage(pageUrl, depth = 0) {
                 break;
             }
 
-            if (href && href.startsWith('/wiki/') && !href.includes(':')) {
-                const resolvedUrl = new URL(href, cleanUrl.origin).href;
-                const normalizedUrl = resolvedUrl.split('#')[0];
-                
-                if (!visitedUrls.has(normalizedUrl)) {
-                    await delay(CRAWL_DELAY_MS);
-                    await crawlPage(normalizedUrl, depth + 1);
-                }
+            if (!href) {
+                continue;
+            }
+
+            let resolved;
+            try {
+                resolved = new URL(href, cleanUrl.origin);
+            } catch {
+                continue;
+            }
+
+            resolved.hash = '';
+
+            if (!shouldFollowUrl(resolved, seedHostname)) {
+                continue;
+            }
+
+            const normalizedUrl = resolved.href;
+            if (!visitedUrls.has(normalizedUrl)) {
+                await delay(CRAWL_DELAY_MS);
+                await crawlPage(normalizedUrl, depth + 1);
             }
         }
     } catch (error) {

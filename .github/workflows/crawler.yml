@@ -35,5 +35,6 @@ jobs:
           MAX_TARGETS: "20"
           MAX_PAGES: "200"
           MAX_DEPTH: "2"
+          SEED_URL_TEMPLATES: "https://en.wikipedia.org/wiki/{query},https://www.britannica.com/search?query={query},https://developer.mozilla.org/en-US/search?q={query},https://stackoverflow.com/search?q={query},https://kubernetes.io/search/?q={query},https://docs.docker.com/search/?q={query},https://go.dev/search?q={query}"
           CRAWL_DELAY_MS: "1000"
         run: node scripts/crawler.js
