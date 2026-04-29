@@ -33,7 +33,7 @@ jobs:
           CRAWLER_KEY: ${{ secrets.CRAWLER_KEY }}
           ENABLE_INGEST: "true"
           MAX_TARGETS: "20"
-          MAX_PAGES: "50"
-          MAX_DEPTH: "1"
+          MAX_PAGES: "200"
+          MAX_DEPTH: "2"
           CRAWL_DELAY_MS: "1000"
         run: node scripts/crawler.js
