@@ -169,14 +169,32 @@ func (r *Repository) RecordSignal(query string, lang Language) error {
 			signal_count = crawl_signals.signal_count + 1,
 			last_seen = NOW()
 	`, normalizedQuery, string(lang))
+	if err != nil {
+		return err
+	}
+
+	_, err = r.db.Exec(`
+		INSERT INTO crawl_signal_events (query, language, seen_at)
+		VALUES ($1, $2, NOW())
+	`, normalizedQuery, string(lang))
 
 	return err
 }
 
 func (r *Repository) GetTopSignals(limit int) ([]CrawlSignal, error) {
+	// Keep event storage bounded; crawler only needs recent behavior.
+	if _, err := r.db.Exec(`
+		DELETE FROM crawl_signal_events
+		WHERE seen_at < NOW() - INTERVAL '7 days'
+	`); err != nil {
+		return nil, err
+	}
+
 	rows, err := r.db.Query(`
-		SELECT query, language, signal_count, last_seen
-		FROM crawl_signals
+		SELECT query, language, COUNT(*)::int AS signal_count, MAX(seen_at) AS last_seen
+		FROM crawl_signal_events
+		WHERE seen_at >= NOW() - INTERVAL '24 hours'
+		GROUP BY query, language
 		ORDER BY signal_count DESC, last_seen DESC
 		LIMIT $1
 	`, limit)
