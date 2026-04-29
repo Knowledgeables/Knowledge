@@ -9,7 +9,7 @@ const CRAWLER_KEY = process.env.CRAWLER_KEY;
 const TARGETS_ENDPOINT = process.env.TARGETS_ENDPOINT || '/api/crawler/targets';
 const INGEST_ENDPOINT = process.env.INGEST_ENDPOINT || '/api/crawler/ingest';
 const ALLOWED_HOSTS = (process.env.ALLOWED_HOSTS || '').split(',').map((host) => host.trim().toLowerCase()).filter(Boolean);
-const SEED_URL_TEMPLATES = (process.env.SEED_URL_TEMPLATES || 'https://en.wikipedia.org/wiki/{query},https://www.britannica.com/search?query={query},https://developer.mozilla.org/en-US/search?q={query},https://stackoverflow.com/search?q={query},https://kubernetes.io/search/?q={query},https://docs.docker.com/search/?q={query},https://go.dev/search?q={query}')
+const SEED_URL_TEMPLATES = (process.env.SEED_URL_TEMPLATES || 'https://en.wikipedia.org/wiki/{query},https://www.britannica.com/search?query={query},https://developer.mozilla.org/en-US/search?q={query}')
     .split(',')
     .map((template) => template.trim())
     .filter(Boolean);
@@ -277,22 +277,27 @@ async function sendBatchToBackend() {
         return;
     }
 
-    const url = new URL(INGEST_ENDPOINT, BACKEND_URL);
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Crawler-Key': CRAWLER_KEY
-        },
-        body: JSON.stringify(pagesToIngest)
-    });
+    // Send in smaller batches (e.g., 50 at a time)
+    const BATCH_SIZE = 50;
+    for (let i = 0; i < pagesToIngest.length; i += BATCH_SIZE) {
+        const batch = pagesToIngest.slice(i, i + BATCH_SIZE);
+        const url = new URL(INGEST_ENDPOINT, BACKEND_URL);
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Crawler-Key': CRAWLER_KEY
+            },
+            body: JSON.stringify(batch)
+        });
 
-    if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`ingest endpoint failed: ${response.status} ${errorBody}`);
+        if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(`ingest endpoint failed: ${response.status} ${errorBody}`);
+        }
+
+        console.log(`[INFO] Uploaded batch ${i / BATCH_SIZE + 1} (${batch.length} pages)`);
     }
-
-    console.log(`[INFO] Uploaded ${pagesToIngest.length} pages to backend`);
 }
 
 async function main() {
@@ -314,6 +319,10 @@ async function main() {
 
     console.log(`[INFO] Crawl complete. Collected ${pagesToIngest.length} pages`);
     await sendBatchToBackend();
+    // To run this crawler every 12 hours, use a scheduler like cron or GitHub Actions scheduled workflows.
+    // This script does not implement scheduling itself.
+    // Example cron: 0 */12 * * *
+    // Example GitHub Actions: see docs for 'on: schedule'
 }
 
 main().catch((error) => {
