@@ -4,6 +4,121 @@
         "contact": {}
     },
     "paths": {
+        "/api/crawler/existing-urls": {
+            "get": {
+                "description": "Return list of all URLs already in database",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "crawler"
+                ],
+                "summary": "Get existing crawler URLs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Crawler authentication key",
+                        "name": "X-Crawler-Key",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pages.CrawlerExistingURLsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "405": {
+                        "description": "method not allowed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/crawler/ingest": {
+            "post": {
+                "description": "Upsert crawler results into pages table",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "crawler"
+                ],
+                "summary": "Ingest crawled pages",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Crawler authentication key",
+                        "name": "X-Crawler-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Crawler pages payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/pages.CrawlerIngestItem"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pages.CrawlerIngestResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "405": {
+                        "description": "method not allowed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/login": {
             "post": {
                 "description": "Authenticate user and create session",
@@ -127,40 +242,112 @@
                 }
             }
         },
-        "/api/search": {
+        "/change-password": {
             "get": {
-                "description": "Search pages by query and optional language",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
                 "produces": [
-                    "application/json"
+                    "text/html",
+                    "text/html"
                 ],
                 "tags": [
-                    "pages"
+                    "auth",
+                    "auth"
                 ],
-                "summary": "Search",
+                "summary": "Submit new password",
+                "responses": {
+                    "200": {
+                        "description": "Change password page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "303": {
+                        "description": "Redirect to home",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "text/html",
+                    "text/html"
+                ],
+                "tags": [
+                    "auth",
+                    "auth"
+                ],
+                "summary": "Submit new password",
+                "responses": {
+                    "200": {
+                        "description": "Change password page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "303": {
+                        "description": "Redirect to home",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/forgot-password": {
+            "post": {
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Submit forgot password request",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Search query",
-                        "name": "q",
-                        "in": "query",
+                        "description": "Email address",
+                        "name": "email",
+                        "in": "formData",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Language code",
-                        "name": "language",
-                        "in": "query"
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/pages.SearchResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "internal error",
+                    "303": {
+                        "description": "Redirect",
                         "schema": {
                             "type": "string"
                         }
@@ -226,6 +413,49 @@
                 }
             }
         },
+        "/r": {
+            "get": {
+                "description": "Logs click event and redirects user to target URL",
+                "tags": [
+                    "search"
+                ],
+                "summary": "Redirect and track search click",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Target URL",
+                        "name": "url",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Result position",
+                        "name": "pos",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Found"
+                    },
+                    "400": {
+                        "description": "invalid url",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/register": {
             "get": {
                 "description": "Shows the register form",
@@ -239,6 +469,28 @@
                 "responses": {
                     "200": {
                         "description": "Register page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/reset-password": {
+            "post": {
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Submit new password",
+                "responses": {
+                    "303": {
+                        "description": "Redirect to login",
                         "schema": {
                             "type": "string"
                         }
@@ -270,6 +522,48 @@
                 }
             }
         },
+        "pages.CrawlerExistingURLsResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "urls": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "pages.CrawlerIngestItem": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "language": {
+                    "$ref": "#/definitions/pages.Language"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "pages.CrawlerIngestResponse": {
+            "type": "object",
+            "properties": {
+                "received": {
+                    "type": "integer"
+                },
+                "upserted": {
+                    "type": "integer"
+                }
+            }
+        },
         "pages.Language": {
             "type": "string",
             "enum": [
@@ -280,40 +574,6 @@
                 "LanguageEN",
                 "LanguageDA"
             ]
-        },
-        "pages.Page": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "language": {
-                    "$ref": "#/definitions/pages.Language"
-                },
-                "lastUpdated": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "pages.SearchResponse": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer"
-                },
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pages.Page"
-                    }
-                }
-            }
         },
         "users.RegisterRequest": {
             "type": "object",

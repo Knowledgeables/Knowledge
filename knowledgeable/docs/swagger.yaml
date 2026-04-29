@@ -13,6 +13,33 @@ definitions:
       username:
         type: string
     type: object
+  pages.CrawlerExistingURLsResponse:
+    properties:
+      count:
+        type: integer
+      urls:
+        items:
+          type: string
+        type: array
+    type: object
+  pages.CrawlerIngestItem:
+    properties:
+      content:
+        type: string
+      language:
+        $ref: '#/definitions/pages.Language'
+      title:
+        type: string
+      url:
+        type: string
+    type: object
+  pages.CrawlerIngestResponse:
+    properties:
+      received:
+        type: integer
+      upserted:
+        type: integer
+    type: object
   pages.Language:
     enum:
     - en
@@ -21,28 +48,6 @@ definitions:
     x-enum-varnames:
     - LanguageEN
     - LanguageDA
-  pages.Page:
-    properties:
-      content:
-        type: string
-      language:
-        $ref: '#/definitions/pages.Language'
-      lastUpdated:
-        type: string
-      title:
-        type: string
-      url:
-        type: string
-    type: object
-  pages.SearchResponse:
-    properties:
-      count:
-        type: integer
-      results:
-        items:
-          $ref: '#/definitions/pages.Page'
-        type: array
-    type: object
   users.RegisterRequest:
     properties:
       email:
@@ -55,6 +60,82 @@ definitions:
 info:
   contact: {}
 paths:
+  /api/crawler/existing-urls:
+    get:
+      description: Return list of all URLs already in database
+      parameters:
+      - description: Crawler authentication key
+        in: header
+        name: X-Crawler-Key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pages.CrawlerExistingURLsResponse'
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "405":
+          description: method not allowed
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: Get existing crawler URLs
+      tags:
+      - crawler
+  /api/crawler/ingest:
+    post:
+      consumes:
+      - application/json
+      description: Upsert crawler results into pages table
+      parameters:
+      - description: Crawler authentication key
+        in: header
+        name: X-Crawler-Key
+        required: true
+        type: string
+      - description: Crawler pages payload
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/pages.CrawlerIngestItem'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pages.CrawlerIngestResponse'
+        "400":
+          description: invalid request
+          schema:
+            type: string
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "405":
+          description: method not allowed
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: Ingest crawled pages
+      tags:
+      - crawler
   /api/login:
     post:
       consumes:
@@ -136,33 +217,81 @@ paths:
       summary: Register user
       tags:
       - auth
-  /api/search:
+  /change-password:
     get:
-      description: Search pages by query and optional language
-      parameters:
-      - description: Search query
-        in: query
-        name: q
-        required: true
-        type: string
-      - description: Language code
-        in: query
-        name: language
-        type: string
+      consumes:
+      - application/x-www-form-urlencoded
       produces:
-      - application/json
+      - text/html
+      - text/html
       responses:
         "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/pages.SearchResponse'
-        "500":
-          description: internal error
+          description: Change password page
           schema:
             type: string
-      summary: Search
+        "303":
+          description: Redirect to home
+          schema:
+            type: string
+        "400":
+          description: bad request
+          schema:
+            type: string
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+      summary: Submit new password
       tags:
-      - pages
+      - auth
+      - auth
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      produces:
+      - text/html
+      - text/html
+      responses:
+        "200":
+          description: Change password page
+          schema:
+            type: string
+        "303":
+          description: Redirect to home
+          schema:
+            type: string
+        "400":
+          description: bad request
+          schema:
+            type: string
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+      summary: Submit new password
+      tags:
+      - auth
+      - auth
+  /forgot-password:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      parameters:
+      - description: Email address
+        in: formData
+        name: email
+        required: true
+        type: string
+      produces:
+      - text/html
+      responses:
+        "303":
+          description: Redirect
+          schema:
+            type: string
+      summary: Submit forgot password request
+      tags:
+      - auth
   /login:
     get:
       description: Render login page
@@ -201,6 +330,35 @@ paths:
       summary: Logout user
       tags:
       - auth
+  /r:
+    get:
+      description: Logs click event and redirects user to target URL
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: Target URL
+        in: query
+        name: url
+        required: true
+        type: string
+      - description: Result position
+        in: query
+        name: pos
+        required: true
+        type: integer
+      responses:
+        "302":
+          description: Found
+        "400":
+          description: invalid url
+          schema:
+            type: string
+      summary: Redirect and track search click
+      tags:
+      - search
   /register:
     get:
       description: Shows the register form
@@ -214,4 +372,18 @@ paths:
       summary: Server Register page
       tags:
       - pages
+  /reset-password:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      produces:
+      - text/html
+      responses:
+        "303":
+          description: Redirect to login
+          schema:
+            type: string
+      summary: Submit new password
+      tags:
+      - auth
 swagger: "2.0"

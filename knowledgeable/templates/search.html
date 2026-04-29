@@ -9,9 +9,9 @@
 
 <body class="min-h-screen flex flex-col">
 
-     <nav id="navbar"
-        class="flex flex-row items-center fixed top-0 left-0 w-full justify-between py-3 px-5 bg-[#090d16] z-[999]">
-    </nav>
+  <nav id="navbar"
+    class="flex flex-row items-center fixed top-0 left-0 w-full justify-between py-3 px-5 bg-[#090d16] z-[999]">
+  </nav>
 
 
   <div
@@ -62,8 +62,8 @@
 
           {{range $i, $r := .Results}}
 
-          <a href="{{$r.URL}}" rel="noopener noreferrer" class="block px-4 py-4 transition hover:bg-white/5
-            " target="_blank">
+          <a href="/r?q={{$.Query}}&url={{$r.URL}}&pos={{$i}}" rel="noopener noreferrer"
+            class="block px-4 py-4 transition hover:bg-white/5" target="_blank">
 
             <h2 class="text-[#1eff8c] font-medium">
               {{$r.Title}}
@@ -86,12 +86,12 @@
 
   </div>
 
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        lucide.createIcons();
-    </script>
-    <script src="/static/js/navbarAuth.js" type="module"></script>
-    <script src="/static/js/search.js" type="module"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+  <script src="/static/js/navbarAuth.js" type="module"></script>
+  <script src="/static/js/search.js" type="module"></script>
 
 </body>
 
