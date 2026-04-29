@@ -41,3 +41,6 @@ tmp/
 
 # Tailwind output
 static/output.css
+
+# Claude Code
+.claude/
