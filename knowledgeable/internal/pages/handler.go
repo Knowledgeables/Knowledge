@@ -361,3 +361,32 @@ func (h *Handler) CrawlerIngestAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+
+func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
+	trackingID := middleware.GetTrackingID(r)
+
+	query := r.URL.Query().Get("q")
+	url := r.URL.Query().Get("url")
+	posStr := r.URL.Query().Get("pos")
+
+	pos, _ := strconv.Atoi(posStr)
+
+	// ❗ VALIDATION (vigtigt)
+	if url == "" || !strings.HasPrefix(url, "http") {
+		http.Error(w, "invalid url", http.StatusBadRequest)
+		return
+	}
+
+	// log click
+	slog.Info("search_click",
+		observability.LogAttrs("search_click", trackingID, nil,
+			"query", query,
+			"url", url,
+			"position", pos,
+		)...,
+	)
+
+	// redirect
+	http.Redirect(w, r, url, http.StatusFound)
+}
