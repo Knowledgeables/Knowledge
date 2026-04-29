@@ -8,9 +8,3 @@ variable "vm_name" {
   type        = string
   default     = "main-vm"
 }
-
-variable "ssh_password" {
-  description = "SSH password for the virtual machine"
-  type        = string
-  sensitive   = true
-}

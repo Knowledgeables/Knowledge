@@ -2,19 +2,19 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "4.27.0"
+      version = "4.70.0"
     }
   }
 }
 
 provider "azurerm" {
   features {}
-  subscription_id = "var.subscription_id"
+  subscription_id = var.subscription_id
 }
 
 resource "azurerm_resource_group" "terraform_class" {
   name     = "terraform_class-resources"
-  location = "Norway East"
+  location = "Spain Central"
 }
 
 resource "azurerm_virtual_network" "terraform_class" {
@@ -53,7 +53,7 @@ resource "azurerm_network_interface" "terraform_class" {
 }
 
 resource "azurerm_linux_virtual_machine" "terraform_class" {
-  name                = "var.vm_name"
+  name                = var.vm_name
   resource_group_name = azurerm_resource_group.terraform_class.name
   location            = azurerm_resource_group.terraform_class.location
   size                = "Standard_B2s"
@@ -72,13 +72,13 @@ resource "azurerm_linux_virtual_machine" "terraform_class" {
     version   = "latest"
   }
 
-    disable_password_authentication = true
-    admin_ssh_key {
-        username   = "azureuser"
-        public_key = file("~/.ssh/id_rsa.pub")
+  disable_password_authentication = true
+  admin_ssh_key {
+    username   = "azureuser"
+    public_key = file("~/.ssh/id_rsa.pub")
   }
 
-    provisioner "remote-exec" {
+  provisioner "remote-exec" {
     inline = split("\n", templatefile("${path.module}/inline_commands.sh", {}))
 
     connection {
