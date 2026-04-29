@@ -374,6 +374,14 @@ func (h *Handler) CrawlerIngestAPI(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {string} string "invalid url"
 // @Router /r [get]
 func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
+	urlStr := r.URL.Query().Get("url")
+	posStr := r.URL.Query().Get("pos")
+
+	u, err := urlpkg.Parse(urlStr)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+		http.Error(w, "invalid url", http.StatusBadRequest)
+		return
+	}
 
 	trackingID := middleware.GetTrackingID(r)
 
@@ -385,8 +393,6 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := r.URL.Query().Get("q")
-	urlStr := r.URL.Query().Get("url")
-	posStr := r.URL.Query().Get("pos")
 
 	pos, err := strconv.Atoi(posStr)
 	if err != nil {
@@ -395,17 +401,6 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 
 	if urlStr == "" {
 		http.NotFound(w, r)
-		return
-	}
-
-	if query == "" {
-		http.Redirect(w, r, urlStr, http.StatusFound)
-		return
-	}
-
-	u, err := urlpkg.Parse(urlStr)
-	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
-		http.Error(w, "invalid url", http.StatusBadRequest)
 		return
 	}
 
