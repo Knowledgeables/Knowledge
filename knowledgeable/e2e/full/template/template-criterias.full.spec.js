@@ -2,8 +2,8 @@ import { test, expect } from "@playwright/test";
 
   test("can redirect to login-page", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("#nav-login")).toBeVisible();
-    await page.locator("#nav-login").click();
+    await expect(page.locator("#login-button")).toBeVisible();
+    await page.locator("#login-button").click();
     await expect(page).toHaveURL(/login/);
   });
 
@@ -32,7 +32,7 @@ import { test, expect } from "@playwright/test";
   test("anonymous user can navigate to login via navbar", async ({ page }) => {
     await page.goto("/");
 
-    const loginBtn = page.locator("#nav-login");
+    const loginBtn = page.locator("#login-button");
     await expect(loginBtn).toBeVisible();
     await expect(loginBtn).toBeEnabled();
 
