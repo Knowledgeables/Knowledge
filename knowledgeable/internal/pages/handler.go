@@ -363,6 +363,16 @@ func (h *Handler) CrawlerIngestAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 
+// Redirect godoc
+// @Summary Redirect and track search click
+// @Description Logs click event and redirects user to target URL
+// @Tags search
+// @Param q query string true "Search query"
+// @Param url query string true "Target URL"
+// @Param pos query int true "Result position"
+// @Success 302
+// @Failure 400 {string} string "invalid url"
+// @Router /r [get]
 func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	trackingID := middleware.GetTrackingID(r)
 
