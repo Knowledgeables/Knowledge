@@ -1,0 +1,15 @@
+---
+- name: Bootstrap Knowledge VMs
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Update and upgrade packages
+      ansible.builtin.import_tasks: tasks/packages.yml
+
+    - name: Install and configure Docker
+      ansible.builtin.import_tasks: tasks/docker.yml
+
+    - name: Install and configure fail2ban
+      ansible.builtin.import_tasks: tasks/fail2ban.yml
