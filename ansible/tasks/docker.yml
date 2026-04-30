@@ -12,9 +12,9 @@
     enabled: yes
     state: started
 
-- name: Add azureuser to docker group
+- name: Add user to docker group
   ansible.builtin.user:
-    name: azureuser
+    name: "{{ ansible_user }}"
     groups: docker
     append: yes
 

@@ -68,6 +68,12 @@ variable "ssh_public_key" {
   default     = "~/.ssh/id_rsa.pub"
 }
 
+variable "allowed_ssh_cidrs" {
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+  description = "CIDRs allowed to reach SSH. Open to world by default for student project (dynamic home IP, fail2ban + key-only auth provide protection). Restrict in production."
+}
+
 variable "vms" {
   description = "Map of VMs to create"
   type = map(object({

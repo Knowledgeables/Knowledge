@@ -34,14 +34,20 @@ jobs:
           ANSIBLE_HOST_KEY_CHECKING: "False"
         run: |
           set +e
-          ansible-playbook -i inventory.ini playbook.yml --check --diff > drift-output.txt 2>&1
-          cat drift-output.txt
-          
-          # Detect drift: any task that would change something
-          if grep -qE "changed=[1-9]" drift-output.txt; then
+          ansible-playbook --check ... > drift-output.txt 2>&1
+          rc=$?
+          set -e
+
+          if [ $rc -ne 0 ] && (grep -qE "FAILED!|UNREACHABLE" drift-output.txt); then
+            echo "drift_detected=false" >> $GITHUB_OUTPUT
+            echo "check_failed=true" >> $GITHUB_OUTPUT
+            exit 1   # fail the job loudly
+          elif grep -q "changed=[1-9]" drift-output.txt; then
             echo "drift_detected=true" >> $GITHUB_OUTPUT
+            echo "check_failed=false" >> $GITHUB_OUTPUT
           else
             echo "drift_detected=false" >> $GITHUB_OUTPUT
+            echo "check_failed=false" >> $GITHUB_OUTPUT
           fi
           
           # Exit cleanly so the issue creation step can run

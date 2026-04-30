@@ -8,6 +8,7 @@
   ansible.builtin.apt:
     upgrade: dist
     autoremove: yes
+  whenn: not ansible_check_mode
 
 - name: Install base packages
   ansible.builtin.apt:
