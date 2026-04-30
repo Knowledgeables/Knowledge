@@ -323,7 +323,21 @@ func (h *Handler) CrawlerIngestAPI(w http.ResponseWriter, r *http.Request) {
 
 	upserted, err := h.service.IngestCrawlerPages(items)
 	if err != nil {
-		slog.Error("crawler ingest failed", "error", err)
+		// Log more details for debugging
+		slog.Error("crawler ingest failed",
+			"error", err,
+			"items_count", len(items),
+			"first_item", func() interface{} {
+				if len(items) > 0 {
+					return items[0]
+				}
+				return nil
+			}(),
+		)
+		// Optionally, print the full error with stack trace if available
+		if errWithStack, ok := err.(interface{ Error() string }); ok {
+			slog.Error("error details", "stack", errWithStack.Error())
+		}
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
