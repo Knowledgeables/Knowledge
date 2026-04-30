@@ -14,70 +14,10 @@ variable "subscription_id" {
 
 }
 
-variable "vnet_name" {
-  description = "The name of the virtual network"
-  type        = string
-  default     = "whoknows-vnet"
-}
-
-variable "vnet_address_space" {
-  description = "The address space for the virtual network"
-  type        = string
-  default     = "10.0.0.0/16"
-}
-
-variable "subnet_name" {
-  description = "The name of the subnet"
-  type        = string
-  default     = "internal"
-}
-
-variable "subnet_address_prefix" {
-  description = "The address prefix for the subnet"
-  type        = string
-  default     = "10.0.2.0/24"
-}
-
-variable "public_ip_name" {
-  description = "The name of the public IP"
-  type        = string
-  default     = "knowledge-publicip"
-}
-
-variable "public_ip_allocation_method" {
-  description = "The allocation method for the public IP"
-  type        = string
-  default     = "Static"
-}
-
-variable "nic_name" {
-  description = "The name of the network interface"
-  type        = string
-  default     = "knowledge-nic"
-}
-
-variable "ip_configuration_name" {
-  description = "The name of the IP configuration"
-  type        = string
-  default     = "internal"
-}
-
-variable "private_ip_allocation" {
-  description = "The allocation method for the private IP"
-  type        = string
-  default     = "Dynamic"
-}
-
-variable "vm_name" {
-  description = "The name of the virtual machine"
-  type        = string
-  default     = "Knowledge"
-}
-
 variable "vm_size" {
   description = "The size of the virtual machine"
   type        = string
-  default     = "Standard_B2s"
+  default     = "Standard_B2ats_v2"
 }
 
 variable "admin_username" {
@@ -107,13 +47,13 @@ variable "source_image_publisher" {
 variable "source_image_offer" {
   description = "The offer of the source image"
   type        = string
-  default     = "UbuntuServer"
+  default     = "0001-com-ubuntu-server-jammy"
 }
 
 variable "source_image_sku" {
   description = "The SKU of the source image"
   type        = string
-  default     = "18.04-LTS"
+  default     = "22_04-lts-gen2"
 }
 
 variable "source_image_version" {
@@ -128,8 +68,17 @@ variable "ssh_public_key" {
   default     = "~/.ssh/id_rsa.pub"
 }
 
-variable "ssh_private_key" {
-  description = "The path to the SSH private key"
-  type        = string
-  default     = "~/.ssh/id_rsa"
+variable "vms" {
+  description = "Map of VMs to create"
+  type = map(object({
+    role = string
+  }))
+  default = {
+    app = {
+      role = "application"
+    }
+    monitoring = {
+      role = "monitoring"
+    }
+  }
 }
