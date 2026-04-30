@@ -2,19 +2,23 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "4.70.0"
+      version = "4.27.0"
     }
   }
 }
 
 provider "azurerm" {
-  features {}
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
   subscription_id = var.subscription_id
 }
 
 resource "azurerm_resource_group" "terraform_class" {
-  name     = "terraform_class-resources"
-  location = "Spain Central"
+  name     = var.resource_group_name
+  location = var.location
 }
 
 resource "azurerm_virtual_network" "terraform_class" {
@@ -56,25 +60,25 @@ resource "azurerm_linux_virtual_machine" "terraform_class" {
   name                = var.vm_name
   resource_group_name = azurerm_resource_group.terraform_class.name
   location            = azurerm_resource_group.terraform_class.location
-  size                = "Standard_B2s"
-  admin_username      = "azureuser"
+  size                = var.vm_size
+  admin_username      = var.admin_username
   network_interface_ids = [
     azurerm_network_interface.terraform_class.id,
   ]
   os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
+    caching              = var.os_disk_caching
+    storage_account_type = var.os_disk_storage_account_type
   }
   source_image_reference {
-    publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-jammy"
-    sku       = "22_04-lts-gen2"
-    version   = "latest"
+    publisher = var.source_image_publisher
+    offer     = var.source_image_offer
+    sku       = var.source_image_sku
+    version   = var.source_image_version
   }
 
   disable_password_authentication = true
   admin_ssh_key {
-    username   = "azureuser"
+    username   = var.admin_username
     public_key = file("~/.ssh/id_rsa.pub")
   }
 
@@ -83,7 +87,7 @@ resource "azurerm_linux_virtual_machine" "terraform_class" {
 
     connection {
       type        = "ssh"
-      user        = "azureuser"
+      user        = var.admin_username
       private_key = file("~/.ssh/id_rsa")
       host        = self.public_ip_address
       timeout     = "2m"
