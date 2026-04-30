@@ -1,0 +1,43 @@
+name: Configure - Ansible
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'ansible/**'
+      - '.github/workflows/configure.yml'
+
+concurrency:
+  group: configure
+  cancel-in-progress: false
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Install Ansible
+        run: |
+          sudo apt update
+          sudo apt install -y ansible
+
+      - name: Create group_vars from secrets
+        run: |
+          mkdir -p ansible/group_vars
+          cat > ansible/group_vars/all.yml << EOF
+          ansible_user: ${{ secrets.SSH_USER }}
+          EOF
+
+      - name: Run Ansible playbook
+        working-directory: ansible
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
+        run: ansible-playbook -i inventory.ini playbook.yml
