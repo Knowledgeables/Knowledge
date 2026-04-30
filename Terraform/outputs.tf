@@ -16,13 +16,13 @@ output "ssh_commands" {
 output "ansible_inventory" {
   description = "Ansible inventory in INI format"
   value = join("\n", concat(
-    ["[app]"],
+    ["[knowledge]"],
     [for name, vm in azurerm_linux_virtual_machine.vm : 
       "${name} ansible_host=${vm.public_ip_address} ansible_user=${var.admin_username}"
-      if name == "app"],
-    ["", "[monitoring]"],
+      if name == "knowledge"],
+    ["", "[kmonitor]"],
     [for name, vm in azurerm_linux_virtual_machine.vm : 
       "${name} ansible_host=${vm.public_ip_address} ansible_user=${var.admin_username}"
-      if name == "monitoring"],
+      if name == "kmonitor"],
   ))
 }

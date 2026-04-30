@@ -80,10 +80,10 @@ variable "vms" {
     role = string
   }))
   default = {
-    app = {
+    knowledge = {
       role = "application"
     }
-    monitoring = {
+    kmonitor = {
       role = "monitoring"
     }
   }
