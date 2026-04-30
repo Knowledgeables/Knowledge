@@ -9,6 +9,7 @@ import (
 	"knowledgeable/internal/observability"
 	"log/slog"
 	"net/http"
+	urlpkg "net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -69,9 +70,22 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if query == "" {
+
+		slog.Info("search_empty",
+			observability.LogAttrs("search_empty", trackingID, userID)...,
+		)
 		results = []Page{}
 		count = 0
 	} else {
+
+		// the intent of the search request
+		slog.Info("search",
+			observability.LogAttrs("search", trackingID, userID,
+				"query", query,
+				"language", lang,
+			)...,
+		)
+
 		results, count, err = h.service.Search(query, Language(lang))
 		if err != nil {
 			slog.Error("search_failed",
@@ -85,13 +99,15 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		slog.Info("search",
-			observability.LogAttrs("search", trackingID, userID,
+		// the outcome of the search query
+		slog.Info("search_result",
+			observability.LogAttrs("search_result", trackingID, userID,
 				"query", query,
 				"language", lang,
 				"results", count,
 			)...,
 		)
+
 		if err := h.service.RecordSignal(query, Language(lang)); err != nil {
 			slog.Warn("record search signal failed",
 				observability.LogAttrs("search_signal_failed", trackingID, userID,
@@ -150,6 +166,14 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 		results = []Page{}
 		count = 0
 	} else {
+		// the intend of the search requets
+		slog.Info("search",
+			observability.LogAttrs("search", trackingID, userID,
+				"query", query,
+				"language", lang,
+			)...,
+		)
+
 		results, count, err = h.service.Search(query, Language(lang))
 		if err != nil {
 			slog.Error("search_failed",
@@ -163,8 +187,9 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		slog.Info("search",
-			observability.LogAttrs("search", trackingID, userID,
+		// the outcome of the search query
+		slog.Info("search_result",
+			observability.LogAttrs("search_result", trackingID, userID,
 				"query", query,
 				"language", lang,
 				"results", count,
@@ -173,7 +198,7 @@ func (h *Handler) SearchAPI(w http.ResponseWriter, r *http.Request) {
 
 		if err := h.service.RecordSignal(query, Language(lang)); err != nil {
 			slog.Warn("record search_api signal failed",
-				observability.LogAttrs("search_api_signal_failed", trackingID, userID,
+				observability.LogAttrs("search_signal_failed", trackingID, userID,
 					"query", query,
 					"language", lang,
 					"error", err.Error(),
@@ -350,4 +375,68 @@ func (h *Handler) CrawlerIngestAPI(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+// Redirect godoc
+// @Summary Redirect and track search click
+// @Description Logs click event and redirects user to target URL
+// @Tags search
+// @Param q query string true "Search query"
+// @Param url query string true "Target URL"
+// @Param pos query int true "Result position"
+// @Success 302
+// @Failure 400 {string} string "invalid url"
+// @Router /r [get]
+func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
+	urlStr := r.URL.Query().Get("url")
+	posStr := r.URL.Query().Get("pos")
+
+	u, err := urlpkg.Parse(urlStr)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+		http.Error(w, "invalid url", http.StatusBadRequest)
+		return
+	}
+
+	trackingID := middleware.GetTrackingID(r)
+
+	var userID *int64
+	if cookie, err := r.Cookie("session_id"); err == nil {
+		if id, ok := auth.Get(cookie.Value); ok {
+			userID = &id
+		}
+	}
+
+	query := r.URL.Query().Get("q")
+
+	pos, err := strconv.Atoi(posStr)
+	if err != nil {
+		pos = -1
+	}
+
+	if urlStr == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	// ensures url already exists in db to prevend open redirect
+	page, err := h.service.FindByURL(urlStr)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	if page == nil {
+		http.Error(w, "unknown url", http.StatusBadRequest)
+		return
+	}
+
+	slog.Info("search_click",
+		observability.LogAttrs("search_click", trackingID, userID,
+			"query", query,
+			"url", urlStr,
+			"position", pos,
+		)...,
+	)
+
+	http.Redirect(w, r, urlStr, http.StatusFound)
 }

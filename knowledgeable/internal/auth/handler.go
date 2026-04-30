@@ -229,14 +229,20 @@ func (h *Handler) LoginAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 // ChangePassword godoc
-// @Summary Change password
-// @Description Force-change password for authenticated user
+// @Summary Show change password page
 // @Tags auth
+// @Produce html
+// @Success 200 {string} string "Change password page"
+// @Router /change-password [get]
+// ChangePassword godoc
+// @Summary Submit new password
+// @Tags auth
+// @Accept application/x-www-form-urlencoded
 // @Produce html
 // @Success 303 {string} string "Redirect to home"
 // @Failure 400 {string} string "bad request"
 // @Failure 401 {string} string "unauthorized"
-// @Router /change-password [get,post]
+// @Router /change-password [post]
 func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	trackingID := middleware.GetTrackingID(r)
 
@@ -366,14 +372,20 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 }
 
 // ForgotPassword godoc
-// @Summary Request password reset
-// @Description Sends a password reset email if the address is registered
+// @Summary Show forgot password page
+// @Tags auth
+// @Produce html
+// @Success 200 {string} string "Forgot password page"
+// @Router /forgot-password [get]
+
+// ForgotPassword godoc
+// @Summary Submit forgot password request
 // @Tags auth
 // @Accept application/x-www-form-urlencoded
 // @Produce html
 // @Param email formData string true "Email address"
-// @Success 303 {string} string "Redirect to /forgot-password?sent=1"
-// @Router /forgot-password [get,post]
+// @Success 303 {string} string "Redirect"
+// @Router /forgot-password [post]
 func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	trackingID := middleware.GetTrackingID(r)
 
@@ -467,14 +479,20 @@ func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 }
 
 // ResetPassword godoc
-// @Summary Reset password via token
-// @Description Validates the reset token and updates the user's password
+// @Summary Show reset password page
+// @Tags auth
+// @Produce html
+// @Param token query string true "Reset token"
+// @Success 200 {string} string "Reset password page"
+// @Router /reset-password [get]
+
+// ResetPassword godoc
+// @Summary Submit new password
 // @Tags auth
 // @Accept application/x-www-form-urlencoded
 // @Produce html
-// @Param token query string true "Reset token"
-// @Success 303 {string} string "Redirect to /login"
-// @Router /reset-password [get,post]
+// @Success 303 {string} string "Redirect to login"
+// @Router /reset-password [post]
 func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	trackingID := middleware.GetTrackingID(r)
 
