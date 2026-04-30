@@ -12,7 +12,7 @@ The system uses a three-layer separation of concerns:
 | Configuration | Ansible | OS-level setup (Docker, fail2ban) | Occasional (CI on `ansible/**` changes) |
 | Application | Docker Compose + existing CD pipeline | App deployment | Continuous (every push) |
 
-Two VMs are provisioned in Azure: `app-vm` and `monitoring-vm`. They share networking (one VNet, one subnet, one NSG with all required ports) but are configured for distinct roles via the application layer.
+Two VMs are provisioned in Azure: knowledge (application server, runs the Go app + Postgres + nginx with TLS) and kmonitor (monitoring server, runs Grafana + Loki behind nginx). They share networking (one VNet, one subnet, one NSG) but are configured for distinct roles via the application layer.
 
 ## Prerequisites
 
@@ -52,9 +52,13 @@ Expected duration: ~2-3 minutes. Outputs include:
 ### 2. Update Ansible inventory
 
 ```bash
+# macOS / Linux / WSL
 terraform output -raw ansible_inventory > ../ansible/inventory.ini
 ```
-
+```bash
+# Windows PowerShell — do NOT use `>` redirection (writes UTF-16 with BOM, breaks Ansible parsing)
+terraform output -raw ansible_inventory | Out-File -Encoding ascii ../ansible/inventory.ini
+```
 This regenerates the inventory with current VM IPs. Commit this file to git so CI can use it.
 
 ### 3. Configure VMs (Ansible)
@@ -81,19 +85,26 @@ Update the A record for `<app-domain>` to point at the app VM's public IP.
 
 The existing CD pipeline uses `SSH_HOST` to deploy. Update it to the new app VM IP (Settings → Secrets → Actions → SSH_HOST).
 
-### 6. Bootstrap Let's Encrypt (one-time, app VM only)
+### 6. Trigger application deployment
+
+Push a commit to main (triggers existing CD pipeline) or manually trigger the deployment workflow. This transfers docker-compose.yml, nginx configs, and .env to ~/app on the knowledge VM, then runs docker compose pull/up.
+The first deploy will fail HTTPS health checks because Let's Encrypt certs don't exist yet. That's expected — proceed to step 7.
+
+### 7. Bootstrap Let's Encrypt (one-time, knowledge VM only)
 
 ```bash
-ssh azureuser@<app-vm-ip>
+ssh azureuser@<knowledge-vm-ip>
 cd ~/app
 ./init-letsencrypt.sh
 ```
 
-This generates real TLS certs. Required only on a fresh VM.
+This generates real TLS certs. After it completes, restart the stack to pick up the new certs:
 
-### 7. Trigger application deployment
+```bash
+docker compose down && docker compose up -d
+```
+Required only on a fresh VM. Subsequent deploys reuse the existing certs.
 
-Either push a commit to `main` (triggers existing CD pipeline) or manually trigger the deployment workflow.
 
 ### 8. Verify
 
@@ -124,6 +135,28 @@ If drift is detected, opens a GitHub issue tagged `drift, infra` with the diff a
    - **No** → manually trigger `configure.yml` to reconcile VMs back to declared state
 3. Close the issue
 
+### Verifying drift detection works
+The drift-check workflow itself can drift — a typo in a regex, a placeholder left in a command, a mishandled exit code — and silently stop catching real problems. A green workflow run only proves the workflow didn't crash, not that it actually checks anything. Periodically validate the full loop end-to-end:
+
+Introduce deliberate drift on the monitoring VM:
+```bash
+ssh azureuser@<kmonitor-vm-ip>
+sudo systemctl stop fail2ban
+```
+Manually trigger drift-check.yml from the GitHub Actions UI.
+
+Confirm an issue is auto-opened in the repo, tagged drift, infra, with the diff.
+
+Trigger configure.yml to reconcile, or run the playbook locally.
+
+SSH back to the monitoring VM and confirm systemctl status fail2ban reports active.
+
+
+Trigger drift-check.yml once more and confirm no new issue is opened.
+
+Close the original issue with a reference to the reconciling run.
+
+Run this validation after any change to drift-check.yml, playbook.yml, or related task files.
 ## Teardown
 
 ```bash
@@ -131,7 +164,16 @@ cd terraform/
 terraform destroy
 ```
 
-Destroys all infrastructure. Application data in Postgres volumes is lost (data is the application's responsibility, not infrastructure). Resource group `knowledge-resource-group` is removed entirely.
+Destroys everything in knowledge-resource-group: VMs, disks, public IPs, networking, NSG. Application data in Postgres volumes is lost (data is the application's responsibility, not infrastructure).
+
+Shadow infrastructure (one-time cleanup)
+Resources that exist outside Terraform's state — manually-created VMs from before IaC was introduced, leftover resource groups from earlier iterations — are not touched by terraform destroy and must be deleted separately:
+
+```bash
+az group list --query "[?starts_with(name, 'KNOWLEDGE') || starts_with(name, 'MONITOR')].name" -o tsv
+# for each result returned:
+az group delete --name <name> --yes
+```
 
 ## Trade-offs and known limitations
 
@@ -146,6 +188,11 @@ Both your existing CD pipeline and the new Ansible workflows reuse `SSH_PRIVATE_
 
 ### State stored locally
 Terraform state lives on the developer's laptop, not in remote storage. Single-developer scale tolerates this; multi-developer would require migration to Azure Storage backend.
+
+### Shadow infrastructure from pre-IaC era
+
+The original Knowledge and KMonitor VMs were created manually via the Azure Portal before Terraform was introduced, in separate resource groups (RG.KNOWLEDGE, MONITORKNOWLEDGE). Bringing them retroactively into Terraform state would have required reverse-engineering their exact configuration via terraform import, which is fragile when originals were created with portal defaults that don't match declared values.
+The chosen path was: keep both running until the project is finished, then tear everything down (Terraform-managed and shadow alike) and rebuild fresh from declarations. This validates the rebuild path end-to-end and eliminates the shadow infrastructure as a side effect. Lesson recorded for future projects: start with IaC from day one, or accept that pre-IaC resources will eventually need a destroy-and-rebuild migration rather than a clean retrofit.
 
 ## Related Files
 
