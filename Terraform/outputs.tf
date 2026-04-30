@@ -18,11 +18,11 @@ output "ansible_inventory" {
   value = join("\n", concat(
     ["[knowledge]"],
     [for name, vm in azurerm_linux_virtual_machine.vm : 
-      "${name} ansible_host=${vm.public_ip_address} ansible_user=${var.admin_username}"
+      "${vm.public_ip_address} ansible_user=${var.admin_username}"
       if name == "knowledge"],
     ["", "[kmonitor]"],
     [for name, vm in azurerm_linux_virtual_machine.vm : 
-      "${name} ansible_host=${vm.public_ip_address} ansible_user=${var.admin_username}"
+      "${vm.public_ip_address} ansible_user=${var.admin_username}"
       if name == "kmonitor"],
   ))
 }
