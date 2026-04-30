@@ -3,6 +3,7 @@ package pages
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"knowledgeable/internal/auth"
 	"knowledgeable/internal/middleware"
@@ -348,7 +349,20 @@ func (h *Handler) CrawlerIngestAPI(w http.ResponseWriter, r *http.Request) {
 
 	upserted, err := h.service.IngestCrawlerPages(items)
 	if err != nil {
-		slog.Error("crawler ingest failed", "error", err)
+		// Log error type, message, item count, and up to 5 sample URLs
+		sampleURLs := make([]string, 0, 5)
+		for _, item := range items {
+			sampleURLs = append(sampleURLs, item.URL)
+			if len(sampleURLs) >= 5 {
+				break
+			}
+		}
+		slog.Error("crawler ingest failed",
+			"error_type", fmt.Sprintf("%T", err),
+			"error_msg", err.Error(),
+			"items_count", len(items),
+			"sample_urls", sampleURLs,
+		)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
