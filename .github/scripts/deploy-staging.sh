@@ -3,7 +3,6 @@ set -e
 echo "[DEPLOY] Starting staging deploy"
 cd ~/app
 echo "[DEPLOY] Logging into registry"
-echo "$CR_PAT" | docker login ghcr.io -u "$DOCKER_USERNAME" --password-stdin
 echo "[DEPLOY] Pulling images"
 docker compose --env-file .env.staging -p staging -f docker-compose-staging.yml pull
 echo "[DEPLOY] Start DB"
