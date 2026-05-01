@@ -15,6 +15,7 @@ func (s *Service) GetAllPages() ([]Page, error) {
 }
 
 func (s *Service) Search(q string, lang Language) ([]Page, int, error) {
+	q = strings.ToLower(strings.TrimSpace(q))
 
 	if q == "" {
 		return []Page{}, 0, nil
@@ -76,6 +77,3 @@ func (s *Service) IngestCrawlerPages(items []CrawlerIngestItem) (int, error) {
 
 	return s.repo.UpsertCrawlerPages(validated)
 }
-
-
-

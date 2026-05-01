@@ -3,7 +3,6 @@ package pages
 import (
 	"database/sql"
 	"log"
-	"log/slog"
 	"strings"
 )
 
@@ -63,17 +62,26 @@ func (r *Repository) Search(query string, lang Language) ([]Page, int, error) {
 		       COUNT(*) OVER() AS total_count
 		FROM pages
 		WHERE language = $2
-		  AND search_vector @@ plainto_tsquery('english', $1)
-		ORDER BY rank DESC
+		  AND (
+			search_vector @@ plainto_tsquery('english', $1)
+			OR title ILIKE '%' || $1 || '%'
+		  )
+		ORDER BY
+  (search_vector @@ plainto_tsquery('english', $1)) DESC,
+  (LOWER(title) LIKE LOWER($1) || '%') DESC,
+  rank DESC,
+  title ASC
+  LIMIT 100
 	`, query, lang)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer func() {
 		if err := rows.Close(); err != nil {
-			slog.Error("rows close failed", "error", err)
+			log.Printf("rows close error: %v", err)
 		}
 	}()
+
 	var pages []Page
 	var count int
 
