@@ -392,7 +392,7 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	posStr := r.URL.Query().Get("pos")
 
 	u, err := urlpkg.Parse(urlStr)
-	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https" && u.Scheme != "e2e") {
 		http.Error(w, "invalid url", http.StatusBadRequest)
 		return
 	}
