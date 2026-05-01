@@ -25,6 +25,7 @@ services:
     restart: "no"
     profiles: ["tools"]
     environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/knowledgeable?sslmode=disable
       POSTGRES_DB: knowledgeable
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
