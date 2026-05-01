@@ -23,10 +23,10 @@ if [ "$DB_READY" -eq 0 ]; then
   exit 1
 fi
 echo "[DEPLOY] Run migrations"
-docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations migrate:latest
+docker compose --env-file .env.staging -p staging -f docker-compose-staging.yml --profile tools run --rm migrations migrate:latest
 
 echo "[DEPLOY] Run seed"
-docker compose -p staging -f docker-compose-staging.yml --profile tools run --rm migrations seed:run --specific=staging_seed.js
+docker compose --env-file .env.staging -p staging -f docker-compose-staging.yml --profile tools run --rm migrations seed:run --specific=staging_seed.js
 echo "[DEPLOY] Start app"
 docker compose --env-file .env.staging -p staging -f docker-compose-staging.yml up -d --remove-orphans app
 echo "[DEPLOY] Checking containers"
