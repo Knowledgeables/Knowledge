@@ -39,7 +39,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "CR_PAT='${{ secrets.CR__PAT }}' DOCKER_USERNAME='${{ secrets.DOCKER_USERNAME }}' CRAWLER_KEY='${{ secrets.CRAWLER_KEY }}' DATABASE_URL='${{ secrets.DATABASE_URL }}' bash ~/app/deploy-staging.sh"
+            "CR_PAT='${{ secrets.CR__PAT }}' DOCKER_USERNAME='${{ secrets.DOCKER_USERNAME }}' CRAWLER_KEY='${{ secrets.CRAWLER_KEY }}' DATABASE_URL='${{ secrets.STAGING_DATABASE_URL }}' bash ~/app/deploy-staging.sh"
 
       - name: Wait for staging app
         run: |

@@ -26,10 +26,6 @@ services:
     profiles: ["tools"]
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      POSTGRES_DB: knowledgeable
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_HOST: db
     networks:
       - staging
 
@@ -41,10 +37,6 @@ services:
           condition: service_healthy
     restart: unless-stopped
     environment:
-      POSTGRES_DB: knowledgeable
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_HOST: db
       APP_ENV: staging
       DATABASE_URL: ${DATABASE_URL}
       CRAWLER_KEY: ${CRAWLER_KEY}
