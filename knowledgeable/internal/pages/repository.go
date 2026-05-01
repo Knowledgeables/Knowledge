@@ -61,13 +61,13 @@ func (r *Repository) Search(query string, lang Language) ([]Page, int, error) {
 		       ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank,
 		       COUNT(*) OVER() AS total_count
 		FROM pages
-		WHERE language = $2
-		  AND (
-			search_vector @@ plainto_tsquery('english', $1)
-			OR title ILIKE '%' || $1 || '%'
-		  )
+		WHERE COALESCE(language, 'en') = $2
+AND (
+  search_vector @@ plainto_tsquery('english', replace($1, '_', ' '))
+  OR LOWER(title) LIKE '%' || LOWER($1) || '%'
+)
 		ORDER BY
-  (search_vector @@ plainto_tsquery('english', $1)) DESC,
+  (search_vector @@ plainto_tsquery('english', replace($1, '_', ' '))) DESC,
   (LOWER(title) LIKE LOWER($1) || '%') DESC,
   rank DESC,
   title ASC
