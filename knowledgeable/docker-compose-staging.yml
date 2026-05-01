@@ -29,6 +29,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_HOST: db
+      DATABASE_URL: postgres://postgres:postgres@db:5432/knowledgeable?sslmode=disable
     networks:
       - staging
 
