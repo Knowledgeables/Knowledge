@@ -1,3 +1,4 @@
+//go:build integration
 package pages
 
 import (
@@ -8,35 +9,28 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/lib/pq"
 )
 
 func newTestDB(t *testing.T) *sql.DB {
 	t.Helper()
 
-	db, err := sql.Open("sqlite", ":memory:")
+	db, err := sql.Open("postgres", "postgres://postgres:postgres@localhost:5432/knowledge?sslmode=disable")
 	if err != nil {
-		t.Fatalf("open in-memory db: %v", err)
+		t.Fatalf("open db: %v", err)
 	}
 
-	_, err = db.Exec(`
-		CREATE TABLE pages (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			title TEXT NOT NULL,
-			url TEXT NOT NULL UNIQUE,
-			language TEXT NOT NULL CHECK(language IN ('en', 'da')) DEFAULT 'en',
-			content TEXT NOT NULL,
-			last_updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
-	`)
+	if err := db.Ping(); err != nil {
+		t.Fatalf("ping db: %v", err)
+	}
+
+	_, err = db.Exec(`TRUNCATE pages RESTART IDENTITY`)
 	if err != nil {
-		t.Fatalf("create table: %v", err)
+		t.Fatalf("truncate: %v", err)
 	}
 
 	t.Cleanup(func() {
-		if err := db.Close(); err != nil {
-			t.Logf("failed to close db: %v", err)
-		}
+		_ = db.Close()
 	})
 
 	return db

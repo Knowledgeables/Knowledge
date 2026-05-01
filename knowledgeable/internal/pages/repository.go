@@ -3,6 +3,7 @@ package pages
 import (
 	"database/sql"
 	"log"
+	"log/slog"
 	"strings"
 )
 
@@ -56,48 +57,44 @@ func (r *Repository) GetAll() ([]Page, error) {
 }
 
 func (r *Repository) Search(query string, lang Language) ([]Page, int, error) {
-
-	like := "%" + strings.ToLower(query) + "%"
-
-	var count int
-	err := r.db.QueryRow(`
-        SELECT COUNT(*)
-        FROM pages
-        WHERE language = $1 AND LOWER(title) LIKE $2
-    `, lang, like).Scan(&count)
-	if err != nil {
-		return nil, 0, err
-	}
-
 	rows, err := r.db.Query(`
-	SELECT title, url, language, last_updated, content
-        FROM pages
-        WHERE language = $1 AND LOWER(title) LIKE $2
-    `, lang, like)
+		SELECT title, url, language, last_updated, content,
+		       ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank,
+		       COUNT(*) OVER() AS total_count
+		FROM pages
+		WHERE language = $2
+		  AND search_vector @@ plainto_tsquery('english', $1)
+		ORDER BY rank DESC
+	`, query, lang)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer func() {
 		if err := rows.Close(); err != nil {
-			log.Printf("rows close error: %v", err)
+			slog.Error("rows close failed", "error", err)
 		}
 	}()
-
 	var pages []Page
+	var count int
 
 	for rows.Next() {
 		var p Page
-		if err := rows.Scan(&p.Title, &p.URL, &p.Language, &p.LastUpdated, &p.Content); err != nil {
+		var rank float64
+		if err := rows.Scan(
+			&p.Title,
+			&p.URL,
+			&p.Language,
+			&p.LastUpdated,
+			&p.Content,
+			&rank,
+			&count,
+		); err != nil {
 			return nil, 0, err
 		}
 		pages = append(pages, p)
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, 0, err
-	}
-
-	return pages, count, nil
+	return pages, count, rows.Err()
 }
 
 func (r *Repository) GetExistingURLs() ([]string, error) {
@@ -264,5 +261,3 @@ func (r *Repository) UpsertCrawlerPages(items []CrawlerIngestItem) (int, error) 
 
 	return upserted, nil
 }
-
-
