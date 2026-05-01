@@ -1,10 +1,10 @@
-
 name: CD - Staging Deployment
 on:
   workflow_run:
     workflows: [ "CD - Delivery" ]
     types: [ completed ]
     branches: [ main ]
+
 jobs:
   deploy-staging:
     runs-on: ubuntu-latest
@@ -18,7 +18,6 @@ jobs:
           mkdir -p ~/.ssh/
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
-
 
       - name: Copy compose file
         run: |
@@ -35,14 +34,38 @@ jobs:
             .github/scripts/teardown-staging.sh \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/teardown-staging.sh
 
+      - name: Create staging .env
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: knowledge_staging
+          DATABASE_URL: postgres://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/knowledge_staging
+          CRAWLER_KEY: ${{ secrets.CRAWLER_KEY }}
+        run: |
+          umask 077
+          printf 'POSTGRES_USER=%s\n' "$POSTGRES_USER" > .env.staging
+          printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD" >> .env.staging
+          printf 'POSTGRES_DB=%s\n' "$POSTGRES_DB" >> .env.staging
+          printf 'DATABASE_URL=%s\n' "$DATABASE_URL" >> .env.staging
+          printf 'CRAWLER_KEY=%s\n' "$CRAWLER_KEY" >> .env.staging
+
+      - name: Transfer staging env
+        run: |
+          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            .env.staging \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/.env.staging
+          rm -f .env.staging
+
       - name: Deploy staging
         run: |
           ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "CR_PAT='${{ secrets.CR__PAT }}' DOCKER_USERNAME='${{ secrets.DOCKER_USERNAME }}' CRAWLER_KEY='${{ secrets.CRAWLER_KEY }}' DATABASE_URL='${{ secrets.STAGING_DATABASE_URL }}' bash ~/app/deploy-staging.sh"
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << "EOF"
+            set -e
+            echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            cd ~/app
+            bash deploy-staging.sh
+          EOF
 
       - name: Wait for staging app
         run: |
           timeout 60 bash -c 'until curl -f http://${{ secrets.SSH_HOST }}:8081/health; do sleep 2; done'
-
-          
