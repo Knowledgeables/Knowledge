@@ -267,7 +267,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "code",
-          "expr": "sum(rate({event=\"search\"} | json | level=\"ERROR\" [5m]))\r\n/\r\nsum(rate({event=\"search\"} | json [5m]))",
+          "expr": "sum(rate({container=\"app-app-1\"} | json | event=\"search\" | level=\"ERROR\" [5m]))\r\n/\r\nsum(rate({container=\"app-app-1\"} | json | event=\"search\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }

@@ -291,7 +291,7 @@
             }
           },
           "mappings": [],
-          "noValue": "No succesful searches",
+          "noValue": "No successful searches",
           "thresholds": {
             "mode": "absolute",
             "steps": [
