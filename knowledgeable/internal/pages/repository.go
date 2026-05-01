@@ -56,23 +56,29 @@ func (r *Repository) GetAll() ([]Page, error) {
 }
 
 func (r *Repository) Search(query string, lang Language) ([]Page, int, error) {
+	normalized := strings.ToLower(strings.TrimSpace(query))
+	normalized = strings.ReplaceAll(normalized, "_", " ")
+
+	likeQuery := strings.ReplaceAll(normalized, "%", `\%`)
+	likeQuery = strings.ReplaceAll(likeQuery, "_", `\_`)
+
 	rows, err := r.db.Query(`
 		SELECT title, url, language, last_updated, content,
 		       ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank,
 		       COUNT(*) OVER() AS total_count
 		FROM pages
 		WHERE COALESCE(language, 'en') = $2
-AND (
-  search_vector @@ plainto_tsquery('english', replace($1, '_', ' '))
-  OR LOWER(title) LIKE '%' || LOWER($1) || '%'
-)
+		AND (
+		  search_vector @@ plainto_tsquery('english', $1)
+		  OR LOWER(title) LIKE '%' || $3 || '%' ESCAPE '\'
+		)
 		ORDER BY
-  (search_vector @@ plainto_tsquery('english', replace($1, '_', ' '))) DESC,
-  (LOWER(title) LIKE LOWER($1) || '%') DESC,
-  rank DESC,
-  title ASC
-  LIMIT 100
-	`, query, lang)
+		  (search_vector @@ plainto_tsquery('english', $1)) DESC,
+		  (LOWER(title) LIKE $3 || '%' ESCAPE '\') DESC,
+		  rank DESC,
+		  title ASC
+		LIMIT 100
+	`, normalized, lang, likeQuery)
 	if err != nil {
 		return nil, 0, err
 	}
