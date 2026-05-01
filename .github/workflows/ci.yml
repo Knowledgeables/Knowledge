@@ -51,7 +51,7 @@ jobs:
           docker compose -f docker-compose-dev.yml run --rm migrations sh -c "npm install && npx knex migrate:latest"
 
       - name: Test
-        run: go test -v ./...
+        run: go test -tags=integration -v ./...
 
       - name: Tear down migration containers
         if: always()
