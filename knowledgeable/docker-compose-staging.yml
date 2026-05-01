@@ -26,7 +26,11 @@ services:
     env_file:
       - .env.staging
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      POSTGRES_DB: knowledgeable
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: db
+      DATABASE_URL: postgres://postgres:postgres@db:5432/knowledgeable?sslmode=disable
     networks:
       - staging
 

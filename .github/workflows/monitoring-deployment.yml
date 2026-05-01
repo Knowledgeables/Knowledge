@@ -1,0 +1,52 @@
+name: CD - Monitoring Deployment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'monitoring/**'
+      - '.github/workflows/deploy-monitoring.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy-monitoring:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add SSH key
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
+          chmod 600 ~/.ssh/ssh_key
+
+      - name: Copy monitoring stack
+        run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.MONITOR_SSH_HOST }} \
+            "mkdir -p ~/monitoring"
+          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no -r \
+            monitoring/. \
+            ${{ secrets.SSH_USER }}@${{ secrets.MONITOR_SSH_HOST }}:~/monitoring/
+
+      - name: Write .env on remote
+        run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.MONITOR_SSH_HOST }} \
+            "cat > ~/monitoring/.env" << "EOF"
+          GF_SECURITY_ADMIN_USER=${{ secrets.GF_ADMIN_USER }}
+          GF_SECURITY_ADMIN_PASSWORD=${{ secrets.GF_ADMIN_PASSWORD }}
+          GF_SERVER_ROOT_URL=http://${{ secrets.MONITOR_SSH_HOST }}
+          GF_SERVER_DOMAIN=${{ secrets.MONITOR_SSH_HOST }}
+          EOF
+
+      - name: Deploy stack
+        run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.MONITOR_SSH_HOST }} \
+            "cd ~/monitoring && docker compose pull && docker compose up -d"
+
+      - name: Wait for Grafana
+        run: |
+          timeout 60 bash -c 'until curl -fs http://${{ secrets.MONITOR_SSH_HOST }}/login > /dev/null; do sleep 2; done'
