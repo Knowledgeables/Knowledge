@@ -10,7 +10,7 @@ test("search returns results", async ({ page }) => {
   const results = page.locator('[data-testid="result-item"]');
 
   await expect(results).toHaveCount(1);
-  await expect(results.first()).toContainText("E2E_UNIQUE_SEARCH");
+  await expect(results.first()).toContainText("E2E UNIQUE SEARCH");
 });
 
 test("returns unique result", async ({ page }) => {
@@ -22,7 +22,7 @@ test("returns unique result", async ({ page }) => {
   const results = page.locator('[data-testid="result-item"]');
 
   await expect(results).toHaveCount(1);
-  await expect(results.first()).toContainText("E2E_UNIQUE_SEARCH");
+  await expect(results.first()).toContainText("E2E UNIQUE SEARCH");
 });
 
 test("no results", async ({ page }) => {
@@ -43,7 +43,7 @@ test("trims input", async ({ page }) => {
   const results = page.locator('[data-testid="result-item"]');
 
   await expect(results).toHaveCount(1);
-  await expect(results.first()).toContainText("E2E_UNIQUE_SEARCH");
+  await expect(results.first()).toContainText("E2E UNIQUE SEARCH");
 });
 
 
