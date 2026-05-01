@@ -28,7 +28,7 @@ cd "$PROJECT_DIR" || {
   exit 1
 }
 
-golangci-lint run ./...
+golangci-lint run --allow-parallel-runners ./...
 
 EXIT_CODE=$?
 

@@ -23,6 +23,7 @@ data/
 # Env
 .env
 .env.*
+monitoring/.env
 
 # OS
 .DS_Store
