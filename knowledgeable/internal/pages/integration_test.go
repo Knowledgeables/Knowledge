@@ -1,4 +1,5 @@
 //go:build integration
+
 package pages
 
 import (
@@ -7,7 +8,9 @@ import (
 	"html/template"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -15,13 +18,24 @@ import (
 func newTestDB(t *testing.T) *sql.DB {
 	t.Helper()
 
-	db, err := sql.Open("postgres", "postgres://postgres:postgres@localhost:5432/knowledge?sslmode=disable")
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = "postgres://postgres:postgres@localhost:5432/knowledge?sslmode=disable"
+	}
+
+	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
 
-	if err := db.Ping(); err != nil {
-		t.Fatalf("ping db: %v", err)
+	for i := 0; i < 10; i++ {
+		if err := db.Ping(); err == nil {
+			break
+		}
+		time.Sleep(1 * time.Second)
+		if i == 9 {
+			t.Fatalf("db not ready")
+		}
 	}
 
 	_, err = db.Exec(`TRUNCATE pages RESTART IDENTITY`)

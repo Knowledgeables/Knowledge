@@ -1,4 +1,4 @@
-.PHONY: help go-test smoke-test lint dev-up dev-down dev-build dev-logs setup-hooks dev-migrate hooks-run install-gosec swagger
+.PHONY: help test-unit test-integration smoke-test lint dev-up dev-down dev-build dev-logs setup-hooks dev-migrate hooks-run install-gosec swagger
 
 # =========================
 # Project Commands (make help)
@@ -18,7 +18,8 @@ help:
 	@echo "  make dev-migrate"
 	@echo ""
 	@echo "Testing:"
-	@echo "  make go-test"
+	@echo "  make test-unit"
+	@echo "  make test-integration"
 	@echo "  make smoke-test"
 	@echo "  make full-e2e"
 	@echo ""
@@ -65,8 +66,13 @@ dev-logs:
 # =========================
 # Testing
 # =========================
-go-test:
+test-unit:
 	go test ./... -count=1 -v
+
+test-integration:
+	$(MAKE) dev-up
+	go test -tags=integration ./... -count=1 -v
+	$(MAKE) dev-down
 
 smoke-test: ## Run Playwright smoke tests (requires running app)
 	npx playwright test --project=smoke --reporter=line
