@@ -22,7 +22,7 @@ await knex('pages').insert([
     content: 'string manipulation'
   },
   {
-  title: 'E2E_UNIQUE_SEARCH',
+  title: 'E2E UNIQUE SEARCH',
   url: 'e2e://unique',
   content: 'only-this-should-match-xyz123'
 }
