@@ -3,10 +3,10 @@ package pages
 import "strings"
 
 type Service struct {
-	repo *Repository
+	repo PageRepository 
 }
 
-func NewService(repo *Repository) *Service {
+func NewService(repo PageRepository) *Service {
 	return &Service{repo: repo}
 }
 
@@ -15,6 +15,7 @@ func (s *Service) GetAllPages() ([]Page, error) {
 }
 
 func (s *Service) Search(q string, lang Language) ([]Page, int, error) {
+	q = strings.ToLower(strings.TrimSpace(q))
 
 	if q == "" {
 		return []Page{}, 0, nil
@@ -22,6 +23,17 @@ func (s *Service) Search(q string, lang Language) ([]Page, int, error) {
 
 	return s.repo.Search(q, lang)
 }
+
+type PageRepository interface {
+	GetAll() ([]Page, error)
+	Search(q string, lang Language) ([]Page, int, error)
+	FindByURL(url string) (*Page, error)
+	RecordSignal(q string, lang Language) error
+	GetTopSignals(limit int) ([]CrawlSignal, error)
+	GetExistingURLs() ([]string, error)
+	UpsertCrawlerPages(items []CrawlerIngestItem) (int, error)
+}
+
 
 func (s *Service) FindByURL(url string) (*Page, error) {
 	return s.repo.FindByURL(url)
@@ -76,6 +88,3 @@ func (s *Service) IngestCrawlerPages(items []CrawlerIngestItem) (int, error) {
 
 	return s.repo.UpsertCrawlerPages(validated)
 }
-
-
-
