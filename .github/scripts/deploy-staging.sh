@@ -25,8 +25,8 @@ if [ "$DB_READY" -eq 0 ]; then
 fi
 echo "[DEPLOY] Run migrations + seed"
 docker compose -p staging -f docker-compose-staging.yml \
-  --profile tools run --rm migrations sh -c "knex migrate:latest && knex seed:run --specific=staging_seed.js"
-  
+  --profile tools run --rm --entrypoint sh migrations -c "knex migrate:latest && knex seed:run --specific=staging_seed.js"
+
 echo "[DEPLOY] Start app"
 docker compose -p staging -f docker-compose-staging.yml up -d --remove-orphans app
 echo "[DEPLOY] Checking containers"
