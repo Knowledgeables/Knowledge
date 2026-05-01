@@ -20,7 +20,7 @@ function makeSearchRequest() {
   const query = searchInput.value;
   const url = new URL(window.location.href);
 
-  url.searchParams.set("q", encodeURIComponent(query));
+  url.searchParams.set("q", query);
 
   window.location.href = url.toString();
 }
