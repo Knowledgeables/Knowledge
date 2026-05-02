@@ -43,14 +43,15 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }} 
         
-      - name: Install Playwright browsers (and deps)
+      - name: Install Playwright browsers
         working-directory: knowledgeable
-        run: |
-          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
-            npx playwright install-deps
-          else
-            npx playwright install --with-deps
-          fi
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium --with-deps
+
+      - name: Install system deps only
+        working-directory: knowledgeable
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       - name: Run e2e tests
         working-directory: knowledgeable

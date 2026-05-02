@@ -43,6 +43,7 @@ export default defineConfig({
     {
       name: "full",
       testMatch: /.*\.full\.spec\.js/,
+      use: { ...devices["Desktop Chrome"] },
     },
     {
       name: "post-deploy",
