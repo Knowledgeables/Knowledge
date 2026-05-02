@@ -4,7 +4,7 @@ echo "[DEPLOY] Starting staging deploy"
 cd ~/app
 echo "[DEPLOY] Logging into registry"
 echo "[DEPLOY] Pulling images"
-docker compose --env-file .env.staging -p staging -f docker-compose-staging.yml pull
+docker compose --env-file .env.staging -p staging -f docker-compose-staging.yml --profile tools pull
 echo "[DEPLOY] Start DB"
 docker compose --env-file .env.staging -p staging -f docker-compose-staging.yml up -d db
 echo "[DEPLOY] Wait for DB"
