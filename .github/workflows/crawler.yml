@@ -2,7 +2,7 @@ name: Crawler - Scheduled
 
 on:
   schedule:
-    - cron: "17 3,15 * * *"
+    - cron: "17 3,13 * * *"
   workflow_dispatch:
 
 jobs:
@@ -37,7 +37,4 @@ jobs:
           MAX_DEPTH: "2"
           SEED_URL_TEMPLATES: "https://en.wikipedia.org/wiki/{query},https://www.britannica.com/search?query={query},https://developer.mozilla.org/en-US/search?q={query}"
           CRAWL_DELAY_MS: "1000"
-          # Ensure your backend /api/crawler/targets endpoint uses the last 12 hours for search queries
-          # If you use an env variable for this, set it here, e.g.:
-          # SEARCH_LOOKBACK_HOURS: "12"
         run: node scripts/crawler.js
