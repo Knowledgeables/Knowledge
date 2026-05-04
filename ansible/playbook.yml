@@ -13,3 +13,12 @@
 
     - name: Install and configure fail2ban
       ansible.builtin.import_tasks: tasks/fail2ban.yml
+
+    - name: Install node_exporter
+      ansible.builtin.import_tasks: tasks/node_exporter.yml
+
+  handlers:
+    - name: Restart node_exporter
+      ansible.builtin.systemd:
+        name: node_exporter
+        state: restarted

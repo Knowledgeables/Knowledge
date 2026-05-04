@@ -1,11 +1,10 @@
 networks:
   monitoring:
     driver: bridge
-
 volumes:
   loki_data:
   grafana_data:
-
+  prometheus_data:
 services:
   loki:
     image: grafana/loki:2.9.4
@@ -16,6 +15,20 @@ services:
     command: -config.file=/etc/loki/config.yaml
     networks:
       - monitoring
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+    networks:
+      - monitoring
+    restart: unless-stopped
 
   grafana:
     image: grafana/grafana:10.3.3
@@ -33,6 +46,7 @@ services:
       - GF_SERVER_DOMAIN=${GF_SERVER_DOMAIN}
     networks:
       - monitoring
+
   nginx:
     image: nginx:alpine
     container_name: nginx
@@ -44,3 +58,4 @@ services:
       - monitoring
     depends_on:
       - loki
+      - prometheus
