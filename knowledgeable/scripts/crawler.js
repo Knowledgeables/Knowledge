@@ -216,11 +216,14 @@ async function crawlPage(pageUrl, depth = 0) {
             return;
         }
 
+
+        // Truncate fields to 255 characters to match DB schema
+        const truncate = (str) => str && str.length > 255 ? str.slice(0, 255) : str;
         pagesToIngest.push({
-            title,
-            url: unwrapWaybackUrl(cleanUrl.href),
+            title: truncate(title),
+            url: truncate(unwrapWaybackUrl(cleanUrl.href)),
             language: 'en',
-            content: mainContent
+            content: truncate(mainContent)
         });
 
         console.log(`[${pagesToIngest.length}/${MAX_PAGES}] Indexed: ${cleanUrl.href}`);
