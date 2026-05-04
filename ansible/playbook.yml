@@ -1,24 +1,34 @@
 ---
-- name: Bootstrap Knowledge VMs
+- name: Bootstrap all VMs
   hosts: all
   become: yes
   gather_facts: yes
-
   tasks:
     - name: Update and upgrade packages
       ansible.builtin.import_tasks: tasks/packages.yml
-
     - name: Install and configure Docker
       ansible.builtin.import_tasks: tasks/docker.yml
-
     - name: Install and configure fail2ban
       ansible.builtin.import_tasks: tasks/fail2ban.yml
-
     - name: Install node_exporter
       ansible.builtin.import_tasks: tasks/node_exporter.yml
-
   handlers:
     - name: Restart node_exporter
       ansible.builtin.systemd:
         name: node_exporter
+        state: restarted
+
+- name: App server only
+  hosts: knowledge
+  become: yes
+  gather_facts: yes
+  tasks:
+    - name: Install promtail
+      ansible.builtin.import_tasks: tasks/promtail.yml
+    - name: Install db backup script and cron
+      ansible.builtin.import_tasks: tasks/db_backup.yml
+  handlers:
+    - name: Restart promtail
+      community.docker.docker_compose_v2:
+        project_src: /opt/promtail
         state: restarted

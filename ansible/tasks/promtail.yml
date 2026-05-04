@@ -1,0 +1,31 @@
+---
+- name: Create promtail directory
+  ansible.builtin.file:
+    path: /opt/promtail
+    state: directory
+    mode: "0755"
+
+- name: Create promtail positions directory
+  ansible.builtin.file:
+    path: /opt/promtail/positions
+    state: directory
+    mode: "0755"
+
+- name: Copy promtail compose file
+  ansible.builtin.copy:
+    src: promtail-docker-compose.yml
+    dest: /opt/promtail/docker-compose.yml
+    mode: "0644"
+  notify: Restart promtail
+
+- name: Template promtail config
+  ansible.builtin.template:
+    src: promtail-config.yml.j2
+    dest: /opt/promtail/promtail-config.yml
+    mode: "0644"
+  notify: Restart promtail
+
+- name: Start promtail
+  community.docker.docker_compose_v2:
+    project_src: /opt/promtail
+    state: present

@@ -1,0 +1,13 @@
+version: "3.8"
+services:
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: promtail
+    restart: unless-stopped
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/db_backups:/opt/db_backups:ro
+      - /opt/promtail/promtail-config.yml:/etc/promtail/config.yml
+      - /opt/promtail/positions:/tmp/positions
+    command: -config.file=/etc/promtail/config.yml
