@@ -348,24 +348,31 @@ func (h *Handler) CrawlerIngestAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	upserted, err := h.service.IngestCrawlerPages(items)
-	if err != nil {
-		// Log error type, message, item count, and up to 5 sample URLs
-		sampleURLs := make([]string, 0, 5)
-		for _, item := range items {
-			sampleURLs = append(sampleURLs, item.URL)
-			if len(sampleURLs) >= 5 {
-				break
-			}
+	sampleURLs := make([]string, 0, 5)
+	for _, item := range items {
+		sampleURLs = append(sampleURLs, item.URL)
+		if len(sampleURLs) >= 5 {
+			break
 		}
-		slog.Error("crawler ingest failed",
-			"error_type", fmt.Sprintf("%T", err),
-			"error_msg", err.Error(),
+	}
+	if err != nil {
+		slog.Error("crawler_ingest_failed",
+			"event", "crawler_ingest_failed",
 			"items_count", len(items),
 			"sample_urls", sampleURLs,
+			"error_type", fmt.Sprintf("%T", err),
+			"error_msg", err.Error(),
 		)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
+	// Log success
+	slog.Info("crawler_ingest_success",
+		"event", "crawler_ingest_success",
+		"items_count", len(items),
+		"sample_urls", sampleURLs,
+		"upserted", upserted,
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(CrawlerIngestResponse{
