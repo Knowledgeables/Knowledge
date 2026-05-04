@@ -99,10 +99,46 @@ jobs:
 
           echo "App failed to start"
           exit 1
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: knowledgeable
+        run: npm ci
+
+      - name: Install Playwright
+        working-directory: knowledgeable
+        run: npx playwright install --with-deps
 
       - name: Run Playwright post-deploy smoke
+        working-directory: knowledgeable
         env:
           BASE_URL: https://${{ secrets.APP_DOMAIN }}
           TEST_USER_USERNAME: ${{ secrets.TEST_USER_USERNAME }}
           TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
         run: npx playwright test --project=post-deploy
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          ssh -i ~/.ssh/ssh_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << "EOF"
+            set -e
+            cd ~/app
+
+            if [ -f .env.previous ]; then
+              echo "Current version:"
+              grep IMAGE_TAG .env || true
+
+              echo "Rolling back to:"
+              grep IMAGE_TAG .env.previous || true
+
+              cp .env.previous .env
+              docker compose pull
+              docker compose up -d --remove-orphans
+            else
+              echo "No previous version found"
+              exit 1
+            fi
+          EOF
