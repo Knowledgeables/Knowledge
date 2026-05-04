@@ -15,7 +15,7 @@ const SEED_URL_TEMPLATES = (process.env.SEED_URL_TEMPLATES || 'https://en.wikipe
     .filter(Boolean);
 
 const MAX_TARGETS = Number(process.env.MAX_TARGETS || 20);
-const MAX_PAGES = Number(process.env.MAX_PAGES || 200);
+const MAX_PAGES = Number(process.env.MAX_PAGES || 100);
 const MAX_DEPTH = Number(process.env.MAX_DEPTH || 2);
 const CRAWL_DELAY_MS = Number(process.env.CRAWL_DELAY_MS || 1000);
 const ENABLE_INGEST = String(process.env.ENABLE_INGEST || 'false').toLowerCase() === 'true';
@@ -319,10 +319,7 @@ async function main() {
 
     console.log(`[INFO] Crawl complete. Collected ${pagesToIngest.length} pages`);
     await sendBatchToBackend();
-    // To run this crawler every 12 hours, use a scheduler like cron or GitHub Actions scheduled workflows.
-    // This script does not implement scheduling itself.
-    // Example cron: 0 */12 * * *
-    // Example GitHub Actions: see docs for 'on: schedule'
+
 }
 
 main().catch((error) => {
