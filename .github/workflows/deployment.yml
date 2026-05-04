@@ -99,3 +99,10 @@ jobs:
 
           echo "App failed to start"
           exit 1
+
+      - name: Run Playwright post-deploy smoke
+        env:
+          BASE_URL: https://${{ secrets.APP_DOMAIN }}
+          TEST_USER_USERNAME: ${{ secrets.TEST_USER_USERNAME }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+        run: npx playwright test --project=post-deploy
