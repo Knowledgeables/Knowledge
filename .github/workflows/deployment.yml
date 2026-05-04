@@ -58,6 +58,15 @@ jobs:
           printf 'FROM_EMAIL=%s\n'        "$FROM_EMAIL"          >> .env
           printf 'APP_BASE_URL=https://%s\n' "$APP_DOMAIN"       >> .env
 
+      - name: Backup current env on server
+        run: |
+          ssh -i ~/.ssh/ssh_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << "EOF"
+            set -e
+            if [ -f ~/app/.env ]; then
+              cp ~/app/.env ~/app/.env.previous
+            fi
+          EOF
+          
       - name: Transfer .env to server
         run: |
           scp -i ~/.ssh/ssh_key .env ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/.env
