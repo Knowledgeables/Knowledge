@@ -3,13 +3,17 @@
   ansible.builtin.file:
     path: /opt/db_backups
     state: directory
-    mode: "0755"
+    owner: root
+    group: root
+    mode: "0700"
 
 - name: Create scripts directory
   ansible.builtin.file:
     path: /opt/scripts
     state: directory
-    mode: "0755"
+    owner: root
+    group: root
+    mode: "0700"
 
 - name: Check if azcopy is installed
   ansible.builtin.command: which azcopy
@@ -52,8 +56,10 @@
   ansible.builtin.template:
     src: db_backup.sh.j2
     dest: /opt/scripts/db_backup.sh
-    mode: "0755"
-
+    owner: root
+    group: root
+    mode: "0700"
+    
 - name: Install hourly backup cron
   ansible.builtin.cron:
     name: "postgres backup to azure"

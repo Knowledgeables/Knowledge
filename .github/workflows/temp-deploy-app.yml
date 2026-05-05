@@ -72,10 +72,10 @@ jobs:
         run: |
           ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
             ${{ secrets.SSH_USER }}@${{ secrets.TEMP_APP_HOST }} << "EOF"
-            set -euo pipefail
-            echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-            cd ~/app
-            docker compose pull
-            docker compose up -d --remove-orphans db app
-            docker compose ps
+          set -euo pipefail
+          echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          cd ~/app
+          docker compose pull
+          docker compose up -d --remove-orphans db app
+          docker compose ps
           EOF
