@@ -33,6 +33,9 @@ jobs:
           mkdir -p ansible/group_vars
           cat > ansible/group_vars/all.yml << EOF
           ansible_user: ${{ secrets.SSH_USER }}
+          node_exporter_version: "1.8.2"
+          loki_url: ${{ secrets.TEMP_LOKI_URL }}
+          azure_sas_token: ${{ secrets.SAS_TOKEN }}
           EOF
 
       - name: Run Ansible playbook
