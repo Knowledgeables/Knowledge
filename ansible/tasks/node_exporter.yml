@@ -6,15 +6,21 @@
     shell: /usr/sbin/nologin
     create_home: false
 
-- name: Check installed node_exporter version
+- name: Check if node_exporter binary exists
+  ansible.builtin.stat:
+    path: /usr/local/bin/node_exporter
+  register: ne_binary
+
+- name: Get installed node_exporter version
   ansible.builtin.command: /usr/local/bin/node_exporter --version
   register: ne_installed
   failed_when: false
   changed_when: false
+  when: ne_binary.stat.exists
 
 - name: Determine if node_exporter needs install
   ansible.builtin.set_fact:
-    node_exporter_needs_install: "{{ node_exporter_version not in (ne_installed.stdout | default('')) and node_exporter_version not in (ne_installed.stderr | default('')) }}"
+    node_exporter_needs_install: "{{ not ne_binary.stat.exists or node_exporter_version not in (ne_installed.stdout | default('') ~ ne_installed.stderr | default('')) }}"
 
 - name: Download node_exporter
   ansible.builtin.get_url:
