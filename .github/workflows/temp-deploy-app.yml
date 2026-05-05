@@ -1,0 +1,81 @@
+name: TEMP - Deploy App
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
+          chmod 600 ~/.ssh/ssh_key
+
+      - name: Ensure remote app directory exists
+        run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.TEMP_APP_HOST }} "mkdir -p ~/app"
+
+      - name: Transfer docker-compose-prod.yml to server
+        run: |
+          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            knowledgeable/docker-compose-prod.yml \
+            ${{ secrets.SSH_USER }}@${{ secrets.TEMP_APP_HOST }}:~/app/docker-compose.yml
+
+      - name: Transfer nginx config to server
+        run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.TEMP_APP_HOST }} "mkdir -p ~/app/nginx/secure"
+          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no -r \
+            knowledgeable/nginx/secure/. \
+            ${{ secrets.SSH_USER }}@${{ secrets.TEMP_APP_HOST }}:~/app/nginx/secure/
+          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            knowledgeable/nginx/init-letsencrypt.sh \
+            ${{ secrets.SSH_USER }}@${{ secrets.TEMP_APP_HOST }}:~/app/
+
+      - name: Create .env file
+        env:
+          IMAGE_TAG: latest
+          APP_DOMAIN: ${{ secrets.TEMP_APP_HOST }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          DATABASE_URL: postgres://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/knowledge?sslmode=disable
+          CRAWLER_KEY: ${{ secrets.CRAWLER_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+        run: |
+          umask 077
+          printf 'IMAGE_TAG=%s\n'         "$IMAGE_TAG"           >  .env
+          printf 'APP_DOMAIN=%s\n'        "$APP_DOMAIN"          >> .env
+          printf 'POSTGRES_USER=%s\n'     "$POSTGRES_USER"       >> .env
+          printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD"   >> .env
+          printf 'POSTGRES_DB=%s\n'       "knowledge"            >> .env
+          printf 'DATABASE_URL=%s\n'      "$DATABASE_URL"        >> .env
+          printf 'CRAWLER_KEY=%s\n'       "$CRAWLER_KEY"         >> .env
+          printf 'RESEND_API_KEY=%s\n'    "$RESEND_API_KEY"      >> .env
+          printf 'FROM_EMAIL=%s\n'        "$FROM_EMAIL"          >> .env
+          printf 'APP_BASE_URL=http://%s\n' "$APP_DOMAIN"        >> .env
+
+      - name: Transfer .env to server
+        run: |
+          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            .env ${{ secrets.SSH_USER }}@${{ secrets.TEMP_APP_HOST }}:~/app/.env
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.TEMP_APP_HOST }} "chmod 600 ~/app/.env"
+          rm -f .env
+
+      - name: Deploy on server
+        run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.TEMP_APP_HOST }} << "EOF"
+            set -euo pipefail
+            echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            cd ~/app
+            docker compose pull
+            docker compose up -d --remove-orphans db app
+            docker compose ps
+          EOF
