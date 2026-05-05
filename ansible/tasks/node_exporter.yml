@@ -12,20 +12,22 @@
   failed_when: false
   changed_when: false
 
+- name: Determine if node_exporter needs install
+  ansible.builtin.set_fact:
+    node_exporter_needs_install: "{{ node_exporter_version not in (ne_installed.stdout | default('')) and node_exporter_version not in (ne_installed.stderr | default('')) }}"
+
 - name: Download node_exporter
   ansible.builtin.get_url:
     url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
     dest: "/tmp/node_exporter-{{ node_exporter_version }}.tar.gz"
     mode: "0644"
-  when: node_exporter_version not in (ne_installed.stderr | default('')) and node_exporter_version not in (ne_installed.stdout | default(''))
-
+  when: node_exporter_needs_install
 - name: Extract node_exporter
   ansible.builtin.unarchive:
     src: "/tmp/node_exporter-{{ node_exporter_version }}.tar.gz"
     dest: /tmp/
     remote_src: true
-  when: node_exporter_version not in (ne_installed.stderr | default('')) and node_exporter_version not in (ne_installed.stdout | default(''))
-
+  when: node_exporter_needs_install
 - name: Install node_exporter binary
   ansible.builtin.copy:
     src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
@@ -34,7 +36,7 @@
     group: node_exporter
     mode: "0755"
     remote_src: true
-  when: node_exporter_version not in (ne_installed.stderr | default('')) and node_exporter_version not in (ne_installed.stdout | default(''))
+  when: node_exporter_needs_install
   notify: Restart node_exporter
 
 - name: Install node_exporter systemd unit
