@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   promtail:
     image: grafana/promtail:2.9.0
