@@ -1,0 +1,46 @@
+name: TEMP - Deploy Monitoring
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
+          chmod 600 ~/.ssh/ssh_key
+
+      - name: Copy monitoring stack
+        run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.TEMP_MONITOR_HOST }} \
+            "mkdir -p ~/monitoring"
+          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no -r \
+            monitoring/. \
+            ${{ secrets.SSH_USER }}@${{ secrets.TEMP_MONITOR_HOST }}:~/monitoring/
+
+      - name: Write .env on remote
+        run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.TEMP_MONITOR_HOST }} \
+            "cat > ~/monitoring/.env" << "EOF"
+          GF_SECURITY_ADMIN_USER=${{ secrets.GF_ADMIN_USER }}
+          GF_SECURITY_ADMIN_PASSWORD=${{ secrets.GF_ADMIN_PASSWORD }}
+          GF_SERVER_ROOT_URL=http://${{ secrets.TEMP_MONITOR_HOST }}
+          GF_SERVER_DOMAIN=${{ secrets.TEMP_MONITOR_HOST }}
+          EOF
+
+      - name: Deploy stack
+        run: |
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.TEMP_MONITOR_HOST }} \
+            "cd ~/monitoring && docker compose pull && docker compose up -d"
+
+      - name: Wait for Grafana
+        run: |
+          timeout 60 bash -c 'until curl -fs http://${{ secrets.TEMP_MONITOR_HOST }}/login > /dev/null; do sleep 2; done'

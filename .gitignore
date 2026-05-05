@@ -74,4 +74,10 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+#ansible vars
 ansible/group_vars/all.yml
+
+#certbot
+knowledgeable/nginx/certbot/conf/
+knowledgeable/nginx/certbot/conf/
+knowledgeable/nginx/certbot/www/

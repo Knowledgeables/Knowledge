@@ -35,6 +35,11 @@ jobs:
           scp -i ~/.ssh/ssh_key -r \
             knowledgeable/nginx/secure/. \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/nginx/secure/
+          scp -i ~/.ssh/ssh_key \
+            knowledgeable/nginx/init-letsencrypt.sh \
+            knowledgeable/nginx/99-autoreload.sh \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/
+          ssh -i ~/.ssh/ssh_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "chmod +x ~/app/init-letsencrypt.sh ~/app/99-autoreload.sh"
 
       - name: Create .env file
         env:
