@@ -26,8 +26,7 @@ jobs:
 
       - name: Install Ansible
         run: |
-          sudo apt update
-          sudo apt install -y ansible
+          pipx install --include-deps ansible
 
       - name: Create group_vars from secrets
         run: |
