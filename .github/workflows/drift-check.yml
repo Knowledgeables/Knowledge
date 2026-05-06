@@ -1,7 +1,7 @@
 name: Drift Check
 on:
-  schedule:
-    - cron: '0 3 * * *'    # 3 AM UTC daily
+  #schedule:
+   # - cron: '0 3 * * *'    # 3 AM UTC daily
   workflow_dispatch:
 
 jobs:

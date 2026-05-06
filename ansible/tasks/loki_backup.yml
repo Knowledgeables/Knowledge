@@ -1,0 +1,69 @@
+---
+- name: Create loki backup directory
+  ansible.builtin.file:
+    path: /opt/loki_backups
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Create scripts directory
+  ansible.builtin.file:
+    path: /opt/scripts
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Check if azcopy is installed
+  ansible.builtin.command: which azcopy
+  register: azcopy_check
+  failed_when: false
+  changed_when: false
+
+- name: Download azcopy
+  ansible.builtin.get_url:
+    url: https://aka.ms/downloadazcopy-v10-linux
+    dest: /tmp/azcopy.tar.gz
+    mode: "0644"
+  when: azcopy_check.rc != 0
+
+- name: Extract azcopy
+  ansible.builtin.unarchive:
+    src: /tmp/azcopy.tar.gz
+    dest: /tmp/
+    remote_src: true
+  when: azcopy_check.rc != 0
+
+- name: Find azcopy binary
+  ansible.builtin.find:
+    paths: /tmp
+    patterns: azcopy
+    recurse: true
+    file_type: file
+  register: azcopy_bin
+  when: azcopy_check.rc != 0
+
+- name: Install azcopy
+  ansible.builtin.copy:
+    src: "{{ azcopy_bin.files[0].path }}"
+    dest: /usr/local/bin/azcopy
+    mode: "0755"
+    remote_src: true
+  when: azcopy_check.rc != 0
+
+- name: Template loki_backup script
+  ansible.builtin.template:
+    src: loki_backup.sh.j2
+    dest: /opt/scripts/loki_backup.sh
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Install daily loki backup cron
+  ansible.builtin.cron:
+    name: "loki backup to azure"
+    minute: "0"
+    hour: "3"
+    job: "/opt/scripts/loki_backup.sh"
+    user: root
