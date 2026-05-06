@@ -9,8 +9,11 @@ scrape_configs:
 
   - job_name: node
     static_configs:
-      - targets:
-          - '10.0.2.5:9100'
-          - '10.0.2.4:9100'
+      - targets: ['10.0.2.5:9100']
         labels:
           env: prod
+          instance: knowledge
+      - targets: ['10.0.2.4:9100']
+        labels:
+          env: prod
+          instance: kmonitor

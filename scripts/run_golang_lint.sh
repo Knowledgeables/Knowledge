@@ -1,7 +1,7 @@
 #!/bin/sh
 # Runs golangci-lint inside the knowledgeable Go project
 
-REQUIRED_VERSION="v2.11.4"
+REQUIRED_VERSION="v2.11.3"
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 PROJECT_DIR="$REPO_ROOT/knowledgeable"
 
