@@ -7,7 +7,7 @@ USER="user"
 BACKUP_DIR="/opt/db_backups"
 LOG_FILE="$BACKUP_DIR/db_backup.log"
 AZURE_BASE_URL="https://whoknowsdbbackup.blob.core.windows.net/db-backups"
-SAS_TOKEN="{{ azure_sas_token }}"
+SAS_DB_TOKEN="{{ db_sas_token }}"
 mkdir -p "$BACKUP_DIR"
 exec > >(tee -a "$LOG_FILE") 2>&1
 trap 'echo "BACKUP_FAILED ts=$(date -Is)"' ERR
@@ -18,7 +18,7 @@ echo "Running pg_dump"
 PGPASSWORD=$(docker exec "$CONTAINER" printenv POSTGRES_PASSWORD)
 docker exec -e PGPASSWORD="$PGPASSWORD" "$CONTAINER" \
   pg_dump -U "$USER" "$DB" | gzip > "$FILE"
-UPLOAD_URL="${AZURE_BASE_URL}/${BLOB_NAME}?${SAS_TOKEN}"
+UPLOAD_URL="${AZURE_BASE_URL}/${BLOB_NAME}?${SAS_DB_TOKEN}"
 echo "Uploading to Azure: $BLOB_NAME"
 for i in 1 2 3; do
   if azcopy copy "$FILE" "$UPLOAD_URL"; then

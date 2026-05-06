@@ -32,3 +32,11 @@
       community.docker.docker_compose_v2:
         project_src: /opt/promtail
         state: restarted
+
+- name: Monitor server only
+  hosts: kmonitor
+  become: yes
+  gather_facts: yes
+  tasks:
+    - name: Install loki backup script and cron
+      ansible.builtin.import_tasks: tasks/loki_backup.yml
