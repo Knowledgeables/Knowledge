@@ -38,7 +38,7 @@ func (s *Service) GetWeather(ctx context.Context, lat, lon float64) (*WeatherDat
 	if err != nil {
 		return nil, fmt.Errorf("weather: fetch: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("weather: unexpected status %d", resp.StatusCode)
