@@ -50,7 +50,7 @@ dev-up:
 SEED ?= dev_seed.js
 
 dev-migrate:
-	docker compose -f docker-compose-dev.yml run --rm migrations sh -c "npx knex migrate:latest && \
+	docker compose -f docker-compose-dev.yml run --rm migrations sh -c "npm install && npx knex migrate:latest && \
 npx knex seed:run --specific=$(SEED)"
 
 dev-down:

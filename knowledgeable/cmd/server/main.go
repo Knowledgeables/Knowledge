@@ -10,6 +10,7 @@ import (
 	"knowledgeable/internal/middleware"
 	"knowledgeable/internal/pages"
 	"knowledgeable/internal/users"
+	"knowledgeable/internal/weather"
 	"knowledgeable/internal/web"
 	"log"
 	"log/slog"
@@ -61,9 +62,13 @@ func main() {
 		),
 	)
 
+	// Weather
+	weatherSvc := weather.NewService()
+	weatherHandler := weather.NewHandler(weatherSvc, slog.Default(), tmplLoader)
+
 	// user
-	userRepo := users.NewRepository(database)
-	userService := users.NewService(userRepo)
+	userepo := users.NewRepository(database)
+	userService := users.NewService(userepo)
 	userHandler := users.NewHandler(userService, tmplLoader, auth.Create)
 
 	// pages
@@ -83,6 +88,7 @@ func main() {
 		userHandler,
 		pageHandler,
 		authHandler,
+		weatherHandler,
 		func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path != "/" {
 				http.NotFound(w, r)

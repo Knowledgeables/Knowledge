@@ -6,6 +6,7 @@ import (
 	"knowledgeable/internal/auth"
 	"knowledgeable/internal/pages"
 	"knowledgeable/internal/users"
+	"knowledgeable/internal/weather"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -15,6 +16,7 @@ func SetupRoutes(
 	userHandler *users.Handler,
 	pageHandler *pages.Handler,
 	authHandler *auth.Handler,
+	weatherHandler *weather.Handler,
 	dashboardHandler http.HandlerFunc,
 ) {
 
@@ -37,6 +39,8 @@ func SetupRoutes(
 	http.HandleFunc("/change-password", authHandler.ChangePassword)
 	http.HandleFunc("/forgot-password", authHandler.ForgotPassword)
 	http.HandleFunc("/reset-password", authHandler.ResetPassword)
+	http.HandleFunc("/weather", weatherHandler.GetWeatherPage)
+	http.HandleFunc("/api/weather", weatherHandler.GetWeather)
 
 	http.Handle("/metrics", promhttp.Handler())
 
