@@ -28,6 +28,11 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 
 // GetWeather handles GET /api/weather?lat=55.68&lon=12.57
 func (h *Handler) GetWeather(w http.ResponseWriter, r *http.Request) {
+	if r.Method != MethodGet{
+		http.error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	
 	lat, lon, err := parseCoordinates(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

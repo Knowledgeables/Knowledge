@@ -15,6 +15,7 @@ func SetupRoutes(
 	userHandler *users.Handler,
 	pageHandler *pages.Handler,
 	authHandler *auth.Handler,
+	weatherHandler *weather.Handler,
 	dashboardHandler http.HandlerFunc,
 ) {
 
@@ -37,6 +38,7 @@ func SetupRoutes(
 	http.HandleFunc("/change-password", authHandler.ChangePassword)
 	http.HandleFunc("/forgot-password", authHandler.ForgotPassword)
 	http.HandleFunc("/reset-password", authHandler.ResetPassword)
+	http.HandleFunc("/weather", weatherHandler.GetWeather)
 
 	http.Handle("/metrics", promhttp.Handler())
 
