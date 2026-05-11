@@ -2,34 +2,40 @@ package weather
 
 import (
 	"encoding/json"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"strconv"
 )
 
-// Handler exposes the weather endpoint.
+// Handler exposes the weather endpoints.
 type Handler struct {
-	service *Service
-	logger  *slog.Logger
+	service    *Service
+	logger     *slog.Logger
+	tmplLoader func() *template.Template
 }
 
-// NewHandler creates a Handler with the given service and logger.
-func NewHandler(service *Service, logger *slog.Logger) *Handler {
+// NewHandler creates a Handler with the given service, logger, and template loader.
+func NewHandler(service *Service, logger *slog.Logger, tmplLoader func() *template.Template) *Handler {
 	return &Handler{
-		service: service,
-		logger:  logger,
+		service:    service,
+		logger:     logger,
+		tmplLoader: tmplLoader,
 	}
 }
 
-// RegisterRoutes mounts the weather endpoint onto the given mux.
-func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/weather", h.GetWeather)
+// GetWeatherPage handles GET /weather — renders the weather page for users.
+func (h *Handler) GetWeatherPage(w http.ResponseWriter, r *http.Request) {
+	tmpl := h.tmplLoader()
+	if err := tmpl.ExecuteTemplate(w, "weather.html", nil); err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
+	}
 }
 
 // GetWeather handles GET /api/weather?lat=55.68&lon=12.57
 func (h *Handler) GetWeather(w http.ResponseWriter, r *http.Request) {
-	if r.Method != MethodGet{
-		http.error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	

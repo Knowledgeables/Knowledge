@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Weather</title>
+    <link href="/static/output.css" rel="stylesheet">
+    <link rel="icon" href="/static/favicon.png" />
+</head>
+
+<body class="min-h-screen flex flex-col bg-[#0a0e17] text-white">
+
+    <nav id="navbar"
+        class="flex flex-row items-center fixed top-0 left-0 w-full justify-between py-3 px-5 bg-[#090d16] z-[999]">
+    </nav>
+
+    <div class="flex items-center justify-center flex-1 pt-20 px-4">
+        <div class="w-full max-w-md border border-[#242422] rounded-lg p-8 flex flex-col gap-6">
+
+            <h1 class="text-3xl font-semibold tracking-tight">Weather</h1>
+
+            <div class="flex gap-3">
+                <input id="lat" type="text" placeholder="Latitude" value="55.68"
+                    class="flex-1 h-10 bg-[#0f172a] border border-gray-800 rounded px-3 text-white focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm" />
+                <input id="lon" type="text" placeholder="Longitude" value="12.57"
+                    class="flex-1 h-10 bg-[#0f172a] border border-gray-800 rounded px-3 text-white focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm" />
+                <button id="fetch-btn"
+                    class="h-10 px-4 flex items-center justify-center text-[#1eff8c] bg-[#1eff8c]/20 hover:bg-[#1eff8c]/50 transition font-semibold rounded-lg text-sm">
+                    <i data-lucide="search"></i>
+                </button>
+            </div>
+
+            <div id="result" class="hidden flex-col gap-3">
+                <div class="flex justify-between text-sm text-gray-400 border-b border-[#242422] pb-2">
+                    <span id="description" class="text-lg font-medium text-white"></span>
+                </div>
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div class="flex flex-col gap-1">
+                        <span class="text-2xl font-bold text-[#1eff8c]" id="temp"></span>
+                        <span class="text-xs text-gray-400">Temperature</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <span class="text-2xl font-bold text-[#1eff8c]" id="wind"></span>
+                        <span class="text-xs text-gray-400">Wind</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <span class="text-2xl font-bold text-[#1eff8c]" id="humidity"></span>
+                        <span class="text-xs text-gray-400">Humidity</span>
+                    </div>
+                </div>
+            </div>
+
+            <p id="error" class="hidden text-red-400 text-sm"></p>
+        </div>
+    </div>
+
+    <footer class="w-full border-t border-[#242422] bg-[#0f0f0e] py-4 px-5 flex items-center justify-between text-sm text-gray-400">
+        <p>© 2026 Knowledgeable</p>
+    </footer>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+    <script src="/static/js/navbarAuth.js" type="module"></script>
+    <script>
+        async function fetchWeather() {
+            const lat = document.getElementById('lat').value.trim();
+            const lon = document.getElementById('lon').value.trim();
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+
+            result.classList.add('hidden');
+            error.classList.add('hidden');
+
+            try {
+                const res = await fetch(`/api/weather?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`);
+                if (!res.ok) {
+                    const text = await res.text();
+                    throw new Error(text || res.statusText);
+                }
+                const data = await res.json();
+                document.getElementById('description').textContent = data.description;
+                document.getElementById('temp').textContent = data.temperature_c.toFixed(1) + ' °C';
+                document.getElementById('wind').textContent = data.wind_speed_ms.toFixed(1) + ' m/s';
+                document.getElementById('humidity').textContent = data.humidity_pct + ' %';
+                result.classList.remove('hidden');
+                result.classList.add('flex');
+            } catch (err) {
+                error.textContent = err.message;
+                error.classList.remove('hidden');
+            }
+        }
+
+        document.getElementById('fetch-btn').addEventListener('click', fetchWeather);
+        document.getElementById('lon').addEventListener('keydown', e => { if (e.key === 'Enter') fetchWeather(); });
+
+        fetchWeather();
+    </script>
+
+</body>
+
+</html>

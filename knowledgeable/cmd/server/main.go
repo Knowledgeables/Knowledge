@@ -64,11 +64,11 @@ func main() {
 
 	// Weather
 	weatherSvc := weather.NewService()
-	weatherHandler := weather.NewHandler(weatherSvc, slog.default())
+	weatherHandler := weather.NewHandler(weatherSvc, slog.Default(), tmplLoader)
 
 	// user
 	userepo := users.NewRepository(database)
-	userService := users.NewService(userRepo)
+	userService := users.NewService(userepo)
 	userHandler := users.NewHandler(userService, tmplLoader, auth.Create)
 
 	// pages
