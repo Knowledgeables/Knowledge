@@ -1,6 +1,7 @@
 package weather
 
 import (
+	"bytes"
 	"encoding/json"
 	"html/template"
 	"log/slog"
@@ -28,6 +29,7 @@ func NewHandler(service *Service, logger *slog.Logger, tmplLoader func() *templa
 func (h *Handler) GetWeatherPage(w http.ResponseWriter, r *http.Request) {
 	tmpl := h.tmplLoader()
 	if err := tmpl.ExecuteTemplate(w, "weather.html", nil); err != nil {
+		h.logger.Error("GetWeatherPage: template execution failed", "error", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
@@ -52,10 +54,15 @@ func (h *Handler) GetWeather(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(data); err != nil {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(data); err != nil {
 		h.logger.Error("failed to encode weather response", "error", err)
+		http.Error(w, "failed to encode weather data", http.StatusInternalServerError)
+		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = buf.WriteTo(w)
 }
 
 func parseCoordinates(r *http.Request) (float64, float64, error) {

@@ -16,17 +16,12 @@
     <div class="flex items-center justify-center flex-1 pt-20 px-4">
         <div class="w-full max-w-md border border-[#242422] rounded-lg p-8 flex flex-col gap-6">
 
-            <h1 class="text-3xl font-semibold tracking-tight">Weather</h1>
-
-            <div class="flex gap-3">
-                <input id="lat" type="text" placeholder="Latitude" value="55.68"
-                    class="flex-1 h-10 bg-[#0f172a] border border-gray-800 rounded px-3 text-white focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm" />
-                <input id="lon" type="text" placeholder="Longitude" value="12.57"
-                    class="flex-1 h-10 bg-[#0f172a] border border-gray-800 rounded px-3 text-white focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm" />
-                <button id="fetch-btn"
-                    class="h-10 px-4 flex items-center justify-center text-[#1eff8c] bg-[#1eff8c]/20 hover:bg-[#1eff8c]/50 transition font-semibold rounded-lg text-sm">
-                    <i data-lucide="search"></i>
-                </button>
+            <div class="flex flex-col gap-1">
+                <h1 class="text-3xl font-semibold tracking-tight">Weather</h1>
+                <span class="flex items-center gap-1 text-sm text-gray-400">
+                    <i data-lucide="map-pin" class="w-4 h-4"></i>
+                    Copenhagen
+                </span>
             </div>
 
             <div id="result" class="hidden flex-col gap-3">
@@ -64,8 +59,6 @@
     <script src="/static/js/navbarAuth.js" type="module"></script>
     <script>
         async function fetchWeather() {
-            const lat = document.getElementById('lat').value.trim();
-            const lon = document.getElementById('lon').value.trim();
             const result = document.getElementById('result');
             const error = document.getElementById('error');
 
@@ -73,16 +66,16 @@
             error.classList.add('hidden');
 
             try {
-                const res = await fetch(`/api/weather?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`);
+                const res = await fetch('/api/weather?lat=55.6761&lon=12.5683');
                 if (!res.ok) {
                     const text = await res.text();
                     throw new Error(text || res.statusText);
                 }
                 const data = await res.json();
-                document.getElementById('description').textContent = data.description;
-                document.getElementById('temp').textContent = data.temperature_c.toFixed(1) + ' °C';
-                document.getElementById('wind').textContent = data.wind_speed_ms.toFixed(1) + ' m/s';
-                document.getElementById('humidity').textContent = data.humidity_pct + ' %';
+                document.getElementById('description').textContent = data.description ?? 'N/A';
+                document.getElementById('temp').textContent = Number.isFinite(data.temperature_c) ? data.temperature_c.toFixed(1) + ' °C' : 'N/A';
+                document.getElementById('wind').textContent = Number.isFinite(data.wind_speed_ms) ? data.wind_speed_ms.toFixed(1) + ' m/s' : 'N/A';
+                document.getElementById('humidity').textContent = Number.isFinite(data.humidity_pct) ? data.humidity_pct + ' %' : 'N/A';
                 result.classList.remove('hidden');
                 result.classList.add('flex');
             } catch (err) {
@@ -90,9 +83,6 @@
                 error.classList.remove('hidden');
             }
         }
-
-        document.getElementById('fetch-btn').addEventListener('click', fetchWeather);
-        document.getElementById('lon').addEventListener('keydown', e => { if (e.key === 'Enter') fetchWeather(); });
 
         fetchWeather();
     </script>
