@@ -29,12 +29,12 @@ func (s *Service) GetWeather(ctx context.Context, lat, lon float64) (*WeatherDat
 		baseURL, lat, lon,
 	)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil) // #nosec G704 -- URL is baseURL const + range-validated float64 coords; no SSRF possible
 	if err != nil {
 		return nil, fmt.Errorf("weather: build request: %w", err)
 	}
 
-	resp, err := s.client.Do(req)
+	resp, err := s.client.Do(req) // #nosec G704 -- same as above
 	if err != nil {
 		return nil, fmt.Errorf("weather: fetch: %w", err)
 	}
@@ -49,12 +49,17 @@ func (s *Service) GetWeather(ctx context.Context, lat, lon float64) (*WeatherDat
 		return nil, fmt.Errorf("weather: decode response: %w", err)
 	}
 
+	observedAt, err := time.Parse("2006-01-02T15:04", raw.CurrentWeather.Time)
+	if err != nil {
+		observedAt = time.Now()
+	}
+
 	return &WeatherData{
 		Temperature: raw.CurrentWeather.Temperature,
 		WindSpeed:   raw.CurrentWeather.WindSpeed,
 		Humidity:    raw.Current.Humidity,
 		Description: describeWeatherCode(raw.CurrentWeather.WeatherCode),
-		RetrievedAt: time.Now().UTC(),
+		RetrievedAt: observedAt.UTC(),
 	}, nil
 }
 

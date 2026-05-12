@@ -38,6 +38,12 @@ function baseNav(content) {
                         About
                     </a>
                 </li>
+
+                <li class="rounded-lg hover:bg-white/5 transition">
+                    <a href="/weather" id="nav-weather" class="block p-2 text-gray-400 hover:text-gray-300 transition">
+                        Weather
+                    </a>
+                </li>
             </ul>
    </div>
 
