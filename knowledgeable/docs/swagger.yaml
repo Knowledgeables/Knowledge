@@ -57,6 +57,19 @@ definitions:
       username:
         type: string
     type: object
+  weather.WeatherData:
+    properties:
+      description:
+        type: string
+      humidity_pct:
+        type: integer
+      retrieved_at:
+        type: string
+      temperature_c:
+        type: number
+      wind_speed_ms:
+        type: number
+    type: object
 info:
   contact: {}
 paths:
@@ -217,6 +230,38 @@ paths:
       summary: Register user
       tags:
       - auth
+  /api/weather:
+    get:
+      description: Returns current weather for the given coordinates
+      parameters:
+      - description: Latitude (-90 to 90)
+        in: query
+        name: lat
+        required: true
+        type: number
+      - description: Longitude (-180 to 180)
+        in: query
+        name: lon
+        required: true
+        type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/weather.WeatherData'
+        "400":
+          description: missing or invalid coordinates
+          schema:
+            type: string
+        "502":
+          description: failed to retrieve weather data
+          schema:
+            type: string
+      summary: Get weather data
+      tags:
+      - weather
   /change-password:
     get:
       consumes:
@@ -386,4 +431,17 @@ paths:
       summary: Submit new password
       tags:
       - auth
+  /weather:
+    get:
+      description: Render the weather page
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: Weather page
+          schema:
+            type: string
+      summary: Serve Weather page
+      tags:
+      - weather
 swagger: "2.0"

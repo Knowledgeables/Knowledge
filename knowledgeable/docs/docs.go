@@ -253,6 +253,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/weather": {
+            "get": {
+                "description": "Returns current weather for the given coordinates",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "weather"
+                ],
+                "summary": "Get weather data",
+                "parameters": [
+                    {
+                        "type": "number",
+                        "description": "Latitude (-90 to 90)",
+                        "name": "lat",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "Longitude (-180 to 180)",
+                        "name": "lon",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/weather.WeatherData"
+                        }
+                    },
+                    "400": {
+                        "description": "missing or invalid coordinates",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "502": {
+                        "description": "failed to retrieve weather data",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/change-password": {
             "get": {
                 "consumes": [
@@ -508,6 +556,26 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/weather": {
+            "get": {
+                "description": "Render the weather page",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "weather"
+                ],
+                "summary": "Serve Weather page",
+                "responses": {
+                    "200": {
+                        "description": "Weather page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -597,6 +665,26 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "weather.WeatherData": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "humidity_pct": {
+                    "type": "integer"
+                },
+                "retrieved_at": {
+                    "type": "string"
+                },
+                "temperature_c": {
+                    "type": "number"
+                },
+                "wind_speed_ms": {
+                    "type": "number"
                 }
             }
         }
