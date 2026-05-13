@@ -26,6 +26,12 @@ func NewHandler(service *Service, logger *slog.Logger, tmplLoader func() *templa
 }
 
 // GetWeatherPage handles GET /weather — renders the weather page for users.
+// @Summary Serve Weather page
+// @Description Render the weather page
+// @Tags weather
+// @Produce html
+// @Success 200 {string} string "Weather page"
+// @Router /weather [get]
 func (h *Handler) GetWeatherPage(w http.ResponseWriter, r *http.Request) {
 	tmpl := h.tmplLoader()
 	if err := tmpl.ExecuteTemplate(w, "weather.html", nil); err != nil {
@@ -35,6 +41,16 @@ func (h *Handler) GetWeatherPage(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetWeather handles GET /api/weather?lat=55.68&lon=12.57
+// @Summary Get weather data
+// @Description Returns current weather for the given coordinates
+// @Tags weather
+// @Produce json
+// @Param lat query number true "Latitude (-90 to 90)"
+// @Param lon query number true "Longitude (-180 to 180)"
+// @Success 200 {object} weather.WeatherData
+// @Failure 400 {string} string "missing or invalid coordinates"
+// @Failure 502 {string} string "failed to retrieve weather data"
+// @Router /api/weather [get]
 func (h *Handler) GetWeather(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
