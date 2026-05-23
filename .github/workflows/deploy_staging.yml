@@ -4,7 +4,7 @@ on:
     workflows: [ "CD - Delivery" ]
     types: [ completed ]
     branches: [ main ]
-#test
+
 jobs:
   deploy-staging:
     runs-on: ubuntu-latest
