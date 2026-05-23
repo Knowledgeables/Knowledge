@@ -19,6 +19,10 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
 
+      - name: Ensure remote app directory exists
+        run: |
+          ssh -i ~/.ssh/ssh_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/app"
+
       - name: Copy compose file
         run: |
           scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
