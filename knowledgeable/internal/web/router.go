@@ -2,13 +2,10 @@ package web
 
 import (
 	"net/http"
-
 	"knowledgeable/internal/auth"
 	"knowledgeable/internal/pages"
 	"knowledgeable/internal/users"
 	"knowledgeable/internal/weather"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -41,8 +38,6 @@ func SetupRoutes(
 	http.HandleFunc("/reset-password", authHandler.ResetPassword)
 	http.HandleFunc("/weather", weatherHandler.GetWeatherPage)
 	http.HandleFunc("/api/weather", weatherHandler.GetWeather)
-
-	http.Handle("/metrics", promhttp.Handler())
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
