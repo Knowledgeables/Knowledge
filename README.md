@@ -37,6 +37,11 @@ Knowledgeable is a searchable knowledge-base platform supporting multiple langua
 | Reverse Proxy | Nginx |
 | Security scanning | Gosec + GitHub SARIF |
 | API docs | Swagger |
+| Infrastructure (IaC) | Terraform (Azure) |
+| Configuration management | Ansible |
+| Metrics | Prometheus + Node Exporter |
+| Logs | Loki + Promtail |
+| Dashboards | Grafana |
 
 ## CI/CD Pipeline
 
@@ -50,15 +55,25 @@ Pull Request → main
 Push to main
     ├── Auto Release   (conventional commit → semver tag)
     ├── Delivery       (build & push Docker images to GHCR)
-    │       └── Deployment      (SSH → pull image → redeploy production)
-    └── Build Migration Image   (build & push Dockerfile.migrations to GHCR)
+    │       └── Deploy Staging  (SSH → staging)
+    │               └── Playwright Staging  (full E2E suite)
+    │                       └── Deployment  (SSH → production, rollback on failure)
+    ├── Build Migration Image   (build & push Dockerfile.migrations to GHCR)
+    └── Configure      (Ansible → install/update Docker, fail2ban, node_exporter, promtail on VMs)
 
-Staging
-    ├── Deploy Staging  (SSH deploy to staging server)
-    └── Playwright      (full Playwright suite on staging)
+Push to main (ansible/ changes)
+    └── Configure      (Ansible configuration management run)
 
-Daily (00:00 UTC)
-    └── Security Scan  (Gosec → SARIF → GitHub Security tab)
+Monitoring server
+    └── Monitoring Deployment  (SSH → deploy Prometheus + Loki + Grafana + Nginx stack)
+
+Daily (03:00 UTC)
+    ├── Security Scan  (Gosec → SARIF → GitHub Security tab)
+    ├── Drift Check    (Ansible check mode → open GitHub issue on drift)
+    └── Crawler        (Node.js crawler ingests data to Knowledge backend)
+
+Scheduled (03:17 & 13:17 UTC)
+    └── Crawler        (recurring content ingestion)
 ```
 
 | Workflow file | Trigger | Purpose |
@@ -67,11 +82,80 @@ Daily (00:00 UTC)
 | `playwright_ci.yml` | PR → main | Playwright smoke tests |
 | `security_scan.yml` | Daily + manual | Gosec, uploads SARIF to GitHub Security |
 | `release.yml` | Push → main | Bumps semver tag from Conventional Commits |
-| `delivery.yml` | Push → main | Builds multi-stage Docker images, pushes to GHCR |
-| `deployment.yml` | After Delivery | SSH deploy to production server |
-| `deploy_staging.yml` | Manual / staging trigger | SSH deploy to staging server |
-| `playwright_staging.yml` | After staging deploy | Playwright tests against staging environment |
+| `delivery.yml` | Push → main | Builds multi-arch Docker images, pushes to GHCR |
+| `deploy_staging.yml` | After Delivery | SSH deploy to staging server |
+| `playwright_staging.yml` | After staging deploy | Full Playwright suite against staging environment |
+| `deployment.yml` | After Playwright staging | SSH deploy to production; rollback on failure |
 | `build-and-push-migration.yml` | Push → main | Builds and pushes migration Docker image to GHCR |
+| `configure.yml` | Push → main (ansible/) + manual | Ansible: provisions Docker, fail2ban, node_exporter, promtail on all VMs |
+| `monitoring-deployment.yml` | Manual | SSH deploy of monitoring stack (Prometheus, Loki, Grafana, Nginx) |
+| `drift-check.yml` | Daily 03:00 UTC | Ansible check mode; opens GitHub issue if configuration drift detected |
+| `crawler.yml` | Scheduled (03:17 & 13:17 UTC) + manual | Node.js web crawler ingests content to Knowledge backend |
+
+## Infrastructure
+
+Cloud infrastructure is defined as code in the [`Terraform/`](Terraform/) directory and targets Azure (Norway East).
+
+| Resource | Details |
+|---|---|
+| Provider | Azure (`azurerm` v4.27.0) |
+| VMs | 2 × `Standard_B2ats_v2` Ubuntu 22.04 LTS — `knowledge` (app) and `kmonitor` (monitoring) |
+| Network | VNet `10.0.0.0/16`, subnet `10.0.2.0/24` |
+| Security | NSG rules: SSH, HTTP/HTTPS, Node Exporter (subnet-only, port 9100), staging port 8081 |
+| Outputs | Public IPs, SSH commands, ready-to-paste Ansible inventory and SSH config |
+
+```bash
+cd Terraform/
+terraform init
+terraform apply          # provisions VMs, network, security groups
+terraform output         # prints IPs and SSH config
+```
+
+## Configuration Management
+
+Server state is managed with Ansible from the [`ansible/`](ansible/) directory. The `configure.yml` GitHub Actions workflow runs the playbook automatically on pushes that touch `ansible/`, and daily via `drift-check.yml` (check mode only).
+
+**What the playbook installs on every VM:**
+
+- Docker + Docker Compose v2 plugin
+- `fail2ban` (SSH brute-force protection)
+- Node Exporter v1.8.2 (metrics, port 9100)
+
+**App server additionally gets:**
+
+- Promtail (ships container + system logs to Loki)
+- PostgreSQL backup cron (hourly, uploads to Azure Blob via `azcopy`)
+
+**Monitoring server additionally gets:**
+
+- Loki backup cron (daily 03:00 UTC, uploads to Azure Blob)
+
+```bash
+cd ansible/
+ansible-playbook playbook.yml              # full run
+ansible-playbook playbook.yml --check      # drift detection (no changes)
+```
+
+## Monitoring
+
+The monitoring stack lives in [`monitoring/`](monitoring/) and is deployed to the dedicated `kmonitor` VM via the `monitoring-deployment.yml` workflow.
+
+| Service | Role |
+|---|---|
+| Prometheus | Scrapes metrics from both VMs via Node Exporter (30 s interval, 15-day retention) |
+| Loki | Log aggregation backend (720 h retention, boltdb-shipper) |
+| Promtail | Runs on the app VM; ships Docker container logs and system logs to Loki |
+| Grafana | Dashboards for application logs, search performance/SLO, user activity, and infrastructure |
+| Nginx | Reverse proxy on port 80 — routes `/loki/api/*` to Loki and `/` to Grafana |
+
+Pre-provisioned Grafana dashboards:
+
+- **Infrastructure** — VM CPU, memory, disk, network via Node Exporter
+- **Search Performance & Quality** — latency and result quality metrics
+- **Search SLO (Health)** — error-budget burn tracking
+- **User Activity (Realtime)** — live registration and login events
+- **Application Logs** — structured log explorer via Loki
+- **Forgot Password / Reset** — password-reset funnel
 
 ## Getting Started
 
@@ -148,8 +232,34 @@ Examples:
 ```
 Knowledge/
 ├── .github/
-│   ├── workflows/          # 8+ CI/CD pipelines
+│   ├── workflows/          # 13 CI/CD pipelines (app, infra, monitoring, security)
+│   ├── scripts/            # deploy-staging.sh, teardown-staging.sh
 │   └── ISSUE_TEMPLATE/     # Bug, feature, chore, docs templates
+├── Terraform/              # Azure IaC — VMs, network, NSG, outputs
+│   ├── main.tf             # Provider + resource group
+│   ├── vms.tf              # 2 Linux VMs (knowledge, kmonitor)
+│   ├── network.tf          # VNet, subnet, NSG rules
+│   ├── variables.tf        # Input variables (VM size, location, etc.)
+│   ├── outputs.tf          # IPs, SSH commands, Ansible inventory
+│   └── terraform.tfvars    # Azure subscription + region config
+├── ansible/                # Configuration management
+│   ├── playbook.yml        # Main playbook (bootstraps all VMs)
+│   ├── ansible.cfg
+│   ├── inventory.ini       # Static inventory (knowledge + kmonitor)
+│   ├── group_vars/all.yml  # Shared variables (node_exporter version, Loki URL)
+│   ├── tasks/              # packages, docker, node_exporter, promtail, fail2ban, backups
+│   ├── templates/          # db_backup.sh.j2, loki_backup.sh.j2, promtail-config.yml.j2
+│   └── files/              # promtail-docker-compose.yml
+├── monitoring/             # Monitoring stack (deployed to kmonitor VM)
+│   ├── docker-compose.yml  # Loki, Prometheus, Grafana, Nginx
+│   ├── prometheus/         # prometheus.yml (scrapes both VMs)
+│   ├── loki/               # config.yaml
+│   ├── grafana/
+│   │   └── provisioning/
+│   │       ├── datasources/    # Prometheus + Loki datasource configs
+│   │       └── dashboards/     # 6 pre-provisioned dashboard JSON files
+│   ├── nginx/              # nginx.conf (reverse proxy)
+│   └── .env.example
 ├── docs/
 │   ├── legacy-analysis.md     # Issues found in the old system
 │   └── legacy-architecture.md # Old monolith architecture notes
@@ -168,7 +278,6 @@ Knowledge/
 │   ├── frontend/           # Tailwind source
 │   ├── templates/          # HTML templates
 │   ├── static/             # Compiled CSS + JS
-│   ├── monitoring/         # Prometheus config
 │   ├── nginx/              # Nginx reverse proxy config
 │   ├── Dockerfile.dev
 │   ├── Dockerfile.prod
@@ -204,3 +313,8 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) **before** opening a PR. Key points:
 | Tests | None | Unit + E2E (Playwright) |
 | Deployments | Manual | Automated via GitHub Actions |
 | Security scanning | None | Gosec (daily, SARIF) |
+| Infrastructure | Manually provisioned | Terraform (Azure IaC) |
+| Server config | Ad-hoc / undocumented | Ansible (idempotent, drift-checked daily) |
+| Observability | None | Prometheus + Loki + Grafana + 6 dashboards |
+| Log shipping | None | Promtail → Loki |
+| Backups | None | Hourly DB + daily Loki backups to Azure Blob |
