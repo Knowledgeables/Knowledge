@@ -15,24 +15,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Add SSH key
+      - name: Setup SSH
         run: |
-          mkdir -p ~/.ssh/
+          mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
+          printf '%s\n' "${{ secrets.MONITOR_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Copy monitoring stack
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+          ssh -i ~/.ssh/ssh_key \
             ${{ secrets.SSH_USER }}@${{ secrets.MONITOR_SSH_HOST }} \
             "mkdir -p ~/monitoring"
-          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no -r \
+          scp -i ~/.ssh/ssh_key -r \
             monitoring/. \
             ${{ secrets.SSH_USER }}@${{ secrets.MONITOR_SSH_HOST }}:~/monitoring/
 
       - name: Write .env on remote
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+          ssh -i ~/.ssh/ssh_key \
             ${{ secrets.SSH_USER }}@${{ secrets.MONITOR_SSH_HOST }} \
             "cat > ~/monitoring/.env" << "EOF"
           GF_SECURITY_ADMIN_USER=${{ secrets.GF_ADMIN_USER }}

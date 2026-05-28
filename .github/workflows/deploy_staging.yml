@@ -13,24 +13,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Add SSH key
+      - name: Setup SSH
         run: |
-          mkdir -p ~/.ssh/
+          mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ssh_key
           chmod 600 ~/.ssh/ssh_key
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Copy compose file
         run: |
-          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+          scp -i ~/.ssh/ssh_key \
             knowledgeable/docker-compose-staging.yml \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/docker-compose-staging.yml
 
       - name: Copy scripts
         run: |
-          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+          scp -i ~/.ssh/ssh_key \
             .github/scripts/deploy-staging.sh \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/deploy-staging.sh
-          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+          scp -i ~/.ssh/ssh_key \
             .github/scripts/teardown-staging.sh \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/teardown-staging.sh
 
@@ -51,14 +53,14 @@ jobs:
 
       - name: Transfer staging env
         run: |
-          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+          scp -i ~/.ssh/ssh_key \
             .env.staging \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app/.env.staging
           rm -f .env.staging
 
       - name: Deploy staging
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+          ssh -i ~/.ssh/ssh_key \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << "EOF"
             set -e
             echo "${{ secrets.CR__PAT }}" | docker login ghcr.io -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
