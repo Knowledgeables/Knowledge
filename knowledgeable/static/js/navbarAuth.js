@@ -60,7 +60,7 @@ function guestNav() {
       <div class="w-64 flex gap-3">
 
             <a href="/login" class="h-9 w-full px-4 flex items-center justify-center gap-2 rounded-lg
-                             text-sm text-gray-400 hover:text-white hover:bg-white/5 transition" id="nav-login">
+                             text-sm text-gray-400 hover:text-white hover:bg-white/5 transition" id="login-button">
                 <i data-lucide="log-in" class="w-4 h-4"></i>
                 Login
             </a>
