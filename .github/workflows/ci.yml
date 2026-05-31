@@ -8,7 +8,6 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     env:
-      GOPRIVATE: github.com/knowledgeables/*
       POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
