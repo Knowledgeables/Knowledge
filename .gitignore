@@ -81,3 +81,6 @@ ansible/group_vars/all.yml
 knowledgeable/nginx/certbot/conf/
 knowledgeable/nginx/certbot/conf/
 knowledgeable/nginx/certbot/www/
+
+# Graphify
+graphify-out

@@ -8,9 +8,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     env:
-      GO111MODULE: on
       GOPRIVATE: github.com/knowledgeables/*
-      GITHUB_AUTHENTICATION_TOKEN: ${{ secrets.CR__PAT }}
       POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
