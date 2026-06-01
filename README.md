@@ -49,7 +49,7 @@ Every change goes through the following pipeline before reaching production:
 
 ```
 Pull Request → main
-    ├── Go CI          (lint → build → DB setup → migrations → go test)
+    ├── Go CI          (lint → build → DB setup → migrations → integration tests)
     └── Playwright     (smoke tests)
 
 Push to main
@@ -58,7 +58,6 @@ Push to main
     │       └── Deploy Staging  (SSH → staging)
     │               └── Playwright Staging  (full E2E suite)
     │                       └── Deployment  (SSH → production, rollback on failure)
-    ├── Build Migration Image   (build & push Dockerfile.migrations to GHCR)
     └── Configure      (Ansible → install/update Docker, fail2ban, node_exporter, promtail on VMs)
 
 Push to main (ansible/ changes)
@@ -78,7 +77,7 @@ Scheduled (03:17 & 13:17 UTC)
 
 | Workflow file | Trigger | Purpose |
 |---|---|---|
-| `ci.yml` | PR → main | golangci-lint, build, DB setup, migrations, go test |
+| `ci.yml` | PR → main | golangci-lint, build, DB setup, migrations, integration tests |
 | `playwright_ci.yml` | PR → main | Playwright smoke tests |
 | `security_scan.yml` | Daily + manual | Gosec, uploads SARIF to GitHub Security |
 | `release.yml` | Push → main | Bumps semver tag from Conventional Commits |
@@ -86,7 +85,6 @@ Scheduled (03:17 & 13:17 UTC)
 | `deploy_staging.yml` | After Delivery | SSH deploy to staging server |
 | `playwright_staging.yml` | After staging deploy | Full Playwright suite against staging environment |
 | `deployment.yml` | After Playwright staging | SSH deploy to production; rollback on failure |
-| `build-and-push-migration.yml` | Push → main | Builds and pushes migration Docker image to GHCR |
 | `configure.yml` | Push → main (ansible/) + manual | Ansible: provisions Docker, fail2ban, node_exporter, promtail on all VMs |
 | `monitoring-deployment.yml` | Manual | SSH deploy of monitoring stack (Prometheus, Loki, Grafana, Nginx) |
 | `drift-check.yml` | Daily 03:00 UTC | Ansible check mode; opens GitHub issue if configuration drift detected |
@@ -129,6 +127,7 @@ Server state is managed with Ansible from the [`ansible/`](ansible/) directory. 
 **Monitoring server additionally gets:**
 
 - Loki backup cron (daily 03:00 UTC, uploads to Azure Blob)
+- Blackbox Exporter config (deployed via Ansible, used for HTTP uptime probing)
 
 ```bash
 cd ansible/
@@ -147,12 +146,14 @@ The monitoring stack lives in [`monitoring/`](monitoring/) and is deployed to th
 | Promtail | Runs on the app VM; ships Docker container logs and system logs to Loki |
 | Grafana | Dashboards for application logs, search performance/SLO, user activity, and infrastructure |
 | Nginx | Reverse proxy on port 80 — routes `/loki/api/*` to Loki and `/` to Grafana |
+| Blackbox Exporter | HTTP uptime probing — Prometheus scrapes it to track availability of the production `/health` endpoint |
 
 Pre-provisioned Grafana dashboards:
 
 - **Infrastructure** — VM CPU, memory, disk, network via Node Exporter
 - **Search Performance & Quality** — latency and result quality metrics
 - **Search SLO (Health)** — error-budget burn tracking
+- **Container Activiy**  - shows active containers and log volume
 - **User Activity (Realtime)** — live registration and login events
 - **Application Logs** — structured log explorer via Loki
 - **Forgot Password / Reset** — password-reset funnel
@@ -251,9 +252,10 @@ Knowledge/
 │   ├── templates/          # db_backup.sh.j2, loki_backup.sh.j2, promtail-config.yml.j2
 │   └── files/              # promtail-docker-compose.yml
 ├── monitoring/             # Monitoring stack (deployed to kmonitor VM)
-│   ├── docker-compose.yml  # Loki, Prometheus, Grafana, Nginx
-│   ├── prometheus/         # prometheus.yml (scrapes both VMs)
+│   ├── docker-compose.yml  # Loki, Prometheus, Grafana, Nginx, Blackbox Exporter
+│   ├── prometheus/         # prometheus.yml (scrapes both VMs + blackbox HTTP probes)
 │   ├── loki/               # config.yaml
+│   ├── blackbox/           # blackbox_config.yml (HTTP uptime probe modules)
 │   ├── grafana/
 │   │   └── provisioning/
 │   │       ├── datasources/    # Prometheus + Loki datasource configs
