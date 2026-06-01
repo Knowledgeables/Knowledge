@@ -1,11 +1,11 @@
 name: CD - Monitoring Deployment
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Configure - Ansible"]
+    types:
+      - completed
     branches: [main]
-    paths:
-      - 'monitoring/**'
-      - '.github/workflows/deploy-monitoring.yml'
   workflow_dispatch:
 
 jobs:
