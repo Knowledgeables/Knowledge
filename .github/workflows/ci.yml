@@ -49,6 +49,8 @@ jobs:
 
       - name: Test
         run: go test -tags integration ./...
+        env:
+          DATABASE_URL: postgres://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/knowledge?sslmode=disable
 
       - name: Tear down migration containers
         if: always()
