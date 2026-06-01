@@ -1,0 +1,13 @@
+---
+- name: Create blackbox config directory
+  ansible.builtin.file:
+    path: /home/azureuser/monitoring/blackbox
+    state: directory
+    mode: "0755"
+
+- name: Template blackbox exporter config
+  ansible.builtin.template:
+    src: blackbox_config.yml.j2
+    dest: /home/azureuser/monitoring/blackbox/config.yml
+    mode: "0644"
+  notify: Restart monitoring stack

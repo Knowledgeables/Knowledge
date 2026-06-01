@@ -59,3 +59,13 @@ services:
     depends_on:
       - loki
       - prometheus
+  blackbox-exporter:
+    image: prom/blackbox-exporter:latest
+    container_name: blackbox-exporter
+    volumes:
+      - ./blackbox/config.yml:/config/config.yml:ro
+    command:
+      - "--config.file=/config/config.yml"
+    networks:
+      - monitoring
+    restart: unless-stopped

@@ -40,3 +40,10 @@
   tasks:
     - name: Install loki backup script and cron
       ansible.builtin.import_tasks: tasks/loki_backup.yml
+    - name: Setup Blackbox exporter
+      ansible.builtin.import_tasks: tasks/blackbox.yml
+  handlers:
+    - name: Restart monitoring stack
+      community.docker.docker_compose_v2:
+        project_src: /home/azureuser/monitoring
+        state: restarted
