@@ -71,7 +71,7 @@ variable "ssh_public_key" {
 variable "allowed_ssh_cidrs" {
   type        = list(string)
   default     = ["0.0.0.0/0"]
-  description = "CIDRs allowed to reach SSH. Open to world by default for student project (dynamic home IP, fail2ban + key-only auth provide protection). Restrict in production."
+  description = "CIDRs allowed to reach SSH. Open to world by default (dynamic home IP, fail2ban + key-only auth provide protection)."
 }
 
 variable "vms" {
@@ -86,5 +86,8 @@ variable "vms" {
     kmonitor = {
       role = "monitoring"
     }
+    kstaging = {
+    role = "staging"
+  }
   }
 }
