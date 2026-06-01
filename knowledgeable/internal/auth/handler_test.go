@@ -1,4 +1,3 @@
-//go:build integration
 package auth
 
 import (
@@ -104,8 +103,6 @@ func TestLoginAPI_SetsSessionCookie(t *testing.T) {
 
 }
 
-//Login failure
-
 type failUserService struct{}
 
 func (s *failUserService) Login(username, password string) (*users.User, error) {
@@ -133,8 +130,8 @@ func (s *failUserService) ConsumeResetToken(rawToken string) (int64, error) {
 }
 
 type mockEmailSender struct {
-	sentTo  string
-	err     error
+	sentTo string
+	err    error
 }
 
 func (m *mockEmailSender) Send(to, subject, html string) error {
@@ -168,7 +165,6 @@ func TestLoginAPI_InvalidCredentials(t *testing.T) {
 
 	res := rr.Result()
 
-	// should redirect back to login with error param
 	if res.StatusCode != http.StatusSeeOther {
 		t.Fatalf("expected 303, got %d", res.StatusCode)
 	}
@@ -177,18 +173,14 @@ func TestLoginAPI_InvalidCredentials(t *testing.T) {
 		t.Fatalf("expected redirect to /login?error=invalid_credentials, got %s", res.Header.Get("Location"))
 	}
 
-	// ingen cookie
 	if len(res.Cookies()) != 0 {
 		t.Fatal("expected no cookies on failed login")
 	}
 
-	// ingen session
 	if len(sessions) != 0 {
 		t.Fatal("expected no session to be created")
 	}
 }
-
-// ForgotPassword
 
 func TestForgotPassword_UnknownEmail_RedirectsToSent(t *testing.T) {
 	handler := NewHandler(&failUserService{}, func() *template.Template {
@@ -259,8 +251,6 @@ func TestForgotPassword_MissingEmail_RedirectsWithError(t *testing.T) {
 		t.Fatalf("expected missing_email redirect, got %s", res.Header.Get("Location"))
 	}
 }
-
-// ResetPassword
 
 func TestResetPassword_POST_Success(t *testing.T) {
 	handler := NewHandler(&successUserService{}, func() *template.Template {
