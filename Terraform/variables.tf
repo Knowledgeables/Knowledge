@@ -86,8 +86,5 @@ variable "vms" {
     kmonitor = {
       role = "monitoring"
     }
-    kstaging = {
-    role = "staging"
-  }
   }
 }
