@@ -45,7 +45,7 @@ jobs:
 
       - name: Deploy stack
         run: |
-          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no \
+          ssh -i ~/.ssh/ssh_key \
             ${{ secrets.SSH_USER }}@${{ secrets.MONITOR_SSH_HOST }} \
             "cd ~/monitoring && docker compose pull && docker compose up -d"
 

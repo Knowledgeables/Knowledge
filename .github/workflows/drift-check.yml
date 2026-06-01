@@ -16,6 +16,9 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          printf '%s\n' "${{ secrets.MONITOR_SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Install Ansible
         run: pipx install --include-deps ansible
@@ -34,8 +37,6 @@ jobs:
       - name: Run Ansible in check mode
         id: check
         working-directory: ansible
-        env:
-          ANSIBLE_HOST_KEY_CHECKING: "False"
         run: |
           set +e
           ansible-playbook -i inventory.ini playbook.yml --check > drift-output.txt 2>&1
