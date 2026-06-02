@@ -7,6 +7,8 @@ volumes:
   prometheus_data:
 services:
   loki:
+    mem_limit: 300m
+    memswap_limit: 500m
     image: grafana/loki:2.9.4
     container_name: loki
     volumes:

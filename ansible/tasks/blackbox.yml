@@ -10,4 +10,4 @@
     src: blackbox_config.yml.j2
     dest: /home/azureuser/monitoring/blackbox/config.yml
     mode: "0644"
-  notify: Restart monitoring stack
+  notify: Restart blackbox exporter
