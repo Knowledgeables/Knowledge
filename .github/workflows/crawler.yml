@@ -1,8 +1,7 @@
 name: Crawler - Scheduled
 
 on:
-  schedule:
-    - cron: "17 3,13 * * *"
+ 
   workflow_dispatch:
 
 jobs:
